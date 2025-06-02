@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ColorPicker from '../../components/ColorPicker'
 import { vi, MockInstance } from 'vitest'
+import { act } from 'react'
 
 describe('ColorPicker', () => {
   const mockOnChange = vi.fn()
@@ -12,6 +13,7 @@ describe('ColorPicker', () => {
     mockOnChange.mockClear()
     // localStorage をモック
     getItemSpy = vi.spyOn(window.localStorage, 'getItem').mockImplementation((key: string) => {
+      console.log('ColorPicker.test.tsx getItemSpy mock: key=', key);
       if (key === 'colorHistory') {
         // 各テストの開始時に履歴をクリアするために、明示的に空のJSON配列を返す
         return JSON.stringify([]);
@@ -31,15 +33,20 @@ describe('ColorPicker', () => {
 
   it('初期状態でカラーピッカーが表示されていないことを確認する', () => {
     render(<ColorPicker color="#FFFFFF" onChange={mockOnChange} />)
-    expect(screen.queryByTestId('color-picker-popover')).not.toBeInTheDocument()
+    // ポップオーバーの要素がないことを確認（data-testidはピッカーが表示された後にのみ存在）
+    expect(screen.queryByTestId('hex-color-input')).not.toBeInTheDocument()
   })
 
   it('色選択トグルをクリックするとカラーピッカーが表示される', async () => {
-    render(<ColorPicker color="#FFFFFF" onChange={mockOnChange} />)
+    render(<ColorPicker color="#FFFFFFFF" onChange={mockOnChange} />)
     const toggle = screen.getByLabelText('色を選択トグル') as HTMLElement
-    await userEvent.click(toggle)
+
+    await act(async () => {
+      await userEvent.click(toggle)
+    });
     await waitFor(() => {
-      expect(screen.getByDisplayValue('FFFFFF')).toBeInTheDocument() // HEXコード入力フィールドで確認
+      expect(screen.getByTestId('hex-color-input')).toBeInTheDocument() // HEXコード入力フィールドで確認
+      expect((screen.getByTestId('hex-color-input') as HTMLInputElement).value).toBe('FFFFFFFF') // value の確認
     });
   })
 
@@ -49,75 +56,56 @@ describe('ColorPicker', () => {
     await userEvent.click(toggle)
 
     // ピッカー外をクリック
-    fireEvent.mouseDown(document.body)
+    await userEvent.click(document.body)
 
     await waitFor(() => {
-      expect(screen.queryByText('最近使用した色:')).not.toBeInTheDocument()
+      // ColorPickerのレンダリング構造を考慮し、hex-color-input が存在しないことを確認
+      expect(screen.queryByTestId('hex-color-input')).not.toBeInTheDocument()
     })
-  })
-
-  it('HexColorPicker で色を変更すると onChange が呼び出される', async () => {
-    // HexColorPicker の内部操作は直接テストせず、ColorPicker の onChange プロップが呼ばれることを確認
-    // ColorPicker は HexColorPicker の onChange をそのまま props.onChange に渡すため、ここでは直接 mockOnChange を呼び出す
-    render(<ColorPicker color="#FFFFFF" onChange={mockOnChange} />)
-    const toggle = screen.getByLabelText('色を選択トグル') as HTMLElement
-    await userEvent.click(toggle)
-
-    // HexAlphaColorPicker の内部要素を直接操作する代わりに、onChange が呼び出されることを確認
-    // 通常、react-colorful のテストは複雑になるため、ここではonChangeが呼ばれることのみ確認
-    // 実際の色の変更はE2Eテストでカバーするのが適切
-    // mockOnChangeを直接呼び出してonChangeの挙動をシミュレートする
-    mockOnChange('#FF0000FF')
-    expect(mockOnChange).toHaveBeenCalledWith('#FF0000FF')
   })
 
   it('HEXコード入力フィールドで色を変更すると onChange が呼び出される', async () => {
     const { rerender } = render(<ColorPicker color="#FFFFFF" onChange={mockOnChange} />)
     const toggle = screen.getByLabelText('色を選択トグル') as HTMLElement
-    await userEvent.click(toggle)
+    await act(async () => {
+      await userEvent.click(toggle)
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('hex-color-input')).toBeInTheDocument()
+    })
 
-    // value="FFFFFF" の input を取得
-    const hexInput = screen.getByDisplayValue('FFFFFF') as HTMLInputElement
+    const hexInput = screen.getByTestId('hex-color-input') as HTMLInputElement
     await userEvent.clear(hexInput)
     await userEvent.type(hexInput, 'FF0000FF')
 
-    // ColorPickerのonChangeが呼ばれることを確認
     expect(mockOnChange).toHaveBeenCalledWith('#FF0000FF')
 
-    // コンポーネントの状態が更新されたことをシミュレートするためにrerender
-    rerender(<ColorPicker color="#FF0000FF" onChange={mockOnChange} />)
-
-    // waitForでUIが更新されるのを待つ
     await waitFor(() => {
-      expect(screen.getByDisplayValue('FF0000FF')).toBeInTheDocument(); // 修正: 正しいHEXコードが表示されていることを確認
+      expect((screen.getByTestId('hex-color-input') as HTMLInputElement).value).toBe('FF0000FF');
     });
-
   })
 
   it('基本色を選択すると onChange が呼び出される', async () => {
     const { rerender } = render(<ColorPicker color="#FFFFFF" onChange={mockOnChange} />)
     const toggle = screen.getByLabelText('色を選択トグル') as HTMLElement
-    await userEvent.click(toggle)
+    await act(async () => {
+      await userEvent.click(toggle)
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '基本色 #FF0000FF' })).toBeInTheDocument();
+    });
 
-    // TailwindCSSによって生成される空のボタンのname属性をターゲットにする
-    // もしボタンに意味のあるテキストを追加するなら、それを使うべき
-    // ここでは便宜的に最初のボタンを赤と仮定
-    const basicColors = screen.getAllByRole('button', { name: '' })
-    // 基本色ボタンと履歴ボタンを区別するため、より具体的なセレクタを使用するか、リストの順序に依存する
-    // 現状は、最初の数個が基本色であると仮定して対処
-    const redColorButton = basicColors[0]
-    fireEvent.click(redColorButton)
+    const redColorButton = screen.getByRole('button', { name: '基本色 #FF0000FF' })
+    await userEvent.click(redColorButton)
 
-    // ColorPickerのonChangeが呼ばれることを確認
     expect(mockOnChange).toHaveBeenCalledWith('#FF0000FF')
 
-    // コンポーネントの状態が更新されたことをシミュレートするためにrerender
     rerender(<ColorPicker color="#FF0000FF" onChange={mockOnChange} />)
   })
 
   it('履歴色が正しく表示され、選択すると onChange が呼び出される', async () => {
-    // 履歴をセットアップ
     getItemSpy.mockImplementationOnce((key: string) => {
+      console.log('ColorPicker.test.tsx getItemSpy mockOnce: key=', key);
       if (key === 'colorHistory') {
         return JSON.stringify(['#123456FF', '#ABCDEF22']);
       }
@@ -126,45 +114,51 @@ describe('ColorPicker', () => {
 
     const { rerender } = render(<ColorPicker color="#FFFFFF" onChange={mockOnChange} />)
     const toggle = screen.getByLabelText('色を選択トグル') as HTMLElement
-    await userEvent.click(toggle)
+    await act(async () => {
+      await userEvent.click(toggle)
+    });
 
-    expect(screen.getByText('最近使用した色:')).toBeInTheDocument()
-    const historyButtons = screen.getAllByRole('button', { name: '' })
-
-    // 履歴ボタンは基本色の後にレンダリングされるので、最後の2つが履歴ボタン
-    const histColor1Button = historyButtons[historyButtons.length - 2]
-    const histColor2Button = historyButtons[historyButtons.length - 1]
-
-    fireEvent.click(histColor1Button)
     await waitFor(() => {
-      expect(mockOnChange).toHaveBeenCalledWith('#123456FF') // waitFor を追加
+      expect(screen.getByText('最近使用した色:')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '基本色 #123456FF' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '基本色 #ABCDEF22' })).toBeInTheDocument();
+    });
+
+    const histColor1Button = screen.getByRole('button', { name: '基本色 #123456FF' });
+    const histColor2Button = screen.getByRole('button', { name: '基本色 #ABCDEF22' });
+
+    await userEvent.click(histColor1Button)
+    await waitFor(() => {
+      expect(mockOnChange).toHaveBeenCalledWith('#123456FF')
     })
 
-    // コンポーネントの状態が更新されたことをシミュレートするためにrerender
     rerender(<ColorPicker color="#123456FF" onChange={mockOnChange} />)
-
     mockOnChange.mockClear()
-    fireEvent.click(histColor2Button)
+
+    await userEvent.click(histColor2Button)
     await waitFor(() => {
-      expect(mockOnChange).toHaveBeenCalledWith('#ABCDEF22') // waitFor を追加
+      expect(mockOnChange).toHaveBeenCalledWith('#ABCDEF22')
     })
 
-    // コンポーネントの状態が更新されたことをシミュレートするためにrerender
     rerender(<ColorPicker color="#ABCDEF22" onChange={mockOnChange} />)
   })
 
   it('ピッカーが閉じられたときに選択された色が履歴に追加される', async () => {
     const { rerender } = render(<ColorPicker color="#FFFFFFFF" onChange={mockOnChange} />)
     const toggle = screen.getByLabelText('色を選択トグル') as HTMLElement
-    await userEvent.click(toggle) // ピッカーを開く
+    await act(async () => {
+      await userEvent.click(toggle) // ピッカーを開く
+    });
 
     // 色が変更されたことをシミュレートするためにrerender
     rerender(<ColorPicker color="#FF0000FF" onChange={mockOnChange} />)
 
-    fireEvent.mouseDown(document.body) // ピッカーを閉じる
+    await act(async () => {
+      await userEvent.click(document.body) // ピッカーを閉じる
+    })
 
     await waitFor(() => {
-      expect(setItemSpy).toHaveBeenCalledTimes(1) // 1回だけ呼び出されることを期待
+      expect(setItemSpy).toHaveBeenCalledTimes(1)
       expect(setItemSpy).toHaveBeenLastCalledWith(
         'colorHistory',
         JSON.stringify(['#FF0000FF'])
@@ -182,12 +176,16 @@ describe('ColorPicker', () => {
 
     const { rerender } = render(<ColorPicker color="#FFFFFFFF" onChange={mockOnChange} />)
     const toggle = screen.getByLabelText('色を選択トグル') as HTMLElement
-    await userEvent.click(toggle) // ピッカーを開く
+    await act(async () => {
+      await userEvent.click(toggle) // ピッカーを開く
+    });
 
     // 新しい色が選択されたことをシミュレートするためにrerender
-    rerender(<ColorPicker color="#444444FF" onChange={mockOnChange} />) // 新しい色を選択
+    rerender(<ColorPicker color="#444444FF" onChange={mockOnChange} />)
 
-    fireEvent.mouseDown(document.body) // ピッカーを閉じる
+    await act(async () => {
+      await userEvent.click(document.body) // ピッカーを閉じる
+    })
 
     await waitFor(() => {
       expect(setItemSpy).toHaveBeenCalledTimes(1)
@@ -208,12 +206,16 @@ describe('ColorPicker', () => {
 
     const { rerender } = render(<ColorPicker color="#FFFFFFFF" onChange={mockOnChange} />)
     const toggle = screen.getByLabelText('色を選択トグル') as HTMLElement
-    await userEvent.click(toggle) // ピッカーを開く
+    await act(async () => {
+      await userEvent.click(toggle) // ピッカーを開く
+    });
 
     // 履歴にある色が選択されたことをシミュレートするためにrerender
-    rerender(<ColorPicker color="#222222FF" onChange={mockOnChange} />) // 履歴にある色を選択
+    rerender(<ColorPicker color="#222222FF" onChange={mockOnChange} />)
 
-    fireEvent.mouseDown(document.body) // ピッカーを閉じる
+    await act(async () => {
+      await userEvent.click(document.body) // ピッカーを閉じる
+    })
 
     await waitFor(() => {
       expect(setItemSpy).toHaveBeenCalledTimes(1)

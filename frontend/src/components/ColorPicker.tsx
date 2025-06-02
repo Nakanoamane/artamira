@@ -28,6 +28,7 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
   const [history, setHistory] = useState<string[]>(() => {
     try {
       const storedHistory = localStorage.getItem('colorHistory')
+      console.log('ColorPicker useState init: storedHistory =', storedHistory);
       return storedHistory ? JSON.parse(storedHistory) : []
     } catch (error) {
       console.error("Failed to parse color history from localStorage", error)
@@ -80,7 +81,9 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
         aria-label="色を選択トグル"
         className="w-12 h-12 rounded-lg border border-gray-300 cursor-pointer shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
         style={{ backgroundColor: color }}
-        onClick={() => setPickerVisible(!isPickerVisible)}
+        onClick={() => {
+          setPickerVisible(!isPickerVisible)
+        }}
       ></div>
 
       {isPickerVisible && (
@@ -94,6 +97,7 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
             className="w-full mt-2 p-2 border border-gray-300 rounded-md text-center text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-500"
             color={color}
             onChange={handleColorChange}
+            data-testid="hex-color-input"
           />
 
           {/* 基本色選択ボタン */}
@@ -104,6 +108,7 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
                 className="w-6 h-6 rounded-full border border-gray-300 cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 style={{ backgroundColor: basicColor }}
                 onClick={() => handleColorChange(basicColor)}
+                aria-label={`基本色 ${basicColor}`}
               ></button>
             ))}
           </div>
