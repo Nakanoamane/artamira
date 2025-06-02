@@ -42,9 +42,6 @@ cd artamira
 RAILS_ENV=development
 RAILS_MASTER_KEY=your_master_key_here
 
-# データベース設定
-DATABASE_URL=sqlite3:/app/db/development.sqlite3
-
 # フロントエンド設定
 VITE_API_URL=http://localhost:3000
 VITE_WS_URL=ws://localhost:3000/cable
