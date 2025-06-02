@@ -4,4 +4,9 @@ module AuthenticationHelpers
     expect(response).to have_http_status(:ok)
     response.cookies # ログイン後に設定されるクッキーを返す
   end
+
+  def cookies_for_header(user)
+    cookies = sign_in(user)
+    cookies.map { |k, v| "#{k}=#{v}" }.join(';')
+  end
 end

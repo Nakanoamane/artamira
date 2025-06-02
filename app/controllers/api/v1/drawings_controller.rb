@@ -1,7 +1,7 @@
 module Api
   module V1
     class DrawingsController < ApplicationController
-      before_action :set_drawing, only: [:show, :update, :destroy]
+      before_action :set_drawing, only: [:show, :update, :destroy, :save]
 
       def index
         @drawings = Drawing.all
@@ -35,10 +35,23 @@ module Api
         head :no_content
       end
 
+      def save
+        if @drawing.update(last_saved_at: Time.current)
+          ActionCable.server.broadcast "drawing_#{@drawing.id}", {
+            type: 'drawing_saved',
+            drawing_id: @drawing.id,
+            last_saved_at: @drawing.last_saved_at
+          }
+          render json: { status: "success", message: "Drawing saved successfully.", last_saved_at: @drawing.last_saved_at }, status: :ok
+        else
+          render json: @drawing.errors, status: :unprocessable_entity
+        end
+      end
+
       private
 
       def set_drawing
-        @drawing = Drawing.find(params[:id])
+        @drawing = current_user.drawings.find(params[:id])
       end
 
       def drawing_params

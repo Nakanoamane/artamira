@@ -2,11 +2,11 @@ module Api
   module V1
     class DrawingElementsController < ApplicationController
       before_action :set_drawing, only: [:index, :create]
-      before_action :set_drawing_element, only: [:show, :update, :destroy]
+      before_action :set_drawing_and_element, only: [:show, :update, :destroy]
 
       def index
         @drawing_elements = @drawing.drawing_elements
-        render json: @drawing_elements
+        render json: { drawing_elements: @drawing_elements, last_saved_at: @drawing.last_saved_at }
       end
 
       def show
@@ -15,7 +15,7 @@ module Api
 
       def create
         @drawing_element = @drawing.drawing_elements.build(drawing_element_params)
-        @drawing_element.user_id = params[:user_id] # 後で認証システムから取得するように変更
+        @drawing_element.user_id = current_user.id
 
         if @drawing_element.save
           # Action Cableを通じて他のクライアントに通知
@@ -54,11 +54,12 @@ module Api
       private
 
       def set_drawing
-        @drawing = Drawing.find(params[:drawing_id])
+        @drawing = current_user.drawings.find(params[:drawing_id])
       end
 
-      def set_drawing_element
-        @drawing_element = DrawingElement.find(params[:id])
+      def set_drawing_and_element
+        @drawing = current_user.drawings.find(params[:drawing_id])
+        @drawing_element = @drawing.drawing_elements.find(params[:id])
       end
 
       def drawing_element_params

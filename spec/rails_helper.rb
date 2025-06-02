@@ -78,4 +78,6 @@ RSpec.configure do |config|
   config.before(:each) do
     ActionCable.server.config.cable = { "adapter" => "test" }
   end
+
+  config.include ActiveSupport::Testing::TimeHelpers
 end

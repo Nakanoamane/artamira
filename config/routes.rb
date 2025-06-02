@@ -22,7 +22,8 @@ Rails.application.routes.draw do
       resources :passwords, param: :token, only: [:create, :update] # パスワードリセット関連
 
       resources :drawings do
-        resources :drawing_elements, only: [:index, :create]
+        resources :elements, controller: 'drawing_elements', only: [:index, :create]
+        post 'save', on: :member
       end
       resources :drawing_elements, only: [:show, :update, :destroy]
     end
