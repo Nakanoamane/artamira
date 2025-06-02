@@ -1,0 +1,5 @@
+development:
+  database: cache
+  store_options:
+    expiry_batch_size: 1
+    max_age: 30.seconds.to_i

@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        RAILS_ENV: development
+        BUNDLE_DEPLOYMENT: 0
+    env_file: ./.env
+    volumes:
+      - .:/rails
+    ports:
+      - "3000:3000"
+    command: /rails/bin/docker-entrypoint rails server -b '0.0.0.0'
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    env_file: ./.env
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_started
+    command: npm run dev

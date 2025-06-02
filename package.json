@@ -1,0 +1,19 @@
+{
+  "name": "artamira",
+  "version": "1.0.0",
+  "description": "このプロジェクトはアイデア・設計・製造をAIにお任せしています",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.15.29"
+  }
+}
