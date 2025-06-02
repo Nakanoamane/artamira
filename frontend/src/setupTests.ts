@@ -1,6 +1,7 @@
 /// <reference types="vitest/globals" />
 import '@testing-library/jest-dom';
 import { vi, beforeAll, afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
 
 export class MockCanvasRenderingContext2D {
   // メソッド
@@ -61,7 +62,7 @@ export class MockCanvasRenderingContext2D {
   set direction(v: CanvasDirection) { this.#direction = v; }
 }
 
-let singleMockContextInstance: MockCanvasRenderingContext2D; // 単一のインスタンスを保持するグローバル変数
+export let singleMockContextInstance: MockCanvasRenderingContext2D; // 単一のインスタンスを保持するグローバル変数
 
 beforeAll(() => {
   // すべてのテストの前に単一のモックインスタンスを初期化
@@ -69,6 +70,12 @@ beforeAll(() => {
 
   Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
     value: vi.fn(() => singleMockContextInstance), // 常に同じインスタンスを返す
+  });
+
+  // composedPathをモック
+  Object.defineProperty(Event.prototype, 'composedPath', {
+    value: vi.fn(() => []),
+    configurable: true,
   });
 });
 
@@ -85,4 +92,5 @@ afterEach(() => {
       }
     });
   }
+  cleanup();
 });
