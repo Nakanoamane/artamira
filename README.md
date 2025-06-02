@@ -88,6 +88,9 @@ docker compose exec api bundle exec rspec spec/models/drawing_element_spec.rb
 # フロントエンドのコンポーネント単体テストを実行
 docker compose exec frontend npm test
 
+# 特定のフロントエンドのコンポーネント単体テストを実行
+docker compose exec frontend npx vitest run src/tests/components/ColorPicker.test.tsx
+
 # E2Eテストを実行
 docker compose run --rm e2e
 ```
