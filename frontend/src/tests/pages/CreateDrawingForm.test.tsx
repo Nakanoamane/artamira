@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router'
 import CreateDrawingForm from '../../pages/CreateDrawingForm'
 import { vi } from 'vitest'
 import * as AuthContext from '../../contexts/AuthContext' // AuthContextをインポート
@@ -11,8 +11,8 @@ global.fetch = mockFetch
 
 // useNavigate をモックする
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async (importOriginal) => {
-  const actual = await importOriginal() as typeof import('react-router-dom')
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router')
   return {
     ...actual,
     useNavigate: () => mockNavigate,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { usePageTitle } from '../../hooks/usePageTitle';
 
 const RegisterPage: React.FC = () => {

@@ -34,7 +34,7 @@ export interface CircleElement {
 
 export type DrawingElementType = LineElement | RectElement | CircleElement
 
-interface CanvasProps {
+export interface CanvasProps {
   activeTool: string
   color: string
   brushSize: number
