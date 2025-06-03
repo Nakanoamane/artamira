@@ -1,6 +1,10 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+/// <reference types="vitest/globals" />
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import Canvas, { DrawingElementType } from '../../components/Canvas';
 import { MockCanvasRenderingContext2D } from '../../setupTests'; // MockCanvasRenderingContext2D をインポート
+import { vi } from 'vitest';
+import { singleMockContextInstance } from '../../setupTests'; // singleMockContextInstance をインポート
+import userEvent from '@testing-library/user-event'; // userEventをインポート
 // import 'jest-canvas-mock'; // jest-canvas-mockをインポート (Vitestでは不要)
 
 describe('Canvas', () => {
@@ -15,8 +19,28 @@ describe('Canvas', () => {
     status: { isConnected: true, error: null },
   };
 
+  // Canvas APIのモックはsetupTests.tsで処理されるため、ここでは不要
+  // let originalCanvas: any; // 不要な変数は削除
+
+  beforeAll(() => {
+    // originalCanvas = window.HTMLCanvasElement; // 不要な行は削除
+    window.HTMLCanvasElement.prototype.toDataURL = vi.fn((type: string) => {
+      return `data:${type};base64,mocked_image_data`;
+    });
+  });
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    // `vi.clearAllMocks()` はすべてのモックの呼び出し履歴をクリアしますが、モック関数自体は再作成されません。
+    // defaultProps.setIsDrawing は describe スコープで一度だけ作成されているため、
+    // 各テストで新しいモック関数を割り当てる必要があります。
+    defaultProps.setIsDrawing.mockClear();
+    defaultProps.onDrawComplete.mockClear();
+    // 他のモック関数もあれば同様にクリア
+    vi.clearAllMocks(); // これも実行しておく
+  });
+
+  afterAll(() => {
+    // window.HTMLCanvasElement = originalCanvas; // 不要な行は削除
   });
 
   it('renders canvas element', () => {
@@ -35,24 +59,42 @@ describe('Canvas', () => {
     expect(screen.getByText(errorMessage)).toBeInTheDocument();
   });
 
-  it('sets isDrawing to true on mouse down', () => {
-    render(<Canvas {...defaultProps} />);
+  it('sets isDrawing to true on mouse down', async () => {
+    // ref を渡して Canvas コンポーネントが内部の canvas 要素にアクセスできるようにする
+    const mockRef: { current: HTMLCanvasElement | null } = { current: null };
+    render(<Canvas {...defaultProps} ref={mockRef} />);
     const canvas = screen.getByTestId('drawing-canvas');
-    fireEvent.mouseDown(canvas);
+    // Canvas コンポーネントが内部的に ref を設定するのを待つ
+    // ただし、このテストの文脈では ref.current が canvas 要素になることを保証するだけでよい
+    mockRef.current = canvas as HTMLCanvasElement; // 手動で current を設定
+
+    act(() => {
+      fireEvent.mouseDown(canvas, { clientX: 10, clientY: 10 });
+    });
     expect(defaultProps.setIsDrawing).toHaveBeenCalledWith(true);
   });
 
-  it('sets isDrawing to false and nulls prevPointRef on mouse up', () => {
-    render(<Canvas {...defaultProps} isDrawing={true} />);
+  it('sets isDrawing to false and nulls prevPointRef on mouse up', async () => {
+    const mockRef: { current: HTMLCanvasElement | null } = { current: null };
+    render(<Canvas {...defaultProps} isDrawing={true} ref={mockRef} />);
     const canvas = screen.getByTestId('drawing-canvas');
-    fireEvent.mouseUp(canvas);
+    mockRef.current = canvas as HTMLCanvasElement;
+
+    act(() => {
+      fireEvent.mouseUp(canvas, { clientX: 20, clientY: 20 });
+    });
     expect(defaultProps.setIsDrawing).toHaveBeenCalledWith(false);
   });
 
   it('sets isDrawing to false and nulls prevPointRef on mouse leave', () => {
-    render(<Canvas {...defaultProps} isDrawing={true} />);
+    const mockRef: { current: HTMLCanvasElement | null } = { current: null };
+    render(<Canvas {...defaultProps} isDrawing={true} ref={mockRef} />);
     const canvas = screen.getByTestId('drawing-canvas');
-    fireEvent.mouseLeave(canvas);
+    mockRef.current = canvas as HTMLCanvasElement;
+
+    act(() => {
+      fireEvent.mouseLeave(canvas);
+    });
     expect(defaultProps.setIsDrawing).toHaveBeenCalledWith(false);
   });
 
@@ -72,31 +114,33 @@ describe('Canvas', () => {
       },
     ];
 
-    render(<Canvas {...defaultProps} drawingElementsToRender={drawingElements} />);
+    const mockRef: { current: HTMLCanvasElement | null } = { current: null };
+    render(<Canvas {...defaultProps} drawingElementsToRender={drawingElements} ref={mockRef} />);
 
-    // renderの直後にcanvasとctxを取得
     const canvas = screen.getByTestId('drawing-canvas') as HTMLCanvasElement;
+    mockRef.current = canvas as HTMLCanvasElement; // ref を設定
     const ctx = canvas.getContext('2d') as unknown as MockCanvasRenderingContext2D;
 
-    await vi.waitFor(() => {
-      const canvas = screen.getByTestId('drawing-canvas') as HTMLCanvasElement;
-      const ctx = canvas.getContext('2d') as unknown as MockCanvasRenderingContext2D;
+    // Canvasの初期化と描画要素の描画でclearRectが呼ばれることを期待
+    // drawingElementsToRender が初期プロップとして渡されるため、useEffectは一度だけトリガーされる
+    expect(ctx.clearRect).toHaveBeenCalledTimes(1);
 
-      expect(ctx.clearRect).toHaveBeenCalledTimes(2);
-      expect(ctx.beginPath).toHaveBeenCalledTimes(4);
-      expect(ctx.moveTo).toHaveBeenCalledTimes(4);
-      expect(ctx.lineTo).toHaveBeenCalledTimes(4);
-      expect(ctx.stroke).toHaveBeenCalledTimes(4);
-      expect(ctx.closePath).toHaveBeenCalledTimes(4);
+    // drawingElementsToRender の変更は初回レンダリング後に発生すると仮定
+    // ここでは、useEffect がトリガーされた後の描画を確認する
+    expect(ctx.beginPath).toHaveBeenCalledTimes(drawingElements.length);
+    expect(ctx.moveTo).toHaveBeenCalledTimes(drawingElements.length);
+    expect(ctx.lineTo).toHaveBeenCalledTimes(drawingElements.length);
+    expect(ctx.stroke).toHaveBeenCalledTimes(drawingElements.length);
+    expect(ctx.closePath).toHaveBeenCalledTimes(drawingElements.length);
 
-      expect(ctx.moveTo).toHaveBeenCalledWith(0, 0);
-      expect(ctx.lineTo).toHaveBeenCalledWith(10, 10);
+    expect(ctx.moveTo).toHaveBeenCalledWith(0, 0);
+    expect(ctx.lineTo).toHaveBeenCalledWith(10, 10);
 
-      expect(ctx.moveTo).toHaveBeenCalledWith(20, 20);
-      expect(ctx.lineTo).toHaveBeenCalledWith(30, 30);
+    expect(ctx.moveTo).toHaveBeenCalledWith(20, 20);
+    expect(ctx.lineTo).toHaveBeenCalledWith(30, 30);
 
-      expect(ctx.strokeStyle).toBe('#00ff00');
-      expect(ctx.lineWidth).toBe(10);
-    });
+    // 最後の描画要素の色とブラシサイズが適用されていることを確認
+    expect(ctx.strokeStyle).toBe('#00ff00');
+    expect(ctx.lineWidth).toBe(10);
   });
 });

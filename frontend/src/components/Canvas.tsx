@@ -46,15 +46,26 @@ interface CanvasProps {
 }
 
 const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
-  ({ activeTool, color, brushSize, isDrawing, setIsDrawing, onDrawComplete, drawingElementsToRender, status }, ref) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null)
+  ({ activeTool, color, brushSize, isDrawing, setIsDrawing, onDrawComplete, drawingElementsToRender, status }, forwardedRef) => {
+    const localCanvasRef = useRef<HTMLCanvasElement>(null); // ローカルのref
     const prevPointRef = useRef<Point | null>(null)
     const animationFrameId = useRef<number | null>(null) // requestAnimationFrame のIDを保持
     const [tempDrawingElement, setTempDrawingElement] = useState<DrawingElementType | null>(null) // 仮描画要素の状態
     // const { channel, status } = useActionCable('DrawingChannel')
 
+    // forwardedRef を localCanvasRef に接続する useEffect
     useEffect(() => {
-      const canvas = canvasRef.current
+      if (forwardedRef) {
+        if (typeof forwardedRef === 'function') {
+          forwardedRef(localCanvasRef.current);
+        } else {
+          forwardedRef.current = localCanvasRef.current;
+        }
+      }
+    }, [forwardedRef, localCanvasRef]);
+
+    useEffect(() => {
+      const canvas = localCanvasRef.current
       if (!canvas) return
 
       const CANVAS_WIDTH = 1200;
@@ -68,10 +79,10 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
 
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
-    }, [])
+    }, [localCanvasRef])
 
     useEffect(() => {
-      const canvas = canvasRef.current
+      const canvas = localCanvasRef.current
       if (!canvas) return
 
       const ctx = canvas.getContext('2d')
@@ -81,7 +92,12 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       drawingElementsToRender.forEach((element) => {
         drawElement(ctx, element)
       })
-    }, [drawingElementsToRender])
+
+      // 仮描画要素があれば描画
+      if (tempDrawingElement) {
+        drawElement(ctx, tempDrawingElement);
+      }
+    }, [drawingElementsToRender, tempDrawingElement, localCanvasRef])
 
     const drawElement = (
       ctx: CanvasRenderingContext2D,
@@ -124,9 +140,24 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       }
     }
 
+    const drawElements = useCallback(() => {
+      const canvas = localCanvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawingElementsToRender.forEach(element => {
+        drawElement(ctx, element);
+      });
+      if (tempDrawingElement) {
+        drawElement(ctx, tempDrawingElement);
+      }
+    }, [localCanvasRef, drawingElementsToRender, tempDrawingElement]);
+
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
       setIsDrawing(true)
-      const canvas = canvasRef.current
+      const canvas = localCanvasRef.current
       if (!canvas) return
 
       const rect = canvas.getBoundingClientRect()
@@ -150,7 +181,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
     const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (!isDrawing) return
 
-      const canvas = canvasRef.current
+      const canvas = localCanvasRef.current
       if (!canvas) return
 
       const rect = canvas.getBoundingClientRect()
@@ -240,7 +271,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         animationFrameId.current = null;
       }
 
-      const canvas = canvasRef.current
+      const canvas = localCanvasRef.current
       if (!canvas) return
 
       const rect = canvas.getBoundingClientRect()
@@ -249,85 +280,55 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         y: e.clientY - rect.top,
       }
 
-      if (prevPointRef.current) {
-        let completedElement: DrawingElementType | null = null;
-        if (activeTool === 'pen' || activeTool === 'eraser') {
-          // ペンと消しゴムはMouseMoveで点を蓄積しているので、MouseUpで完了要素として送信
-          if (tempDrawingElement && tempDrawingElement.type === 'line') {
-            // 最後の点を追加して完了
-            completedElement = {
-              id: crypto.randomUUID(),
-              ...tempDrawingElement,
-              points: [...tempDrawingElement.points, currentPoint],
-            };
-          } else {
-            // ストロークが短すぎる場合（一点のみの場合など）
-            completedElement = {
-              id: crypto.randomUUID(),
-              type: 'line',
-              points: [prevPointRef.current, currentPoint],
-              color: activeTool === 'eraser' ? '#FFFFFF' : color,
-              brushSize,
-            };
-          }
-        } else if (activeTool === 'line' || activeTool === 'rectangle' || activeTool === 'circle') {
-          // 図形ツールはtempDrawingElementをそのまま完了要素とする
-          if (tempDrawingElement) {
-            completedElement = {
-              id: crypto.randomUUID(),
-              ...tempDrawingElement,
-            };
-          }
-        }
-
-        if (completedElement) {
-          onDrawComplete(completedElement);
-        }
+      // 仮描画要素を確定し、onDrawCompleteを呼び出す
+      if (tempDrawingElement) {
+        // IDを割り当てる
+        const elementWithId = { ...tempDrawingElement, id: crypto.randomUUID() };
+        onDrawComplete(elementWithId);
+        setTempDrawingElement(null); // 仮描画をクリア
       }
 
       setIsDrawing(false)
       prevPointRef.current = null
-      setTempDrawingElement(null) // 仮描画要素をクリア
     }
 
-    // Placeholder for clear drawing functionality
-    const clearDrawing = () => {
-      // console.log("Canvas clear function called. Implement logic to clear all drawing elements.")
-    }
-
-    const drawElements = useCallback(() => {
-      const canvas = canvasRef.current
-      if (!canvas) return
-
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      drawingElementsToRender.forEach((element) => {
-        drawElement(ctx, element)
-      })
-
-      // 仮描画要素があれば描画
-      if (tempDrawingElement) {
-        drawElement(ctx, tempDrawingElement);
+    const handleMouseLeave = () => {
+      // ドラッグ中にキャンバスからマウスが離れた場合も描画を終了
+      if (isDrawing) {
+        if (animationFrameId.current) {
+          cancelAnimationFrame(animationFrameId.current);
+          animationFrameId.current = null;
+        }
+        if (tempDrawingElement) {
+          // IDを割り当てる
+          const elementWithId = { ...tempDrawingElement, id: crypto.randomUUID() };
+          onDrawComplete(elementWithId);
+          setTempDrawingElement(null); // 仮描画をクリア
+        }
+        setIsDrawing(false);
+        prevPointRef.current = null;
       }
-    }, [drawingElementsToRender, tempDrawingElement])
+    };
 
-    useEffect(() => {
-      drawElements();
-    }, [drawElements]); // drawElementsがuseCallbackでラップされているため、依存配列はdrawElementsのみ
+    // clearDrawing関数
+    const clearDrawing = () => {
+      const canvas = localCanvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
     return (
       <div className="relative bg-white">
         <canvas
-          ref={canvasRef}
+          ref={localCanvasRef}
           data-testid="drawing-canvas"
           className="border border-gray-300 shadow-lg"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp} // マウスがキャンバスから離れた時も描画を終了
+          onMouseLeave={handleMouseLeave}
         />
         {status.error && (
           <div className="absolute top-0 left-0 right-0 bg-red-100 text-red-700 px-4 py-2 rounded-t-lg">
