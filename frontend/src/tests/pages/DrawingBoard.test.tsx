@@ -19,14 +19,14 @@ const { mockUsePageTitle, mockUseDrawingChannel } = vi.hoisted(() => {
 const { MockToolbarComponent, MockCanvasComponent } = await vi.hoisted(async () => {
   const React = await vi.importActual<typeof import('react')>('react');
 
-  const MockToolbar = (props: any) => {
+  const MockToolbar = vi.fn((props: any) => {
     return React.createElement('div', { 'data-testid': 'toolbar' }, [
       React.createElement('button', { key: 'save', onClick: props.onSave, disabled: !props.isSaveEnabled, type: 'button' }, '保存'),
       React.createElement('button', { key: 'export', onClick: props.onExportClick, type: 'button' }, 'エクスポート'),
     ]);
-  };
+  });
 
-  const MockCanvas = React.forwardRef((props: any, ref: React.Ref<HTMLCanvasElement>) => {
+  const MockCanvas = vi.fn(React.forwardRef((props: any, ref: React.Ref<HTMLCanvasElement>) => {
     return React.createElement('div', { className: 'relative bg-white' },
       React.createElement('canvas', {
         'data-testid': 'drawing-canvas',
@@ -37,7 +37,7 @@ const { MockToolbarComponent, MockCanvasComponent } = await vi.hoisted(async () 
         ...props,
       })
     );
-  });
+  }));
 
   return {
     MockToolbarComponent: MockToolbar,
@@ -252,7 +252,7 @@ describe('DrawingBoard', () => {
     expect(screen.getByRole('button', { name: '保存' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'エクスポート' })).toBeInTheDocument();
 
-
+    console.log('Toolbar in test:', Toolbar);
 
     expect(Toolbar).toHaveBeenCalledWith(
       expect.objectContaining({ isSaveEnabled: false }),
