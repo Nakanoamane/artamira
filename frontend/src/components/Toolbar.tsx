@@ -12,6 +12,9 @@ interface ToolbarProps {
   onRedo: () => void
   canUndo: boolean
   canRedo: boolean
+  onSave: () => void
+  isSaveEnabled: boolean
+  onExportClick: () => void
 }
 
 const Toolbar = ({
@@ -25,6 +28,9 @@ const Toolbar = ({
   onRedo,
   canUndo,
   canRedo,
+  onSave,
+  isSaveEnabled,
+  onExportClick,
 }: ToolbarProps) => {
   return (
     <div className="flex flex-col items-center p-4 bg-white shadow-md rounded-lg">
@@ -73,6 +79,26 @@ const Toolbar = ({
             onClick={() => onToolChange('circle')}
           >
             円
+          </button>
+        </div>
+      </div>
+
+      {/* 保存ボタン */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">操作</label>
+        <div className="flex gap-2">
+          <button
+            className={`px-4 py-2 rounded-md ${isSaveEnabled ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+            onClick={onSave}
+            disabled={!isSaveEnabled}
+          >
+            保存
+          </button>
+          <button
+            className="px-4 py-2 rounded-md bg-purple-500 text-white hover:bg-purple-600"
+            onClick={onExportClick}
+          >
+            エクスポート
           </button>
         </div>
       </div>
