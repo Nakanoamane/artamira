@@ -28,7 +28,6 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
   const [history, setHistory] = useState<string[]>(() => {
     try {
       const storedHistory = localStorage.getItem('colorHistory')
-      console.log('ColorPicker useState init: storedHistory =', storedHistory);
       return storedHistory ? JSON.parse(storedHistory) : []
     } catch (error) {
       console.error("Failed to parse color history from localStorage", error)
@@ -36,7 +35,7 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
     }
   })
   const popoverRef = useRef<HTMLDivElement>(null)
-  const prevIsPickerVisibleRef = useRef(isPickerVisible); // isPickerVisible の以前の値を追跡
+  const prevIsPickerVisibleRef = useRef(isPickerVisible);
 
   const handleColorChange = (newColor: string) => {
     onChange(newColor)
@@ -64,11 +63,10 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
   }, [])
 
   useEffect(() => {
-    // isPickerVisible が true -> false に変わったときにのみ履歴を更新
     if (prevIsPickerVisibleRef.current === true && !isPickerVisible) {
       addColorToHistory(color)
     }
-    prevIsPickerVisibleRef.current = isPickerVisible; // 現在の isPickerVisible を保存
+    prevIsPickerVisibleRef.current = isPickerVisible;
   }, [isPickerVisible, color])
 
   return (
@@ -88,10 +86,8 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
 
       {isPickerVisible && (
         <div className="absolute z-10 mt-20 p-4 bg-white rounded-lg shadow-xl border border-gray-200">
-          {/* カラーピッカー（Alpha対応） */}
           <HexAlphaColorPicker color={color} onChange={handleColorChange} className="w-48 h-48" />
 
-          {/* HEXコード入力欄 */}
           <HexColorInput
             alpha
             className="w-full mt-2 p-2 border border-gray-300 rounded-md text-center text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -100,7 +96,6 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
             data-testid="hex-color-input"
           />
 
-          {/* 基本色選択ボタン */}
           <div className="grid grid-cols-6 gap-1 mt-4">
             {BASIC_COLORS.map((basicColor) => (
               <button
@@ -113,17 +108,17 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
             ))}
           </div>
 
-          {/* 履歴色表示 */}
           {history.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200">
               <p className="text-xs text-gray-500 mb-2">最近使用した色:</p>
               <div className="flex gap-2">
-                {history.map((histColor) => (
+                {history.map((hColor, index) => (
                   <button
-                    key={histColor}
+                    key={index}
                     className="w-8 h-8 rounded-full border border-gray-300 cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    style={{ backgroundColor: histColor }}
-                    onClick={() => handleColorChange(histColor)}
+                    style={{ backgroundColor: hColor }}
+                    onClick={() => handleColorChange(hColor)}
+                    data-testid={`history-color-button-${hColor}`}
                   ></button>
                 ))}
               </div>
