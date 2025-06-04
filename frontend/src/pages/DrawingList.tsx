@@ -46,7 +46,7 @@ const DrawingList = () => {
   }
 
   if (error) {
-    return <div className="text-center mt-8 text-red-500">エラー: {error}</div>
+    return <div className="text-center mt-8 text-status-danger">エラー: {error}</div>
   }
 
   return (
@@ -55,19 +55,19 @@ const DrawingList = () => {
       <div className="text-center mb-6">
         <Link
           to="/drawings/new"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          className="bg-cave-ochre hover:bg-dark-cave-ochre text-clay-white font-bold py-2 px-4 rounded"
           role="button"
         >
           新規描画ボードを作成
         </Link>
       </div>
       {drawings.length === 0 ? (
-        <p className="text-center text-gray-600">まだ描画ボードがありません。</p>
+        <p className="text-center text-medium-gray">まだ描画ボードがありません。</p>
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {drawings.map((drawing) => (
-            <li key={drawing.id} className="bg-white shadow-md rounded-lg p-6">
-              <Link to={`/drawings/${drawing.id}`} className="text-xl font-semibold text-blue-600 hover:underline">
+            <li key={drawing.id} className="bg-rock-linen shadow-md rounded-lg p-6">
+              <Link to={`/drawings/${drawing.id}`} className="text-xl font-semibold text-cave-ochre hover:underline">
                 {drawing.title || `無題の描画ボード (${drawing.id})`}
               </Link>
             </li>

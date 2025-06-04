@@ -71,13 +71,13 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
 
   return (
     <div className="relative flex flex-col items-center gap-2" ref={popoverRef}>
-      <label htmlFor="color-picker-toggle" className="text-sm font-medium text-gray-700">
+      <label htmlFor="color-picker-toggle" className="text-sm font-medium text-flint-gray">
         色を選択
       </label>
       <div
         id="color-picker-toggle"
         aria-label="色を選択トグル"
-        className="w-12 h-12 rounded-lg border border-gray-300 cursor-pointer shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
+        className="w-12 h-12 rounded-lg border border-light-gray cursor-pointer shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
         style={{ backgroundColor: color }}
         onClick={() => {
           setPickerVisible(!isPickerVisible)
@@ -85,12 +85,12 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
       ></div>
 
       {isPickerVisible && (
-        <div className="absolute z-10 mt-20 p-4 bg-white rounded-lg shadow-xl border border-gray-200">
+        <div className="absolute z-10 mt-20 p-4 bg-rock-linen rounded-lg shadow-xl border border-light-gray">
           <HexAlphaColorPicker color={color} onChange={handleColorChange} className="w-48 h-48" />
 
           <HexColorInput
             alpha
-            className="w-full mt-2 p-2 border border-gray-300 rounded-md text-center text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full mt-2 p-2 border border-light-gray rounded-md text-center text-sm font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-cave-ochre"
             color={color}
             onChange={handleColorChange}
             data-testid="hex-color-input"
@@ -100,7 +100,7 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
             {BASIC_COLORS.map((basicColor) => (
               <button
                 key={basicColor}
-                className="w-6 h-6 rounded-full border border-gray-300 cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="w-6 h-6 rounded-full border border-light-gray cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-cave-ochre focus:ring-offset-2"
                 style={{ backgroundColor: basicColor }}
                 onClick={() => handleColorChange(basicColor)}
                 aria-label={`基本色 ${basicColor}`}
@@ -109,13 +109,13 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
           </div>
 
           {history.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-xs text-gray-500 mb-2">最近使用した色:</p>
+            <div className="mt-4 pt-4 border-t border-light-gray">
+              <p className="text-xs text-medium-gray mb-2">最近使用した色:</p>
               <div className="flex gap-2">
                 {history.map((hColor, index) => (
                   <button
                     key={index}
-                    className="w-8 h-8 rounded-full border border-gray-300 cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="w-8 h-8 rounded-full border border-light-gray cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-cave-ochre focus:ring-offset-2"
                     style={{ backgroundColor: hColor }}
                     onClick={() => handleColorChange(hColor)}
                     data-testid={`history-color-button-${hColor}`}

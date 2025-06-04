@@ -6,7 +6,7 @@ interface BrushSizeSelectorProps {
 const BrushSizeSelector = ({ size, onChange }: BrushSizeSelectorProps) => {
   return (
     <div className="flex flex-col items-center gap-2">
-      <label htmlFor="brush-size" className="text-sm font-medium text-gray-700">
+      <label htmlFor="brush-size" className="text-sm font-medium text-flint-gray">
         ブラシサイズ: {size}px
       </label>
       <input
@@ -16,7 +16,7 @@ const BrushSizeSelector = ({ size, onChange }: BrushSizeSelectorProps) => {
         max="20"
         value={size}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+        className="w-32 h-2 bg-light-gray rounded-lg appearance-none cursor-pointer"
       />
     </div>
   )

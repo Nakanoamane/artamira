@@ -47,27 +47,27 @@ const CreateDrawingForm = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 bg-rock-linen">
       <h1 className="text-3xl font-bold mb-6 text-center">新規描画ボードを作成</h1>
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md max-w-md mx-auto">
+      <form onSubmit={handleSubmit} className="bg-rock-linen p-6 rounded-lg shadow-md max-w-md mx-auto">
         <div className="mb-4">
-          <label htmlFor="title" className="block text-gray-700 text-sm font-bold mb-2">
+          <label htmlFor="title" className="block text-flint-gray text-sm font-bold mb-2">
             ボードタイトル:
           </label>
           <input
             type="text"
             id="title"
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            className="shadow appearance-none border border-light-gray rounded w-full py-2 px-3 text-flint-gray leading-tight focus:outline-none focus:shadow-cave-ochre"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
             placeholder="新しい描画ボードのタイトル"
           />
         </div>
-        {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
+        {error && <p className="text-status-danger text-xs italic mb-4">{error}</p>}
         <button
           type="submit"
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          className="bg-cave-ochre hover:bg-dark-cave-ochre text-clay-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-cave-ochre"
           disabled={loading}
         >
           {loading ? '作成中...' : '作成'}

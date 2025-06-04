@@ -32,16 +32,16 @@ const Toolbar = ({
   onExportClick,
 }: ToolbarProps) => {
   return (
-    <div className="flex flex-col items-center p-4 bg-white shadow-md rounded-lg">
+    <div className="flex flex-col items-center p-4 bg-rock-linen shadow-md rounded-lg">
       <h3 className="text-lg font-semibold mb-4">ツールバー</h3>
 
       {/* ツール選択 */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">ツール</label>
+        <label className="block text-sm font-medium text-flint-gray mb-2">ツール</label>
         <div className="flex gap-2">
           <button
             className={`px-4 py-2 rounded-md ${
-              activeTool === 'pen' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
+              activeTool === 'pen' ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray'
             }`}
             onClick={() => onToolChange('pen')}
           >
@@ -49,7 +49,7 @@ const Toolbar = ({
           </button>
           <button
             className={`px-4 py-2 rounded-md ${
-              activeTool === 'eraser' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
+              activeTool === 'eraser' ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray'
             }`}
             onClick={() => onToolChange('eraser')}
           >
@@ -57,7 +57,7 @@ const Toolbar = ({
           </button>
           <button
             className={`px-4 py-2 rounded-md ${
-              activeTool === 'line' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
+              activeTool === 'line' ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray'
             }`}
             onClick={() => onToolChange('line')}
           >
@@ -65,7 +65,7 @@ const Toolbar = ({
           </button>
           <button
             className={`px-4 py-2 rounded-md ${
-              activeTool === 'rectangle' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
+              activeTool === 'rectangle' ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray'
             }`}
             onClick={() => onToolChange('rectangle')}
           >
@@ -73,7 +73,7 @@ const Toolbar = ({
           </button>
           <button
             className={`px-4 py-2 rounded-md ${
-              activeTool === 'circle' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
+              activeTool === 'circle' ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray'
             }`}
             onClick={() => onToolChange('circle')}
           >
@@ -84,17 +84,17 @@ const Toolbar = ({
 
       {/* 保存ボタン */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">操作</label>
+        <label className="block text-sm font-medium text-flint-gray mb-2">操作</label>
         <div className="flex gap-2">
           <button
-            className={`px-4 py-2 rounded-md ${isSaveEnabled ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+            className={`px-4 py-2 rounded-md ${isSaveEnabled ? 'bg-status-success text-clay-white' : 'bg-light-gray text-medium-gray cursor-not-allowed'}`}
             onClick={onSave}
             disabled={!isSaveEnabled}
           >
             保存
           </button>
           <button
-            className="px-4 py-2 rounded-md bg-purple-500 text-white hover:bg-purple-600"
+            className="px-4 py-2 rounded-md bg-stone-blue text-clay-white hover:bg-dark-stone-blue"
             onClick={onExportClick}
           >
             エクスポート
@@ -104,17 +104,17 @@ const Toolbar = ({
 
       {/* アンドゥ/リドゥボタン */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">履歴</label>
+        <label className="block text-sm font-medium text-flint-gray mb-2">履歴</label>
         <div className="flex gap-2">
           <button
-            className={`px-4 py-2 rounded-md ${canUndo ? 'bg-indigo-500 text-white' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+            className={`px-4 py-2 rounded-md ${canUndo ? 'bg-moss-green text-clay-white' : 'bg-light-gray text-medium-gray cursor-not-allowed'}`}
             onClick={onUndo}
             disabled={!canUndo}
           >
             Undo
           </button>
           <button
-            className={`px-4 py-2 rounded-md ${canRedo ? 'bg-indigo-500 text-white' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
+            className={`px-4 py-2 rounded-md ${canRedo ? 'bg-moss-green text-clay-white' : 'bg-light-gray text-medium-gray cursor-not-allowed'}`}
             onClick={onRedo}
             disabled={!canRedo}
           >
@@ -130,7 +130,7 @@ const Toolbar = ({
 
       {/* ブラシサイズ選択 */}
       <div className="mb-4">
-        <label htmlFor="brush-size" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="brush-size" className="block text-sm font-medium text-flint-gray mb-2">
           ブラシサイズ: {activeBrushSize}px
         </label>
         <input
@@ -140,7 +140,7 @@ const Toolbar = ({
           max="100"
           value={activeBrushSize}
           onChange={(e) => onBrushSizeChange(Number(e.target.value))}
-          className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          className="w-32 h-2 bg-light-gray rounded-lg appearance-none cursor-pointer"
         />
       </div>
     </div>
