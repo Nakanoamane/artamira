@@ -20,7 +20,6 @@ const DrawingList = () => {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/drawings`, {
           headers: {
             'Content-Type': 'application/json',
-            // 'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
           credentials: 'include',
         })
@@ -66,9 +65,11 @@ const DrawingList = () => {
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {drawings.map((drawing) => (
-            <li key={drawing.id} className="bg-rock-linen shadow-md rounded-lg p-6">
-              <Link to={`/drawings/${drawing.id}`} className="text-xl font-semibold text-cave-ochre hover:underline">
-                {drawing.title || `無題の描画ボード (${drawing.id})`}
+            <li key={drawing.id} className="bg-rock-linen shadow-md rounded-lg p-6 hover:bg-clay-white cursor-pointer group">
+              <Link to={`/drawings/${drawing.id}`} className="block w-full h-full">
+                <span className="text-xl font-semibold text-cave-ochre group-hover:text-dark-cave-ochre">
+                  {drawing.title || `無題の描画ボード (${drawing.id})`}
+                </span>
               </Link>
             </li>
           ))}
