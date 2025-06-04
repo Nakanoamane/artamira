@@ -26,7 +26,7 @@ const { MockToolbarComponent, MockCanvasComponent } = await vi.hoisted(async () 
     ]);
   });
 
-  const MockCanvas = vi.fn(React.forwardRef((props: any, ref: React.Ref<HTMLCanvasElement>) => {
+  const MockCanvas = vi.fn((props: any, ref: React.Ref<HTMLCanvasElement>) => {
     return React.createElement('div', { className: 'relative bg-white' },
       React.createElement('canvas', {
         'data-testid': 'drawing-canvas',
@@ -37,7 +37,7 @@ const { MockToolbarComponent, MockCanvasComponent } = await vi.hoisted(async () 
         ...props,
       })
     );
-  }));
+  });
 
   return {
     MockToolbarComponent: MockToolbar,
@@ -251,8 +251,6 @@ describe('DrawingBoard', () => {
 
     expect(screen.getByRole('button', { name: '保存' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'エクスポート' })).toBeInTheDocument();
-
-    console.log('Toolbar in test:', Toolbar);
 
     expect(Toolbar).toHaveBeenCalledWith(
       expect.objectContaining({ isSaveEnabled: false }),
