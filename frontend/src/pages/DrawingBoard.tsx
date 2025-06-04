@@ -288,7 +288,15 @@ const DrawingBoard = () => {
       )}
       {!isDirty && lastSavedAt && (
         <div className="text-center text-gray-500 text-sm mb-2">
-          最終保存: {lastSavedAt.toLocaleString()}
+          最終保存: {lastSavedAt ? lastSavedAt.toLocaleString('ja-JP', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            hour12: false, // 24時間表記
+          }) : 'まだ保存されていません'}
         </div>
       )}
       <div className="flex flex-col items-center gap-4">
