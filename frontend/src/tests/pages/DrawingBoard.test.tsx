@@ -1,8 +1,10 @@
 import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, beforeEach, afterEach, describe, it, expect, Mock } from 'vitest'
+import React from 'react'
 import DrawingBoard from '../../pages/DrawingBoard'
 import { useParams } from 'react-router'
+import { CanvasProps } from '../../components/Canvas'
 
 // モック化
 vi.mock('react-router', () => ({
@@ -24,10 +26,18 @@ vi.mock('../../hooks/useDrawingChannel', () => ({
 vi.mock('../../components/Canvas', () => ({
   // forwardRefでラップされたコンポーネントのモック
   __esModule: true,
-  default: vi.fn(({ onDrawComplete, drawingElementsToRender }) => {
+  default: React.forwardRef<HTMLCanvasElement, CanvasProps>(({ onDrawComplete, drawingElementsToRender }, ref) => {
     const mockRef = { current: document.createElement('canvas') };
     // toDataURLのモックを追加
     mockRef.current.toDataURL = vi.fn(() => 'data:image/png;base64,mockpngdata');
+
+    // 親コンポーネントから渡されたrefをモックのcanvas要素に設定
+    if (typeof ref === 'function') {
+      ref(mockRef.current);
+    } else if (ref) {
+      ref.current = mockRef.current;
+    }
+
     return (
       <div data-testid="mock-canvas">
         Mock Canvas
