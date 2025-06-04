@@ -1,5 +1,4 @@
 import { forwardRef, useEffect, useRef, useCallback, useState } from 'react'
-// import { useActionCable } from '../hooks/useActionCable'
 
 interface Point {
   x: number
@@ -126,10 +125,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           const height = element.end.y - element.start.y
           ctx.rect(element.start.x, element.start.y, width, height)
         } else if (element.type === 'circle') {
-          const radius = Math.sqrt(
-            Math.pow(element.center.x - element.radius, 2) +
-            Math.pow(element.center.y - element.radius, 2)
-          )
           ctx.arc(element.center.x, element.center.y, element.radius, 0, 2 * Math.PI)
         }
 
@@ -262,7 +257,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       }
     }
 
-    const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const handleMouseUp = () => {
       if (!isDrawing) return
 
       // requestAnimationFrameがある場合はキャンセル
@@ -273,12 +268,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
 
       const canvas = localCanvasRef.current
       if (!canvas) return
-
-      const rect = canvas.getBoundingClientRect()
-      const currentPoint = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      }
 
       // 仮描画要素を確定し、onDrawCompleteを呼び出す
       if (tempDrawingElement) {
@@ -309,15 +298,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         prevPointRef.current = null;
       }
     };
-
-    // clearDrawing関数
-    const clearDrawing = () => {
-      const canvas = localCanvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
 
     return (
       <div className="relative bg-white">

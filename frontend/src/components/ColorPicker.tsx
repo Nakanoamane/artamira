@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { HexColorPicker, HexColorInput, HexAlphaColorPicker } from 'react-colorful'
+import { useState, useRef, useEffect } from 'react'
+import { HexColorInput, HexAlphaColorPicker } from 'react-colorful'
 
 interface ColorPickerProps {
   color: string
