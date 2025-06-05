@@ -6,6 +6,7 @@ import ExportModal from '../components/ExportModal'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useDrawingChannel } from '../hooks/useDrawingChannel'
 import { useParams } from 'react-router'
+import { useHeader } from '../contexts/HeaderContext'
 
 interface Drawing {
   id: number;
@@ -32,6 +33,14 @@ const DrawingBoard = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const { id } = useParams<{ id: string }>()
+  const { setCompactHeader } = useHeader()
+
+  useEffect(() => {
+    setCompactHeader(true)
+    return () => {
+      setCompactHeader(false)
+    }
+  }, [setCompactHeader])
 
   // Undo/Redo Functions
   const handleUndo = useCallback(() => {
