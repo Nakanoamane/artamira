@@ -23,12 +23,12 @@ export async function loginOrCreateUser(page: Page) {
 
     // 新規登録後のリダイレクトを待つ
     await page.waitForURL('/drawings', { timeout: 10000 })
-    await expect(page).toHaveTitle(/Artamira - 描画ボード一覧/)
+    await expect(page).toHaveTitle(/Artamira - Boards/)
   })
 
   // ログイン状態が成功したことを確認
   await expect(page.url()).toContain('/drawings')
-  await expect(page).toHaveTitle(/Artamira - 描画ボード一覧/)
+  await expect(page).toHaveTitle(/Artamira - Boards/)
 
   // ログイン後のストレージ状態を返す
   return page.context().storageState();

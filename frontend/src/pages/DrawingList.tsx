@@ -8,7 +8,7 @@ interface Drawing {
 }
 
 const DrawingList = () => {
-  usePageTitle('描画ボード一覧')
+  usePageTitle('Boards')
 
   const [drawings, setDrawings] = useState<Drawing[]>([])
   const [loading, setLoading] = useState(true)
@@ -50,7 +50,7 @@ const DrawingList = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">描画ボード一覧</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center">Boards</h1>
       <div className="text-center mb-6">
         <Link
           to="/drawings/new"

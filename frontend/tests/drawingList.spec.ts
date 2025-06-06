@@ -8,7 +8,7 @@ test.describe("DrawingList", () => {
   test("should display a list of drawing boards and a creation button", async ({
     page,
   }) => {
-    await expect(page.getByText("描画ボード一覧")).toBeVisible();
+    await expect(page.getByText("Boards")).toBeVisible();
     await expect(
       page.getByRole("button", { name: "新規描画ボードを作成" })
     ).toBeVisible();
@@ -56,7 +56,7 @@ test.describe("DrawingList", () => {
 
     // 一覧ページに戻る
     await page.goto("/drawings");
-    await expect(page.getByText("描画ボード一覧")).toBeVisible();
+    await expect(page.getByText("Boards")).toBeVisible();
     // 描画ボードがリストに表示されるまで待機
     await page.getByRole('link', { name: existingBoardTitle }).waitFor({ state: 'visible' });
 

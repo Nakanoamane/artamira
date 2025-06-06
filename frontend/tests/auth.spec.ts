@@ -20,7 +20,7 @@ async function registerAndLogin(page: Page) {
   await page.fill('input[name="password_confirmation"]', user.password);
   await page.click('button[type="submit"]');
   await page.waitForURL("/drawings");
-  await expect(page).toHaveTitle(/Artamira - 描画ボード一覧/);
+  await expect(page).toHaveTitle(/Artamira - Boards/);
 
   return user;
 }
@@ -38,7 +38,7 @@ test("新規ユーザー登録ができること", async ({ page }) => {
   await page.click('button[type="submit"]');
 
   await page.waitForURL("/drawings");
-  await expect(page).toHaveTitle(/Artamira - 描画ボード一覧/);
+  await expect(page).toHaveTitle(/Artamira - Boards/);
 });
 
 // ログインテスト
@@ -55,7 +55,7 @@ test("既存ユーザーがログインできること", async ({ page }) => {
   await page.click('button[type="submit"]');
 
   await page.waitForURL("/drawings");
-  await expect(page).toHaveTitle(/Artamira - 描画ボード一覧/);
+  await expect(page).toHaveTitle(/Artamira - Boards/);
 });
 
 test("無効な認証情報でログインに失敗すること", async ({ page }) => {
