@@ -47,9 +47,9 @@ const CreateDrawingForm = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 bg-rock-linen">
+    <div className="container mx-auto p-4 bg-clay-white">
       <h1 className="text-3xl font-bold mb-6 text-center">新規描画ボードを作成</h1>
-      <form onSubmit={handleSubmit} className="bg-rock-linen p-6 rounded-lg shadow-md max-w-md mx-auto">
+      <form onSubmit={handleSubmit} className="bg-clay-white p-6 rounded-lg shadow-md max-w-md mx-auto">
         <div className="mb-4">
           <label htmlFor="title" className="block text-flint-gray text-sm font-bold mb-2">
             ボードタイトル:

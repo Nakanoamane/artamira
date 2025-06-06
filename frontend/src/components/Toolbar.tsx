@@ -32,7 +32,7 @@ const Toolbar = ({
   onExportClick,
 }: ToolbarProps) => {
   return (
-    <div className="flex flex-col items-center p-4 bg-rock-linen shadow-md rounded-lg">
+    <div className="flex flex-col items-center p-4 bg-clay-white shadow-md rounded-lg">
       <h3 className="text-lg font-semibold mb-4">ツールバー</h3>
 
       {/* ツール選択 */}

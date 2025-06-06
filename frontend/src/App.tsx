@@ -32,7 +32,7 @@ const AppContent: React.FC = () => {
   const { isCompactHeader } = useHeader();
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-clay-white text-charcoal-black">
       {isCompactHeader ? <CompactHeader /> : <Header />}
       <Routes>
         <Route path="/login" element={<LoginPage />} />

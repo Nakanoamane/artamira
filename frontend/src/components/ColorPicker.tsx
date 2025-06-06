@@ -85,7 +85,7 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
       ></div>
 
       {isPickerVisible && (
-        <div className="absolute z-10 mt-20 p-4 bg-rock-linen rounded-lg shadow-xl border border-light-gray">
+        <div className="absolute z-10 mt-20 p-4 bg-clay-white rounded-lg shadow-xl border border-light-gray">
           <HexAlphaColorPicker color={color} onChange={handleColorChange} className="w-48 h-48" />
 
           <HexColorInput

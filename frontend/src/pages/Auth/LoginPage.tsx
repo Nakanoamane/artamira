@@ -24,8 +24,8 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-rock-linen">
-      <div className="px-8 py-6 mt-4 text-left bg-rock-linen shadow-lg">
+    <div className="flex items-center justify-center min-h-screen bg-clay-white">
+      <div className="px-8 py-6 mt-4 text-left bg-clay-white shadow-lg">
         <h3 className="text-2xl font-bold text-center">ログイン</h3>
         <form onSubmit={handleSubmit}>
           <div className="mt-4">
@@ -54,7 +54,7 @@ const LoginPage: React.FC = () => {
               />
             </div>
             {error && <p className="text-status-danger text-xs mt-2">{error}</p>}
-            <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline justify-between gap-4">
               <button
                 type="submit"
                 className="px-6 py-2 mt-4 text-clay-white bg-cave-ochre rounded-lg hover:bg-dark-cave-ochre"

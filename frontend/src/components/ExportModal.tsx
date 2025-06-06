@@ -18,7 +18,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport }) 
 
   return (
     <div className="fixed inset-0 bg-charcoal-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-rock-linen p-6 rounded-lg shadow-xl w-80">
+      <div className="bg-clay-white p-6 rounded-lg shadow-xl w-80">
         <h2 className="text-xl font-bold mb-4">絵をエクスポート</h2>
         <div className="mb-4">
           <label className="block text-sm font-medium text-flint-gray mb-2">フォーマットを選択:</label>
