@@ -32,11 +32,11 @@ const Toolbar = ({
   onExportClick,
 }: ToolbarProps) => {
   return (
-    <div className="flex flex-col items-center p-4 bg-clay-white shadow-md rounded-lg">
-      <h3 className="text-lg font-semibold mb-4">ツールバー</h3>
+    <div className="flex flex-row items-start p-4 bg-clay-white shadow-md rounded-lg justify-center flex-wrap">
+      <h3 className="text-lg font-semibold mb-4 mr-4">ツールバー</h3>
 
       {/* ツール選択 */}
-      <div className="mb-4">
+      <div className="mb-4 mr-4">
         <label className="block text-sm font-medium text-flint-gray mb-2">ツール</label>
         <div className="flex gap-2">
           <button
@@ -83,7 +83,7 @@ const Toolbar = ({
       </div>
 
       {/* 保存ボタン */}
-      <div className="mb-4">
+      <div className="mb-4 mr-4">
         <label className="block text-sm font-medium text-flint-gray mb-2">操作</label>
         <div className="flex gap-2">
           <button
@@ -103,7 +103,7 @@ const Toolbar = ({
       </div>
 
       {/* アンドゥ/リドゥボタン */}
-      <div className="mb-4">
+      <div className="mb-4 mr-4">
         <label className="block text-sm font-medium text-flint-gray mb-2">履歴</label>
         <div className="flex gap-2">
           <button
@@ -124,7 +124,7 @@ const Toolbar = ({
       </div>
 
       {/* カラーピッカー */}
-      <div className="mb-4">
+      <div className="mb-4 mr-4">
         <ColorPicker color={activeColor} onChange={onColorChange} />
       </div>
 
