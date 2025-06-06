@@ -65,9 +65,9 @@ const DrawingList = () => {
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {drawings.map((drawing) => (
-            <li key={drawing.id} className="bg-clay-white shadow-md rounded-lg p-6 hover:bg-clay-white cursor-pointer group">
+            <li key={drawing.id} className="bg-clay-white shadow-md rounded-lg p-6 hover:bg-light-stone-blue cursor-pointer group transition-colors duration-300">
               <Link to={`/drawings/${drawing.id}`} className="block w-full h-full">
-                <span className="text-xl font-semibold text-cave-ochre group-hover:text-dark-cave-ochre">
+                <span className="text-xl font-semibold text-cave-ochre group-hover:text-clay-white">
                   {drawing.title || `無題の描画ボード (${drawing.id})`}
                 </span>
               </Link>
