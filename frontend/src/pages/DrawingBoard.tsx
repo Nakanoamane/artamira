@@ -133,7 +133,7 @@ const DrawingBoard = () => {
         return
       }
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}/elements`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}/`, {
           headers: {
             'Content-Type': 'application/json',
           },
@@ -146,8 +146,8 @@ const DrawingBoard = () => {
 
         const data = await response.json()
         // Drawingモデルのタイトルも取得できるように変更
-        setDrawing({ id: drawingId, title: data.drawing_title || '無題のボード' });
-        setDrawingElements(data.drawing_elements || []);
+        setDrawing({ id: drawingId, title: data.title || '無題のボード' });
+        setDrawingElements(data.elements || []);
         setLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
         setIsDirty(false); // 初期ロード時はDirtyではない
       } catch (e: any) {

@@ -22,7 +22,6 @@ test.describe('DrawingBoard', () => {
       throw new Error('Failed to extract drawing ID from URL');
     }
 
-    // await page.goto(`/drawings/${drawingId}`); // 重複の可能性があるためコメントアウト
     await expect(page.locator('label:has-text("ツール")')).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('ペン')).toBeVisible({ timeout: 15000 });
   })
@@ -31,9 +30,6 @@ test.describe('DrawingBoard', () => {
     const canvas = page.locator('canvas')
     await expect(canvas).toBeVisible()
 
-    // 描画ボードのタイトルが表示されていることを確認
-    await page.pause(); // デバッグ用
-    await page.screenshot({ path: 'test-results/drawing-board-title-debug.png' }); // デバッグ用スクリーンショット
     await expect(page.locator('h1', { hasText: 'テスト描画ボード' })).toBeVisible({ timeout: 10000 });
   })
 
