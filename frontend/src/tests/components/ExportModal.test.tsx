@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import ExportModal from '../../components/ExportModal';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { ExportModal } from '../../components/ExportModal';
 import { vi, describe, it, expect } from 'vitest';
 
 describe('ExportModal', () => {
@@ -19,66 +20,52 @@ describe('ExportModal', () => {
         onExport={mockOnExport}
       />
     );
-    expect(screen.queryByText('絵をエクスポート')).not.toBeInTheDocument();
+    screen.debug();
+    expect(screen.queryByText('エクスポート')).not.toBeInTheDocument();
   });
 
   it('モーダルが開いているときに表示されること', () => {
     render(
       <ExportModal isOpen={true} onClose={mockOnClose} onExport={mockOnExport} />
     );
-    expect(screen.getByText('絵をエクスポート')).toBeInTheDocument();
+    screen.debug();
+    expect(screen.getByText('エクスポート')).toBeInTheDocument();
   });
 
-  it('初期選択フォーマットがPNGであること', () => {
-    render(
-      <ExportModal isOpen={true} onClose={mockOnClose} onExport={mockOnExport} />
-    );
-    const pngRadio = screen.getByLabelText('PNG') as HTMLInputElement;
-    expect(pngRadio.checked).toBe(true);
-  });
-
-  it('JPEGラジオボタンを選択するとフォーマットが変更されること', () => {
-    render(
-      <ExportModal isOpen={true} onClose={mockOnClose} onExport={mockOnExport} />
-    );
-    const jpegRadio = screen.getByLabelText('JPEG') as HTMLInputElement;
-    fireEvent.click(jpegRadio);
-    expect(jpegRadio.checked).toBe(true);
-    const pngRadio = screen.getByLabelText('PNG') as HTMLInputElement;
-    expect(pngRadio.checked).toBe(false);
-  });
-
-  it('「キャンセル」ボタンをクリックすると onClose が呼び出されること', () => {
+  it('「キャンセル」ボタンをクリックすると onClose が呼び出されること', async () => {
     render(
       <ExportModal isOpen={true} onClose={mockOnClose} onExport={mockOnExport} />
     );
     const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
-    fireEvent.click(cancelButton);
+    console.log('Cancel button:', cancelButton);
+    await userEvent.click(cancelButton);
+    console.log('mockOnClose calls:', mockOnClose.mock.calls);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
-  it('「ダウンロード」ボタンをクリックすると onExport と onClose が呼び出されること', () => {
+  it('PNGでエクスポートボタンをクリックすると onExport がPNGフォーマットで呼び出されること', async () => {
     render(
       <ExportModal isOpen={true} onClose={mockOnClose} onExport={mockOnExport} />
     );
-    const downloadButton = screen.getByRole('button', { name: 'ダウンロード' });
-    fireEvent.click(downloadButton);
+    const pngExportButton = screen.getByTestId('png-export-button');
+    console.log('PNG Export button:', pngExportButton);
+    await userEvent.click(pngExportButton);
+    console.log('mockOnExport calls (PNG):', mockOnExport.mock.calls);
+    console.log('mockOnClose calls (PNG):', mockOnClose.mock.calls);
     expect(mockOnExport).toHaveBeenCalledTimes(1);
-    expect(mockOnExport).toHaveBeenCalledWith('png'); // デフォルトはPNG
-    expect(mockOnClose).toHaveBeenCalledTimes(1);
+    expect(mockOnExport).toHaveBeenCalledWith('png');
   });
 
-  it('JPEGを選択後、「ダウンロード」ボタンをクリックすると onExport と onClose が呼び出されること', () => {
+  it('JPEGでエクスポートボタンをクリックすると onExport がJPEGフォーマットで呼び出されること', async () => {
     render(
       <ExportModal isOpen={true} onClose={mockOnClose} onExport={mockOnExport} />
     );
-    const jpegRadio = screen.getByLabelText('JPEG') as HTMLInputElement;
-    fireEvent.click(jpegRadio);
-
-    const downloadButton = screen.getByRole('button', { name: 'ダウンロード' });
-    fireEvent.click(downloadButton);
+    const jpegExportButton = screen.getByTestId('jpeg-export-button');
+    console.log('JPEG Export button:', jpegExportButton);
+    await userEvent.click(jpegExportButton);
+    console.log('mockOnExport calls (JPEG):', mockOnExport.mock.calls);
+    console.log('mockOnClose calls (JPEG):', mockOnClose.mock.calls);
     expect(mockOnExport).toHaveBeenCalledTimes(1);
-    expect(mockOnExport).toHaveBeenCalledWith('jpeg'); // JPEGが選択されていることを確認
-    expect(mockOnClose).toHaveBeenCalledTimes(1);
+    expect(mockOnExport).toHaveBeenCalledWith('jpeg');
   });
 });

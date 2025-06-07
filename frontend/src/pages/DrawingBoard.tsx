@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import Canvas, { DrawingElementType } from '../components/Canvas'
 import Toolbar from '../components/Toolbar'
-import ExportModal from '../components/ExportModal'
+import { ExportModal } from '../components/ExportModal'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useDrawingChannel } from '../hooks/useDrawingChannel'
 import { useParams } from 'react-router'
@@ -251,33 +251,26 @@ const DrawingBoard = () => {
     };
   }, [isDirty]);
 
-  const handleExportClick = () => {
+  const handleExportClick = useCallback(() => {
     setIsExportModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseExportModal = () => {
+  const handleCloseExportModal = useCallback(() => {
     setIsExportModalOpen(false);
-  };
+  }, []);
 
   const handleExport = (format: 'png' | 'jpeg') => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const image = canvas.toDataURL(`image/${format}`);
-    const link = document.createElement('a');
-    link.href = image;
-    link.download = `${drawing?.title || 'untitled'}.${format}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    console.log(`Exporting as ${format}`);
+    // ここにエクスポートロジックを実装
+    handleCloseExportModal();
   };
 
   if (loadingDrawing) {
-    return <div className="text-center mt-8">描画ボードを読み込み中...</div>
+    return <div className="text-center py-4">描画ボードを読み込み中...</div>;
   }
 
   if (errorDrawing) {
-    return <div className="text-center mt-8 text-red-500">エラー: {errorDrawing}</div>
+    return <div className="text-center py-4 text-red-500">エラー: {errorDrawing}</div>;
   }
 
   if (!drawing) {
@@ -285,62 +278,40 @@ const DrawingBoard = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-3 px-8">
-        <h1 className="text-2xl font-bold text-light-cave-ochre">{drawing.title}</h1>
-        <div className="flex items-center gap-2 text-right min-h-[48px]">
-          {isDirty && (
-            <div className="text-orange-500 text-xs">未保存の変更があります</div>
-          )}
-          {lastSavedAt && (
-            <div className="text-gray-500 text-xs">
-              最終保存: {lastSavedAt ? lastSavedAt.toLocaleString('ja-JP', {
-                year: 'numeric',
-                month: 'numeric',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric',
-                second: 'numeric',
-                hour12: false, // 24時間表記
-              }) : 'まだ保存されていません'}
-            </div>
-          )}
-        </div>
-      </div>
+    <div className="flex flex-col h-screen">
+      <Toolbar
+        activeTool={activeTool}
+        onToolChange={setActiveTool}
+        activeColor={activeColor}
+        onColorChange={setActiveColor}
+        activeBrushSize={activeBrushSize}
+        onBrushSizeChange={setActiveBrushSize}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={undoStack.length > 0}
+        canRedo={redoStack.length > 0}
+        onSave={handleSave}
+        onExportClick={handleExportClick}
+        isDirty={isDirty}
+        lastSavedAt={lastSavedAt}
+      />
       {actionCableError && (
-        <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg mb-4 text-center">
-          {actionCableError}
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Error:</strong>
+          <span className="block sm:inline"> {actionCableError}</span>
         </div>
       )}
-      <div className="flex flex-col items-center gap-4">
-        <Toolbar
-          activeTool={activeTool}
-          activeColor={activeColor}
-          activeBrushSize={activeBrushSize}
-          onToolChange={setActiveTool}
-          onColorChange={setActiveColor}
-          onBrushSizeChange={setActiveBrushSize}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          canUndo={undoStack.length > 0}
-          canRedo={redoStack.length > 0}
-          onSave={handleSave}
-          isDirty={isDirty}
-          lastSavedAt={lastSavedAt}
-          onExportClick={handleExportClick}
-        />
-        <Canvas
-          ref={canvasRef}
-          activeTool={activeTool}
-          color={activeColor}
-          brushSize={activeBrushSize}
-          isDrawing={isDrawing}
-          setIsDrawing={setIsDrawing}
-          onDrawComplete={handleDrawComplete}
-          drawingElementsToRender={drawingElements}
-          status={status}
-        />
-      </div>
+      <Canvas
+        ref={canvasRef}
+        isDrawing={isDrawing}
+        setIsDrawing={setIsDrawing}
+        activeTool={activeTool}
+        color={activeColor}
+        brushSize={activeBrushSize}
+        drawingElementsToRender={drawingElements}
+        onDrawComplete={handleDrawComplete}
+        status={status}
+      />
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={handleCloseExportModal}

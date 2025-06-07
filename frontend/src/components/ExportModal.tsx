@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -6,62 +6,44 @@ interface ExportModalProps {
   onExport: (format: 'png' | 'jpeg') => void;
 }
 
-const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport }) => {
-  const [selectedFormat, setSelectedFormat] = useState<'png' | 'jpeg'>('png');
-
+export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport }) => {
   if (!isOpen) return null;
 
-  const handleExportClick = () => {
-    onExport(selectedFormat);
-    onClose();
-  };
-
   return (
-    <div className="fixed inset-0 bg-charcoal-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-clay-white p-6 rounded-lg shadow-xl w-80">
-        <h2 className="text-xl font-bold mb-4">絵をエクスポート</h2>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-flint-gray mb-2">フォーマットを選択:</label>
-          <div className="flex items-center space-x-4">
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                className="form-radio text-stone-blue"
-                value="png"
-                checked={selectedFormat === 'png'}
-                onChange={() => setSelectedFormat('png')}
-              />
-              <span className="ml-2">PNG</span>
-            </label>
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                className="form-radio text-stone-blue"
-                value="jpeg"
-                checked={selectedFormat === 'jpeg'}
-                onChange={() => setSelectedFormat('jpeg')}
-              />
-              <span className="ml-2">JPEG</span>
-            </label>
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" id="my-modal">
+      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="mt-3 text-center">
+          <h3 className="text-lg leading-6 font-medium text-gray-900">エクスポート</h3>
+          <div className="mt-2 px-7 py-3">
+            <p className="text-sm text-gray-500">エクスポートするフォーマットを選択してください。</p>
           </div>
-        </div>
-        <div className="flex justify-end space-x-2">
-          <button
-            className="px-4 py-2 bg-light-gray text-flint-gray rounded-md hover:bg-medium-gray"
-            onClick={onClose}
-          >
-            キャンセル
-          </button>
-          <button
-            className="px-4 py-2 bg-cave-ochre text-clay-white rounded-md hover:bg-dark-cave-ochre"
-            onClick={handleExportClick}
-          >
-            ダウンロード
-          </button>
+          <div className="items-center px-4 py-3">
+            <button
+              id="png-export-button"
+              data-testid="png-export-button"
+              onClick={() => onExport('png')}
+              className="px-4 py-2 bg-stone-blue text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-moss-green focus:outline-none focus:ring-2 focus:ring-moss-green"
+            >
+              PNGでエクスポート
+            </button>
+            <button
+              id="jpeg-export-button"
+              data-testid="jpeg-export-button"
+              onClick={() => onExport('jpeg')}
+              className="mt-2 px-4 py-2 bg-stone-blue text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-moss-green focus:outline-none focus:ring-2 focus:ring-moss-green"
+            >
+              JPEGでエクスポート
+            </button>
+            <button
+              id="cancel-btn"
+              onClick={onClose}
+              className="mt-3 px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            >
+              キャンセル
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
-export default ExportModal;
