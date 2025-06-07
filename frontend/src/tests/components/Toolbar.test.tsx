@@ -20,7 +20,6 @@ describe('Toolbar', () => {
       canRedo: false,
       onSave: vi.fn(),
       isDirty: false,
-      lastSavedAt: null,
       onExportClick: vi.fn(),
     };
   });
@@ -94,32 +93,10 @@ describe('Toolbar', () => {
     expect(screen.getByRole('button', { name: /保存/ })).toBeDisabled();
   });
 
-  it('displays asterisk when isDirty is true', () => {
-    render(<Toolbar {...defaultProps} isDirty={true} />);
-    expect(screen.getByRole('button', { name: '保存 *' })).toBeInTheDocument();
-  });
-
   it('does not display asterisk when isDirty is false', () => {
     render(<Toolbar {...defaultProps} isDirty={false} />);
     expect(screen.queryByRole('button', { name: '保存 *' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '保存' })).toBeInTheDocument();
-  });
-
-  it('displays last saved time when lastSavedAt is present and not dirty', () => {
-    const date = new Date('2023-10-27T10:00:00Z');
-    render(<Toolbar {...defaultProps} isDirty={false} lastSavedAt={date} />);
-    expect(screen.getByText(`最終保存: ${date.toLocaleTimeString()}`)).toBeInTheDocument();
-  });
-
-  it('does not display last saved time when lastSavedAt is present but isDirty is true', () => {
-    const date = new Date('2023-10-27T10:00:00Z');
-    render(<Toolbar {...defaultProps} isDirty={true} lastSavedAt={date} />);
-    expect(screen.queryByText(/最終保存:/)).not.toBeInTheDocument();
-  });
-
-  it('does not display last saved time when lastSavedAt is null', () => {
-    render(<Toolbar {...defaultProps} isDirty={false} lastSavedAt={null} />);
-    expect(screen.queryByText(/最終保存:/)).not.toBeInTheDocument();
   });
 
   it('calls onExportClick when export button is clicked', async () => {

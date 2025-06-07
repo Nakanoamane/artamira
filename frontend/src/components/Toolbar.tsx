@@ -89,11 +89,6 @@ const Toolbar = ({
           >
             保存 {isDirty && '*'}
           </button>
-          {lastSavedAt && !isDirty && (
-            <span className="text-sm text-flint-gray ml-2">
-              最終保存: {lastSavedAt.toLocaleTimeString()}
-            </span>
-          )}
           <button
             className="px-4 py-2 rounded-md border-2 border-stone-blue text-flint-gray hover:bg-stone-blue hover:text-clay-white"
             onClick={onExportClick}
