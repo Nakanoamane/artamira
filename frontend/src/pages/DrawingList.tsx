@@ -50,7 +50,7 @@ const DrawingList = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">Boards</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center text-light-cave-ochre">Boards</h1>
       <div className="text-center mb-6">
         <Link
           to="/drawings/new"

@@ -12,7 +12,9 @@ const Header: React.FC = () => {
 
   return (
     <header className="text-dark-cave-ochre p-4 flex justify-between items-center">
-      <Link to="/" className="text-2xl font-bold">Artamira</Link>
+      <Link to="/" className="hover:opacity-80 transition-opacity duration-200">
+        <img src="/images/logo-text-icon.svg" alt="Artamira Logo" className="h-8" />
+      </Link>
       <nav>
         {isAuthenticated ? (
           <div className="flex items-center space-x-4">
