@@ -251,6 +251,13 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
         expect(response.parsed_body['error']).to eq('Invalid format or missing image_data.')
       end
 
+      it 'image_dataが不正な形式の場合、400 Bad Requestを返す' do
+        post export_api_v1_drawing_path(drawing), params: { format: 'png', image_data: 'data:image/png;base64,invalid-base64-string' }, headers: { 'Cookie' => cookies }
+
+        expect(response).to have_http_status(:bad_request)
+        expect(response.parsed_body['error']).to eq('Invalid Base64 characters in image data.')
+      end
+
       it 'image_dataが欠落している場合、400 Bad Requestを返す' do
         post export_api_v1_drawing_path(drawing), params: { format: 'png' }, headers: { 'Cookie' => cookies }
 
@@ -258,40 +265,28 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
         expect(response.parsed_body['error']).to eq('Invalid format or missing image_data.')
       end
 
-      it 'image_dataが不正な形式の場合、400 Bad Requestを返す' do
-        post export_api_v1_drawing_path(drawing), params: { format: 'png', image_data: 'invalid_data' }, headers: { 'Cookie' => cookies }
-
-        expect(response).to have_http_status(:bad_request)
-        expect(response.parsed_body['error']).to include('Invalid Base64 characters in image data.')
-      end
-    end
-
-    context '存在しない描画ボードの場合' do
-      let!(:cookies) { cookies_for_header(user) }
-
-      it '404 Not Found を返す' do
+      it '存在しない描画ボードIDの場合、404 Not Foundを返す' do
         image_data = generate_dummy_base64_image('png')
         post export_api_v1_drawing_path(99999), params: { format: 'png', image_data: image_data }, headers: { 'Cookie' => cookies }
 
         expect(response).to have_http_status(:not_found)
       end
-    end
 
-    context '他のユーザーの描画ボードの場合' do
-      let!(:other_user) { create(:user) }
-      let!(:other_drawing) { create(:drawing, user: other_user) }
-      let!(:cookies) { cookies_for_header(user) }
+      context '他のユーザーの描画ボードの場合' do
+        let!(:other_user) { create(:user) }
+        let!(:other_drawing) { create(:drawing, user: other_user) }
 
-      it '404 Not Found を返す (認可エラーのため)' do
-        image_data = generate_dummy_base64_image('png')
-        post export_api_v1_drawing_path(other_drawing), params: { format: 'png', image_data: image_data }, headers: { 'Cookie' => cookies }
+        it '404 Not Foundを返す (認可エラーのため)' do
+          image_data = generate_dummy_base64_image('png')
+          post export_api_v1_drawing_path(other_drawing), params: { format: 'png', image_data: image_data }, headers: { 'Cookie' => cookies }
 
-        expect(response).to have_http_status(:not_found)
+          expect(response).to have_http_status(:not_found)
+        end
       end
     end
 
     context '未認証ユーザーの場合' do
-      it '401 Unauthorized を返す' do
+      it '401 Unauthorizedを返す' do
         image_data = generate_dummy_base64_image('png')
         post export_api_v1_drawing_path(drawing), params: { format: 'png', image_data: image_data }
 
