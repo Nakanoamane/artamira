@@ -156,7 +156,7 @@ describe('DrawingList', () => {
     await waitFor(() => {
       const drawingLink = screen.getByText('テストボード')
       expect(drawingLink).toBeInTheDocument()
-      expect(drawingLink).toHaveAttribute('href', '/drawings/10')
+      expect(drawingLink.closest('a')).toHaveAttribute('href', '/drawings/10')
     })
   })
 })
