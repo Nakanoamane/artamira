@@ -80,7 +80,7 @@ beforeAll(() => {
 });
 
 afterEach(() => {
-  const mockGetContext = HTMLCanvasElement.prototype.getContext as vi.Mock;
+  const mockGetContext = HTMLCanvasElement.prototype.getContext as ReturnType<typeof vi.fn>;
   mockGetContext.mockClear(); // getContext自体の呼び出し履歴をクリア
 
   // 単一のモックコンテキストインスタンスのすべてのスパイをクリア
