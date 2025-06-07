@@ -18,7 +18,8 @@ async function registerAndLogin(page: Page) {
   await page.fill('input[name="email"]', user.email);
   await page.fill('input[name="password"]', user.password);
   await page.fill('input[name="password_confirmation"]', user.password);
-  await page.click('button[type="submit"]');
+  await page.getByRole('button', { name: '登録' }).click();
+
   await page.waitForURL("/drawings");
   await expect(page).toHaveTitle(/Artamira - Boards/);
 
@@ -35,7 +36,7 @@ test("新規ユーザー登録ができること", async ({ page }) => {
   await page.fill('input[name="email"]', user.email);
   await page.fill('input[name="password"]', user.password);
   await page.fill('input[name="password_confirmation"]', user.password);
-  await page.click('button[type="submit"]');
+  await page.getByRole('button', { name: '登録' }).click();
 
   await page.waitForURL("/drawings");
   await expect(page).toHaveTitle(/Artamira - Boards/);
@@ -45,14 +46,14 @@ test("新規ユーザー登録ができること", async ({ page }) => {
 test("既存ユーザーがログインできること", async ({ page }) => {
   const user = await registerAndLogin(page);
 
-  await page.click('text="ログアウト"');
+  await page.locator('button:has(span:has-text("ログアウト"))').click();
   await page.waitForURL("/login");
   await expect(page).toHaveTitle(/Artamira - ログイン/);
 
   await expect(page.locator('h3:has-text("ログイン")')).toBeVisible();
   await page.fill('input[name="email"]', user.email);
   await page.fill('input[name="password"]', user.password);
-  await page.click('button[type="submit"]');
+  await page.getByRole('button', { name: 'ログイン' }).click();
 
   await page.waitForURL("/drawings");
   await expect(page).toHaveTitle(/Artamira - Boards/);
@@ -63,7 +64,7 @@ test("無効な認証情報でログインに失敗すること", async ({ page 
   await expect(page.locator('h3:has-text("ログイン")')).toBeVisible();
   await page.fill('input[name="email"]', "invalid@example.com");
   await page.fill('input[name="password"]', "wrongpassword");
-  await page.click('button[type="submit"]');
+  await page.getByRole('button', { name: 'ログイン' }).click();
 
   await expect(page.locator("text=Invalid email or password")).toBeVisible();
   await expect(page).toHaveURL("/login");
@@ -71,9 +72,9 @@ test("無効な認証情報でログインに失敗すること", async ({ page 
 
 // ログアウトテスト
 test("ログインユーザーがログアウトできること", async ({ page }) => {
-  await registerAndLogin(page);
+  const user = await registerAndLogin(page);
 
-  await page.click('text="ログアウト"');
+  await page.locator('button:has(span:has-text("ログアウト"))').click();
 
   await page.waitForURL("/login");
   await expect(page).toHaveTitle(/Artamira - ログイン/);
