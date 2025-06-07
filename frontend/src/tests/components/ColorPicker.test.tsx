@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ColorPicker from '../../components/ColorPicker'
 import { vi, afterEach, beforeEach, it, expect, describe } from 'vitest'
@@ -55,6 +55,8 @@ describe('ColorPicker', () => {
   it('初期状態でカラーピッカーが表示されていないことを確認する', () => {
     render(<ColorPicker color="#FFFFFF" onChange={mockOnChange} />)
     expect(screen.queryByTestId('hex-color-input')).not.toBeInTheDocument()
+    // スポイトボタンも初期状態では表示されていないことを確認
+    expect(screen.queryByTestId('eyedropper-button')).not.toBeInTheDocument()
   })
 
   it('色選択トグルをクリックするとカラーピッカーが表示される', async () => {
@@ -67,6 +69,8 @@ describe('ColorPicker', () => {
     await waitFor(() => {
       expect(screen.getByTestId('hex-color-input')).toBeInTheDocument()
       expect((screen.getByTestId('hex-color-input') as HTMLInputElement).value).toBe('FFFFFFFF')
+      // カラーピッカーが表示されたときにスポイトボタンも表示されることを確認
+      expect(screen.getByTestId('eyedropper-button')).toBeInTheDocument()
     });
   })
 
@@ -79,6 +83,8 @@ describe('ColorPicker', () => {
 
     await waitFor(() => {
       expect(screen.queryByTestId('hex-color-input')).not.toBeInTheDocument()
+      // カラーピッカーが非表示になったときにスポイトボタンも非表示になることを確認
+      expect(screen.queryByTestId('eyedropper-button')).not.toBeInTheDocument()
     })
   })
 
@@ -244,52 +250,68 @@ describe('ColorPicker', () => {
       }))
     })
 
-    test('EyeDropper API is supported, the eyedropper button should be displayed', () => {
+    test('EyeDropper API is supported, the eyedropper button should be displayed', async () => {
       mockIsSupported.mockReturnValue(true)
       render(<ColorPicker color="#FF0000FF" onChange={mockOnChange} />)
-      expect(screen.getByTestId('eyedropper-button')).toBeInTheDocument()
+      const colorPickerToggle = screen.getByLabelText('色を選択トグル')
+      await userEvent.click(colorPickerToggle) // カラーピッカーを開く
+      await waitFor(() => {
+        expect(screen.getByTestId('eyedropper-button')).toBeInTheDocument()
+      })
     })
 
-    test('If EyeDropper API is not supported, the eyedropper button should not be displayed', () => {
+    test('If EyeDropper API is not supported, the eyedropper button should not be displayed', async () => {
       mockIsSupported.mockReturnValue(false)
       render(<ColorPicker color="#FF0000FF" onChange={mockOnChange} />)
-      expect(screen.queryByTestId('eyedropper-button')).not.toBeInTheDocument()
+      const colorPickerToggle = screen.getByLabelText('色を選択トグル')
+      await userEvent.click(colorPickerToggle) // カラーピッカーを開く
+      await waitFor(() => {
+        expect(screen.queryByTestId('eyedropper-button')).not.toBeInTheDocument()
+      })
     })
 
     test('Clicking the eyedropper button should activate eyedropper mode and hide the color picker', async () => {
       mockIsSupported.mockReturnValue(true)
       mockOpen.mockReturnValue(new Promise(() => {})) // resolveしないPromiseでスポイトモードを維持
       render(<ColorPicker color="#FF0000FF" onChange={mockOnChange} />)
-      const eyedropperButton = screen.getByTestId('eyedropper-button')
       const colorPickerToggle = screen.getByLabelText('色を選択トグル')
 
       await userEvent.click(colorPickerToggle) // カラーピッカーを開く
       await waitFor(() => expect(screen.getByTestId('hex-color-input')).toBeInTheDocument())
 
-      await userEvent.click(eyedropperButton)
+      const eyedropperButton = screen.getByTestId('eyedropper-button')
+      await act(async () => {
+        await userEvent.click(eyedropperButton)
+      })
       expect(mockOpen).toHaveBeenCalledTimes(1)
-      await waitFor(() => expect(eyedropperButton).toHaveClass('bg-cave-ochre'))
-      await waitFor(() => expect(screen.queryByTestId('hex-color-input')).not.toBeInTheDocument()) // カラーピッカーが非表示になったことを確認
+      // カラーピッカーが非表示になったことを確認
+      await waitFor(() => expect(screen.queryByTestId('hex-color-input')).not.toBeInTheDocument())
     })
 
     test('Clicking the eyedropper button again should cancel eyedropper mode and show the color picker', async () => {
       mockIsSupported.mockReturnValue(true)
       mockOpen.mockReturnValue(new Promise(() => {})) // resolveしないPromiseでスポイトモードを維持
       render(<ColorPicker color="#FF0000FF" onChange={mockOnChange} />)
-      const eyedropperButton = screen.getByTestId('eyedropper-button')
       const colorPickerToggle = screen.getByLabelText('色を選択トグル')
 
+      await userEvent.click(colorPickerToggle) // カラーピッカーを開く
+      await waitFor(() => expect(screen.getByTestId('hex-color-input')).toBeInTheDocument())
+      const eyedropperButton = screen.getByTestId('eyedropper-button')
+
       // スポイトモードを有効にする
-      await userEvent.click(eyedropperButton)
+      await act(async () => {
+        await userEvent.click(eyedropperButton)
+      })
       await waitFor(() => expect(mockOpen).toHaveBeenCalledTimes(1))
-      await waitFor(() => expect(eyedropperButton).toHaveClass('bg-cave-ochre'))
       await waitFor(() => expect(screen.queryByTestId('hex-color-input')).not.toBeInTheDocument())
 
-      // スポイトモードをキャンセルする
-      await userEvent.click(eyedropperButton)
-      await waitFor(() => expect(mockClose).toHaveBeenCalledTimes(1))
-      await waitFor(() => expect(eyedropperButton).not.toHaveClass('bg-cave-ochre'))
-      await waitFor(() => expect(screen.getByTestId('hex-color-input')).toBeInTheDocument()) // カラーピッカーが再表示されたことを確認
+      // スポイトモードをキャンセルする (カラーピッカーのトグルをクリック)
+      await act(async () => {
+        await userEvent.click(colorPickerToggle) // スポイトボタンではなく、トグルをクリック
+        await waitFor(() => expect(mockClose).toHaveBeenCalledTimes(1))
+      })
+      // カラーピッカーが再表示されたことを確認
+      await waitFor(() => expect(screen.getByTestId('hex-color-input')).toBeInTheDocument())
     })
 
     test('Selecting a color with eyedropper should call onChange and show the color picker', async () => {
@@ -297,8 +319,11 @@ describe('ColorPicker', () => {
       mockOpen.mockResolvedValue({ sRGBHex: '#123456FF' })
 
       render(<ColorPicker color="#FF0000FF" onChange={mockOnChange} />)
-      const eyedropperButton = screen.getByTestId('eyedropper-button')
+      const colorPickerToggle = screen.getByLabelText('色を選択トグル')
+      await userEvent.click(colorPickerToggle) // カラーピッカーを開く
+      await waitFor(() => expect(screen.getByTestId('hex-color-input')).toBeInTheDocument())
 
+      const eyedropperButton = screen.getByTestId('eyedropper-button')
       await userEvent.click(eyedropperButton)
 
       await waitFor(() => {
@@ -312,11 +337,15 @@ describe('ColorPicker', () => {
       mockIsSupported.mockReturnValue(true)
       mockOpen.mockReturnValue(new Promise(() => {})) // resolveしないPromiseでスポイトモードを維持
       render(<ColorPicker color="#FF0000FF" onChange={mockOnChange} />)
+      const colorPickerToggle = screen.getByLabelText('色を選択トグル')
+
+      await userEvent.click(colorPickerToggle) // カラーピッカーを開く
+      await waitFor(() => expect(screen.getByTestId('hex-color-input')).toBeInTheDocument())
       const eyedropperButton = screen.getByTestId('eyedropper-button')
 
       await userEvent.click(eyedropperButton) // スポイトモードを有効にする
       await waitFor(() => expect(mockOpen).toHaveBeenCalledTimes(1))
-      await waitFor(() => expect(screen.queryByTestId('hex-color-input')).not.toBeInTheDocument())
+      await waitFor(() => expect(screen.queryByTestId('hex-color-input')).not.toBeInTheDocument()) // ピッカーが非表示になったことを確認
 
       // ピッカーの外部をクリック
       const outsideDiv = document.createElement('div')
@@ -325,7 +354,6 @@ describe('ColorPicker', () => {
       await userEvent.click(outsideDiv) // 新しい要素をクリック
 
       await waitFor(() => expect(mockClose).toHaveBeenCalledTimes(1))
-      await waitFor(() => expect(eyedropperButton).not.toHaveClass('bg-cave-ochre'))
       // カラーピッカーも非表示になったことを確認
       await waitFor(() => expect(screen.queryByTestId('hex-color-input')).not.toBeInTheDocument(), { timeout: 2000 })
 
@@ -338,8 +366,11 @@ describe('ColorPicker', () => {
       mockOpen.mockResolvedValue({ sRGBHex: '#ABCDEFGG' })
 
       render(<ColorPicker color="#FF0000FF" onChange={mockOnChange} />)
-      const eyedropperButton = screen.getByTestId('eyedropper-button')
+      const colorPickerToggle = screen.getByLabelText('色を選択トグル')
+      await userEvent.click(colorPickerToggle) // カラーピッカーを開く
+      await waitFor(() => expect(screen.getByTestId('hex-color-input')).toBeInTheDocument())
 
+      const eyedropperButton = screen.getByTestId('eyedropper-button')
       await userEvent.click(eyedropperButton)
 
       await waitFor(() => {

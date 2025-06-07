@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { HexColorInput, HexAlphaColorPicker } from 'react-colorful'
 import useEyeDropper from 'use-eye-dropper'
-import { PaintBrushIcon } from '@heroicons/react/20/solid'
+import { EyeDropperIcon, PaintBrushIcon } from '@heroicons/react/20/solid'
 
 interface ColorPickerProps {
   color: string
@@ -107,31 +107,19 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
       <label htmlFor="color-picker-toggle" className="text-sm font-medium text-flint-gray">
         色を選択
       </label>
-      <div className="flex items-center gap-2">
-        <div
-          id="color-picker-toggle"
-          aria-label="色を選択トグル"
-          className="w-12 h-12 rounded-lg border border-light-gray cursor-pointer shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
-          style={{ backgroundColor: color }}
-          onClick={() => {
-            setPickerVisible(!isPickerVisible)
-            if (isEyeDropperActive) {
-              close()
-              setIsEyeDropperActive(false)
-            }
-          }}
-        ></div>
-        {isSupported() && (
-          <button
-            onClick={handleEyeDropper}
-            className={`p-3 rounded-lg border border-light-gray shadow-md transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center ${isEyeDropperActive ? 'bg-cave-ochre text-white' : 'bg-clay-white text-flint-gray'}`}
-            aria-label="スポイトツール"
-            data-testid="eyedropper-button"
-          >
-            <PaintBrushIcon className="h-6 w-6" />
-          </button>
-        )}
-      </div>
+      <div
+        id="color-picker-toggle"
+        aria-label="色を選択トグル"
+        className="w-12 h-12 rounded-lg border border-light-gray cursor-pointer shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
+        style={{ backgroundColor: color }}
+        onClick={() => {
+          setPickerVisible(!isPickerVisible)
+          if (isEyeDropperActive) {
+            close()
+            setIsEyeDropperActive(false)
+          }
+        }}
+      ></div>
 
       {isPickerVisible && (
         <div className="absolute z-10 mt-20 p-4 bg-clay-white rounded-lg shadow-xl border border-light-gray">
@@ -157,22 +145,34 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
             ))}
           </div>
 
-          {history.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-light-gray">
-              <p className="text-xs text-medium-gray mb-2">最近使用した色:</p>
-              <div className="flex gap-2">
-                {history.map((hColor, index) => (
-                  <button
-                    key={index}
-                    className="w-8 h-8 rounded-full border border-light-gray cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-cave-ochre focus:ring-offset-2"
-                    style={{ backgroundColor: hColor }}
-                    onClick={() => handleColorChange(hColor)}
-                    data-testid={`history-color-button-${hColor}`}
-                  ></button>
-                ))}
-              </div>
+          <div className="mt-4 pt-4 border-t border-light-gray">
+            <p className="text-xs text-medium-gray mb-2">最近使用した色:</p>
+            <div className="flex gap-2">
+              {history.length > 0 && (
+                <>
+                  {history.map((hColor, index) => (
+                    <button
+                      key={index}
+                      className="w-8 h-8 rounded-full border border-light-gray cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-cave-ochre focus:ring-offset-2"
+                      style={{ backgroundColor: hColor }}
+                      onClick={() => handleColorChange(hColor)}
+                      data-testid={`history-color-button-${hColor}`}
+                    ></button>
+                  ))}
+                </>
+              )}
+              {isSupported() && (
+                <button
+                  onClick={handleEyeDropper}
+                  className={`w-8 h-8 rounded-full border border-light-gray shadow-sm focus:outline-none focus:ring-2 focus:ring-cave-ochre focus:ring-offset-2 flex items-center justify-center ${isEyeDropperActive ? 'bg-cave-ochre text-white' : 'bg-clay-white text-flint-gray'}`}
+                  aria-label="スポイトツール"
+                  data-testid="eyedropper-button"
+                >
+                  <EyeDropperIcon className="h-5 w-5" />
+                </button>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
