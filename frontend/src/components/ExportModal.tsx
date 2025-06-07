@@ -4,9 +4,11 @@ interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExport: (format: 'png' | 'jpeg') => void;
+  isExporting: boolean;
+  exportError: string | null;
 }
 
-export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport }) => {
+export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, isExporting, exportError }) => {
   if (!isOpen) return null;
 
   return (
@@ -16,24 +18,33 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExp
           <h3 className="text-lg leading-6 font-medium text-gray-900">エクスポート</h3>
           <div className="mt-2 px-7 py-3">
             <p className="text-sm text-gray-500">エクスポートするフォーマットを選択してください。</p>
+            {exportError && (
+              <p className="text-sm text-red-500 mt-2">{exportError}</p>
+            )}
           </div>
           <div className="items-center px-4 py-3">
-            <button
-              id="png-export-button"
-              data-testid="png-export-button"
-              onClick={() => onExport('png')}
-              className="px-4 py-2 bg-stone-blue text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-moss-green focus:outline-none focus:ring-2 focus:ring-moss-green"
-            >
-              PNGでエクスポート
-            </button>
-            <button
-              id="jpeg-export-button"
-              data-testid="jpeg-export-button"
-              onClick={() => onExport('jpeg')}
-              className="mt-2 px-4 py-2 bg-stone-blue text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-moss-green focus:outline-none focus:ring-2 focus:ring-moss-green"
-            >
-              JPEGでエクスポート
-            </button>
+            {isExporting ? (
+              <p className="text-stone-blue">エクスポート中...</p>
+            ) : (
+              <>
+                <button
+                  id="png-export-button"
+                  data-testid="png-export-button"
+                  onClick={() => onExport('png')}
+                  className="px-4 py-2 bg-stone-blue text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-moss-green focus:outline-none focus:ring-2 focus:ring-moss-green"
+                >
+                  PNGでエクスポート
+                </button>
+                <button
+                  id="jpeg-export-button"
+                  data-testid="jpeg-export-button"
+                  onClick={() => onExport('jpeg')}
+                  className="mt-2 px-4 py-2 bg-stone-blue text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-moss-green focus:outline-none focus:ring-2 focus:ring-moss-green"
+                >
+                  JPEGでエクスポート
+                </button>
+              </>
+            )}
             <button
               id="cancel-btn"
               onClick={onClose}

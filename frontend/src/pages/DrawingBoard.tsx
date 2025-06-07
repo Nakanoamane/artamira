@@ -31,6 +31,8 @@ const DrawingBoard = () => {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
 
   const { id } = useParams<{ id: string }>()
   const { setCompactHeader } = useHeader()
@@ -257,12 +259,72 @@ const DrawingBoard = () => {
 
   const handleCloseExportModal = useCallback(() => {
     setIsExportModalOpen(false);
+    setExportError(null);
   }, []);
 
-  const handleExport = (format: 'png' | 'jpeg') => {
-    console.log(`Exporting as ${format}`);
-    // ここにエクスポートロジックを実装
-    handleCloseExportModal();
+  const handleExport = async (format: 'png' | 'jpeg') => {
+    if (!drawingId) {
+      setExportError('描画ボードIDが指定されていません。');
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      setExportError('描画キャンバスが見つかりません。');
+      return;
+    }
+
+    setIsExporting(true);
+    setExportError(null);
+
+    try {
+      const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+      const imageDataURL = canvas.toDataURL(mimeType);
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}/export`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          format: format,
+          image_data: imageDataURL,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      // ファイル名を取得 (Content-Disposition ヘッダーから)
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `untitled.${format}`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      handleCloseExportModal();
+    } catch (e: any) {
+      console.error('Failed to export drawing:', e);
+      setExportError(`エクスポートに失敗しました: ${e.message}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (loadingDrawing) {
@@ -316,6 +378,8 @@ const DrawingBoard = () => {
         isOpen={isExportModalOpen}
         onClose={handleCloseExportModal}
         onExport={handleExport}
+        isExporting={isExporting}
+        exportError={exportError}
       />
     </div>
   )

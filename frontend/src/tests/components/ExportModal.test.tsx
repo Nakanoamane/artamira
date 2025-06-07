@@ -18,6 +18,8 @@ describe('ExportModal', () => {
         isOpen={false}
         onClose={mockOnClose}
         onExport={mockOnExport}
+        isExporting={false}
+        exportError={null}
       />
     );
     screen.debug();
@@ -26,15 +28,56 @@ describe('ExportModal', () => {
 
   it('モーダルが開いているときに表示されること', () => {
     render(
-      <ExportModal isOpen={true} onClose={mockOnClose} onExport={mockOnExport} />
+      <ExportModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onExport={mockOnExport}
+        isExporting={false}
+        exportError={null}
+      />
     );
     screen.debug();
     expect(screen.getByText('エクスポート')).toBeInTheDocument();
   });
 
+  it('エクスポート中に「エクスポート中...」が表示され、エクスポートボタンが非表示になること', () => {
+    render(
+      <ExportModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onExport={mockOnExport}
+        isExporting={true}
+        exportError={null}
+      />
+    );
+    expect(screen.getByText('エクスポート中...')).toBeInTheDocument();
+    expect(screen.queryByTestId('png-export-button')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('jpeg-export-button')).not.toBeInTheDocument();
+  });
+
+  it('exportErrorがある場合、エラーメッセージが表示されること', () => {
+    const errorMessage = 'エクスポートに失敗しました。';
+    render(
+      <ExportModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onExport={mockOnExport}
+        isExporting={false}
+        exportError={errorMessage}
+      />
+    );
+    expect(screen.getByText(errorMessage)).toBeInTheDocument();
+  });
+
   it('「キャンセル」ボタンをクリックすると onClose が呼び出されること', async () => {
     render(
-      <ExportModal isOpen={true} onClose={mockOnClose} onExport={mockOnExport} />
+      <ExportModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onExport={mockOnExport}
+        isExporting={false}
+        exportError={null}
+      />
     );
     const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
     console.log('Cancel button:', cancelButton);
@@ -45,7 +88,13 @@ describe('ExportModal', () => {
 
   it('PNGでエクスポートボタンをクリックすると onExport がPNGフォーマットで呼び出されること', async () => {
     render(
-      <ExportModal isOpen={true} onClose={mockOnClose} onExport={mockOnExport} />
+      <ExportModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onExport={mockOnExport}
+        isExporting={false}
+        exportError={null}
+      />
     );
     const pngExportButton = screen.getByTestId('png-export-button');
     console.log('PNG Export button:', pngExportButton);
@@ -58,7 +107,13 @@ describe('ExportModal', () => {
 
   it('JPEGでエクスポートボタンをクリックすると onExport がJPEGフォーマットで呼び出されること', async () => {
     render(
-      <ExportModal isOpen={true} onClose={mockOnClose} onExport={mockOnExport} />
+      <ExportModal
+        isOpen={true}
+        onClose={mockOnClose}
+        onExport={mockOnExport}
+        isExporting={false}
+        exportError={null}
+      />
     );
     const jpegExportButton = screen.getByTestId('jpeg-export-button');
     console.log('JPEG Export button:', jpegExportButton);
