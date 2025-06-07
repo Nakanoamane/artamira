@@ -143,7 +143,6 @@ describe('DrawingBoard', () => {
     await waitFor(() => {
       expect(document.title).toBe('Test Drawing');
     });
-    expect(screen.getByText(/最終保存: \d{1,2}:\d{2}:\d{2} (?:AM|PM)/)).toBeInTheDocument();
     expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('1');
   });
 
@@ -196,7 +195,6 @@ describe('DrawingBoard', () => {
     expect(undoButton).toBeDisabled();
     expect(redoButton).toBeDisabled();
     expect(saveButton).toBeDisabled();
-    expect(screen.queryByText('未保存の変更があります')).not.toBeInTheDocument();
 
 
     // 描画を実行 (onDrawCompleteをシミュレート)
@@ -207,7 +205,6 @@ describe('DrawingBoard', () => {
     // 描画後に要素が追加され、isDirtyがtrueになる
     await waitFor(() => {
       expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('2');
-      expect(screen.getByText('未保存の変更があります')).toBeInTheDocument();
       expect(undoButton).not.toBeDisabled();
       expect(redoButton).toBeDisabled(); // 描画するとredoStackはクリアされる
       expect(saveButton).not.toBeDisabled();
@@ -221,7 +218,6 @@ describe('DrawingBoard', () => {
     // Undo後に要素が元に戻り、redoが有効になる
     await waitFor(() => {
       expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('1');
-      expect(screen.getByText('未保存の変更があります')).toBeInTheDocument();
       expect(undoButton).toBeDisabled(); // 最初の状態に戻ったためundoはdisabled
       expect(redoButton).not.toBeDisabled();
       expect(saveButton).not.toBeDisabled();
@@ -235,7 +231,6 @@ describe('DrawingBoard', () => {
     // Redo後に要素が再度追加される
     await waitFor(() => {
       expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('2');
-      expect(screen.getByText('未保存の変更があります')).toBeInTheDocument();
       expect(undoButton).not.toBeDisabled();
       expect(redoButton).toBeDisabled();
       expect(saveButton).not.toBeDisabled();

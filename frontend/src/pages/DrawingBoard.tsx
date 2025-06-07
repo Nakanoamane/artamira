@@ -7,6 +7,7 @@ import { usePageTitle } from '../hooks/usePageTitle'
 import { useDrawingChannel } from '../hooks/useDrawingChannel'
 import { useParams } from 'react-router'
 import { useHeader } from '../contexts/HeaderContext'
+import DrawingHeader from '../components/DrawingHeader'
 
 interface Drawing {
   id: number;
@@ -340,40 +341,46 @@ const DrawingBoard = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <Toolbar
-        activeTool={activeTool}
-        onToolChange={setActiveTool}
-        activeColor={activeColor}
-        onColorChange={setActiveColor}
-        activeBrushSize={activeBrushSize}
-        onBrushSizeChange={setActiveBrushSize}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        canUndo={undoStack.length > 0}
-        canRedo={redoStack.length > 0}
-        onSave={handleSave}
-        onExportClick={handleExportClick}
+    <div className="container mx-auto p-4">
+      <DrawingHeader
+        title={drawing.title}
         isDirty={isDirty}
         lastSavedAt={lastSavedAt}
       />
       {actionCableError && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">Error:</strong>
-          <span className="block sm:inline"> {actionCableError}</span>
+        <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg mb-4 text-center">
+          {actionCableError}
         </div>
       )}
-      <Canvas
-        ref={canvasRef}
-        isDrawing={isDrawing}
-        setIsDrawing={setIsDrawing}
-        activeTool={activeTool}
-        color={activeColor}
-        brushSize={activeBrushSize}
-        drawingElementsToRender={drawingElements}
-        onDrawComplete={handleDrawComplete}
-        status={status}
-      />
+      <div className="flex flex-col items-center gap-4">
+        <Toolbar
+          activeTool={activeTool}
+          activeColor={activeColor}
+          activeBrushSize={activeBrushSize}
+          onToolChange={setActiveTool}
+          onColorChange={setActiveColor}
+          onBrushSizeChange={setActiveBrushSize}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={undoStack.length > 0}
+          canRedo={redoStack.length > 0}
+          onSave={handleSave}
+          isDirty={isDirty}
+          lastSavedAt={lastSavedAt}
+          onExportClick={handleExportClick}
+        />
+        <Canvas
+          ref={canvasRef}
+          activeTool={activeTool}
+          color={activeColor}
+          brushSize={activeBrushSize}
+          isDrawing={isDrawing}
+          setIsDrawing={setIsDrawing}
+          onDrawComplete={handleDrawComplete}
+          drawingElementsToRender={drawingElements}
+          status={status}
+        />
+      </div>
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={handleCloseExportModal}
