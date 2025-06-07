@@ -34,7 +34,6 @@ test.describe("DrawingList", () => {
 
     // 成功後、新しい描画ボードのURLにリダイレクトされることを期待
     await expect(page).toHaveURL(/\/drawings\/\d+/);
-    await expect(page.getByText("ツールバー")).toBeVisible(); // 描画ボード詳細ページの内容を確認
     await expect(page.getByText(boardTitle)).toBeVisible(); // 作成したボードのタイトルが表示されていることを確認
   });
 
@@ -65,7 +64,6 @@ test.describe("DrawingList", () => {
 
     // 既存の描画ボード詳細ページに遷移したことを確認
     await expect(page).toHaveURL(`/drawings/${newBoardId}`);
-    await expect(page.getByText("ツールバー")).toBeVisible();
     await expect(page.getByText(existingBoardTitle)).toBeVisible();
   });
 });

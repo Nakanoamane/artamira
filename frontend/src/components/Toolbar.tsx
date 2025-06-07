@@ -53,7 +53,6 @@ const Toolbar = ({
 }: ToolbarProps) => {
   return (
     <div className="flex flex-row items-start p-4 bg-clay-white shadow-md rounded-lg justify-center flex-wrap">
-      <h3 className="text-lg font-semibold mb-4 mr-4">ツールバー</h3>
 
       {/* ツール選択 */}
       <div className="mb-4 mr-4">

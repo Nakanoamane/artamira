@@ -23,7 +23,6 @@ test.describe('DrawingBoard', () => {
     }
 
     await page.goto(`/drawings/${drawingId}`)
-    await expect(page.getByText('ツールバー')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('label:has-text("ツール")')).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('ペン')).toBeVisible({ timeout: 15000 });
   })

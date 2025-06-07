@@ -26,7 +26,6 @@ describe('Toolbar', () => {
 
   it('renders toolbar elements correctly', () => {
     render(<Toolbar {...defaultProps} />);
-    expect(screen.getByText('ツールバー')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'ペン' })).toBeInTheDocument();
     expect(screen.getByLabelText('色を選択トグル')).toBeInTheDocument();
     expect(screen.getByLabelText('ブラシサイズ: 5px')).toBeInTheDocument();
