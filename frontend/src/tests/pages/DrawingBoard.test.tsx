@@ -53,13 +53,14 @@ vi.mock('../../components/Canvas', () => ({
 
 vi.mock('../../components/Toolbar', () => ({
   __esModule: true,
-  default: vi.fn(({ onUndo, onRedo, onSave, onExportClick, canUndo, canRedo, isSaveEnabled }) => (
+  default: vi.fn(({ onUndo, onRedo, onSave, onExportClick, canUndo, canRedo, isDirty, lastSavedAt }) => (
     <div data-testid="mock-toolbar">
       Mock Toolbar
       <button onClick={onUndo} disabled={!canUndo}>Undo</button>
       <button onClick={onRedo} disabled={!canRedo}>Redo</button>
-      <button onClick={onSave} disabled={!isSaveEnabled}>Save</button>
+      <button onClick={onSave} disabled={!isDirty}>Save</button>
       <button onClick={onExportClick}>Export</button>
+      {lastSavedAt && !isDirty && <span data-testid="last-saved-at">最終保存: {lastSavedAt.toLocaleTimeString()}</span>}
     </div>
   )),
 }));

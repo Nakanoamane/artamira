@@ -321,7 +321,8 @@ const DrawingBoard = () => {
           canUndo={undoStack.length > 0}
           canRedo={redoStack.length > 0}
           onSave={handleSave}
-          isSaveEnabled={isDirty}
+          isDirty={isDirty}
+          lastSavedAt={lastSavedAt}
           onExportClick={handleExportClick}
         />
         <Canvas

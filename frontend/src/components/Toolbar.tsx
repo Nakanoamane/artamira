@@ -12,7 +12,8 @@ interface ToolbarProps {
   canUndo: boolean
   canRedo: boolean
   onSave: () => void
-  isSaveEnabled: boolean
+  isDirty: boolean
+  lastSavedAt: Date | null
   onExportClick: () => void
 }
 
@@ -48,7 +49,8 @@ const Toolbar = ({
   canUndo,
   canRedo,
   onSave,
-  isSaveEnabled,
+  isDirty,
+  lastSavedAt,
   onExportClick,
 }: ToolbarProps) => {
   return (
@@ -81,12 +83,17 @@ const Toolbar = ({
         <label className="block text-sm font-medium text-flint-gray mb-2">操作</label>
         <div className="flex gap-2">
           <button
-            className={`px-4 py-2 rounded-md ${isSaveEnabled ? 'bg-stone-blue text-clay-white' : 'bg-light-gray text-medium-gray cursor-not-allowed'}`}
+            className={`px-4 py-2 rounded-md ${isDirty ? 'bg-stone-blue text-clay-white' : 'bg-light-gray text-medium-gray cursor-not-allowed'}`}
             onClick={onSave}
-            disabled={!isSaveEnabled}
+            disabled={!isDirty}
           >
-            保存
+            保存 {isDirty && '*'}
           </button>
+          {lastSavedAt && !isDirty && (
+            <span className="text-sm text-flint-gray ml-2">
+              最終保存: {lastSavedAt.toLocaleTimeString()}
+            </span>
+          )}
           <button
             className="px-4 py-2 rounded-md border-2 border-stone-blue text-flint-gray hover:bg-stone-blue hover:text-clay-white"
             onClick={onExportClick}
