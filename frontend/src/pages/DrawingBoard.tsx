@@ -286,26 +286,30 @@ const DrawingBoard = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">{drawing.title}</h1>
+      <div className="flex justify-between items-center mb-3 px-8">
+        <h1 className="text-3xl font-bold">{drawing.title}</h1>
+        <div className="text-right min-h-[48px]">
+          {isDirty && (
+            <div className="text-orange-500 text-sm">未保存の変更があります</div>
+          )}
+          {!isDirty && lastSavedAt && (
+            <div className="text-gray-500 text-xs">
+              最終保存: {lastSavedAt ? lastSavedAt.toLocaleString('ja-JP', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                hour12: false, // 24時間表記
+              }) : 'まだ保存されていません'}
+            </div>
+          )}
+        </div>
+      </div>
       {actionCableError && (
         <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg mb-4 text-center">
           {actionCableError}
-        </div>
-      )}
-      {isDirty && (
-        <div className="text-center text-orange-500 mb-2">未保存の変更があります</div>
-      )}
-      {!isDirty && lastSavedAt && (
-        <div className="text-center text-gray-500 text-sm mb-2">
-          最終保存: {lastSavedAt ? lastSavedAt.toLocaleString('ja-JP', {
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: 'numeric',
-            second: 'numeric',
-            hour12: false, // 24時間表記
-          }) : 'まだ保存されていません'}
         </div>
       )}
       <div className="flex flex-col items-center gap-4">
