@@ -92,7 +92,8 @@ docker compose exec frontend npm test
 docker compose exec frontend npx vitest run src/tests/components/ColorPicker.test.tsx
 
 # E2Eテストを実行
-docker compose exec frontend npm run test:e2e
+# 事前にdocker compose up -dでコンテナを起動しておく必要があります。
+npm run test:e2e
 ```
 
 ### コンソールの起動

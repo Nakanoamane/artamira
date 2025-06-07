@@ -7,7 +7,9 @@
     "lib": "lib",
     "test": "test"
   },
-  "scripts": {},
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
