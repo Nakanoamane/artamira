@@ -1,0 +1,758 @@
+{
+  "config": {
+    "configFile": "/Users/nakanoamane/myworks/artamira/playwright.config.ts",
+    "rootDir": "/Users/nakanoamane/myworks/artamira/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": "/Users/nakanoamane/myworks/artamira/e2e/global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json",
+        {
+          "outputFile": "results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/nakanoamane/myworks/artamira/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/nakanoamane/myworks/artamira/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/nakanoamane/myworks/artamira/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/nakanoamane/myworks/artamira/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/nakanoamane/myworks/artamira/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/nakanoamane/myworks/artamira/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "3way",
+    "version": "1.52.0",
+    "workers": 4,
+    "webServer": {
+      "command": "npm run dev --prefix frontend",
+      "url": "http://localhost:5173",
+      "reuseExistingServer": true
+    }
+  },
+  "suites": [
+    {
+      "title": "auth.spec.ts",
+      "file": "auth.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "新規ユーザー登録ができること",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2052,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2025-06-07T12:04:01.001Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d748ac400d08b85935ef-7baf5ce18ee430a4d7cf",
+          "file": "auth.spec.ts",
+          "line": 29,
+          "column": 5
+        },
+        {
+          "title": "既存ユーザーがログインできること",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "timedOut",
+                  "duration": 30036,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/Users/nakanoamane/myworks/artamira/e2e/auth.spec.ts",
+                        "column": 14,
+                        "line": 48
+                      },
+                      "message": "Error: page.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('text=\"ログアウト\"')\u001b[22m\n\u001b[2m    - locator resolved to <span class=\"text-dark-cave-ochre absolute -bottom-6 right-1/2 translate-x-1/2 mt-1 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap\">ログアウト</span>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <header class=\"text-dark-cave-ochre p-4 flex justify-between items-center\">…</header> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <header class=\"text-dark-cave-ochre p-4 flex justify-between items-center\">…</header> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    54 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <header class=\"text-dark-cave-ochre p-4 flex justify-between items-center\">…</header> intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n\n\u001b[0m \u001b[90m 46 |\u001b[39m   \u001b[36mconst\u001b[39m user \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m registerAndLogin(page)\u001b[33m;\u001b[39m\n \u001b[90m 47 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 48 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'text=\"ログアウト\"'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 49 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForURL(\u001b[32m\"/login\"\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 50 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[35m/Artamira - ログイン/\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 51 |\u001b[39m\u001b[0m\n\u001b[2m    at /Users/nakanoamane/myworks/artamira/e2e/auth.spec.ts:48:14\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2025-06-07T12:04:00.994Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "_error-context",
+                      "contentType": "application/json",
+                      "body": "eyJwYWdlU25hcHNob3QiOiItIGJhbm5lcjpcbiAgLSBsaW5rIFwiQXJ0YW1pcmEgTG9nb1wiOlxuICAgIC0gL3VybDogL1xuICAgIC0gaW1nIFwiQXJ0YW1pcmEgTG9nb1wiXG4gIC0gbmF2aWdhdGlvbjpcbiAgICAtIHRleHQ6IOOCiOOBhuOBk+OBneOAgXRlc3R1c2VyLTVsNGQ1OHhua21oQGV4YW1wbGUuY29t44GV44KTXG4gICAgLSBidXR0b24gXCLjg63jgrDjgqLjgqbjg4hcIlxuLSBoZWFkaW5nIFwiQm9hcmRzXCIgW2xldmVsPTFdXG4tIGJ1dHRvbiBcIuaWsOimj+aPj+eUu+ODnOODvOODieOCkuS9nOaIkFwiXG4tIGxpc3Q6XG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44OG44K544OI44Oc44O844OJXzE3NDg3NjExNTYzODVcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzFcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLjg4bjgrnjg4jjg5zjg7zjg4lfMTc0ODc2MTIxNjMxMVwiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvMlxuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuaXouWtmOODnOODvOODiV8xNzQ4NzYxMjI2MjYwXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy8zXG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44OG44K544OI44Oc44O844OJXzE3NDg3NjE3NjU4MDBcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzRcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLml6LlrZjjg5zjg7zjg4lfMTc0ODc2MTc2NTc3NFwiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvNVxuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuODhuOCueODiOODnOODvOODiV8xNzQ4NzYxODIwODcyXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy82XG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi5pei5a2Y44Oc44O844OJXzE3NDg3NjE4MjA5MDdcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzdcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLml6LlrZjjg5zjg7zjg4lfMTc0ODc2Mzc4NzI0N1wiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvOFxuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuODhuOCueODiOODnOODvOODiV8xNzQ4NzYzNzg3MTk0XCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy85XG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44Oc44O844OJXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy8xMFxuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuODhuOCueODiOaPj+eUu+ODnOODvOODiVwiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvMTFcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLjg4bjgrnjg4jmj4/nlLvjg5zjg7zjg4lcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzEyXG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44OG44K544OI5o+P55S744Oc44O844OJXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy8xM1xuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuODhuOCueODiOaPj+eUu+ODnOODvOODiVwiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvMTRcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLjg4bjgrnjg4jmj4/nlLvjg5zjg7zjg4lcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzE1XG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44OG44K544OI5o+P55S744Oc44O844OJXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy8xNlxuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuODhuOCueODiOaPj+eUu+ODnOODvOODiVwiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvMTdcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLjg4bjgrnjg4jmj4/nlLvjg5zjg7zjg4lcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzE4XG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44Oc44O844OJ44K/44Kk44OI44OrXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy8xOSJ9"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d748ac400d08b85935ef-f2bde0aff601fd6daef6",
+          "file": "auth.spec.ts",
+          "line": 45,
+          "column": 5
+        },
+        {
+          "title": "無効な認証情報でログインに失敗すること",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 1624,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2025-06-07T12:04:00.991Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d748ac400d08b85935ef-4ac9d04522dedc40db9f",
+          "file": "auth.spec.ts",
+          "line": 61,
+          "column": 5
+        },
+        {
+          "title": "ログインユーザーがログアウトできること",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "status": "timedOut",
+                  "duration": 30034,
+                  "error": {
+                    "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                    "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                  },
+                  "errors": [
+                    {
+                      "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                    },
+                    {
+                      "location": {
+                        "file": "/Users/nakanoamane/myworks/artamira/e2e/auth.spec.ts",
+                        "column": 14,
+                        "line": 76
+                      },
+                      "message": "Error: page.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('text=\"ログアウト\"')\u001b[22m\n\u001b[2m    - locator resolved to <span class=\"text-dark-cave-ochre absolute -bottom-6 right-1/2 translate-x-1/2 mt-1 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap\">ログアウト</span>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <header class=\"text-dark-cave-ochre p-4 flex justify-between items-center\">…</header> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <header class=\"text-dark-cave-ochre p-4 flex justify-between items-center\">…</header> intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    55 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <header class=\"text-dark-cave-ochre p-4 flex justify-between items-center\">…</header> intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n\n\u001b[0m \u001b[90m 74 |\u001b[39m   \u001b[36mawait\u001b[39m registerAndLogin(page)\u001b[33m;\u001b[39m\n \u001b[90m 75 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 76 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'text=\"ログアウト\"'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 77 |\u001b[39m\n \u001b[90m 78 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForURL(\u001b[32m\"/login\"\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 79 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[35m/Artamira - ログイン/\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/nakanoamane/myworks/artamira/e2e/auth.spec.ts:76:14\u001b[22m"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2025-06-07T12:04:00.991Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "_error-context",
+                      "contentType": "application/json",
+                      "body": "eyJwYWdlU25hcHNob3QiOiItIGJhbm5lcjpcbiAgLSBsaW5rIFwiQXJ0YW1pcmEgTG9nb1wiOlxuICAgIC0gL3VybDogL1xuICAgIC0gaW1nIFwiQXJ0YW1pcmEgTG9nb1wiXG4gIC0gbmF2aWdhdGlvbjpcbiAgICAtIHRleHQ6IOOCiOOBhuOBk+OBneOAgXRlc3R1c2VyLXNlZTgyYzJmNWs4QGV4YW1wbGUuY29t44GV44KTXG4gICAgLSBidXR0b24gXCLjg63jgrDjgqLjgqbjg4hcIlxuLSBoZWFkaW5nIFwiQm9hcmRzXCIgW2xldmVsPTFdXG4tIGJ1dHRvbiBcIuaWsOimj+aPj+eUu+ODnOODvOODieOCkuS9nOaIkFwiXG4tIGxpc3Q6XG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44OG44K544OI44Oc44O844OJXzE3NDg3NjExNTYzODVcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzFcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLjg4bjgrnjg4jjg5zjg7zjg4lfMTc0ODc2MTIxNjMxMVwiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvMlxuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuaXouWtmOODnOODvOODiV8xNzQ4NzYxMjI2MjYwXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy8zXG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44OG44K544OI44Oc44O844OJXzE3NDg3NjE3NjU4MDBcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzRcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLml6LlrZjjg5zjg7zjg4lfMTc0ODc2MTc2NTc3NFwiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvNVxuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuODhuOCueODiOODnOODvOODiV8xNzQ4NzYxODIwODcyXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy82XG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi5pei5a2Y44Oc44O844OJXzE3NDg3NjE4MjA5MDdcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzdcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLml6LlrZjjg5zjg7zjg4lfMTc0ODc2Mzc4NzI0N1wiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvOFxuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuODhuOCueODiOODnOODvOODiV8xNzQ4NzYzNzg3MTk0XCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy85XG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44Oc44O844OJXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy8xMFxuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuODhuOCueODiOaPj+eUu+ODnOODvOODiVwiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvMTFcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLjg4bjgrnjg4jmj4/nlLvjg5zjg7zjg4lcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzEyXG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44OG44K544OI5o+P55S744Oc44O844OJXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy8xM1xuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuODhuOCueODiOaPj+eUu+ODnOODvOODiVwiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvMTRcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLjg4bjgrnjg4jmj4/nlLvjg5zjg7zjg4lcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzE1XG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44OG44K544OI5o+P55S744Oc44O844OJXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy8xNlxuICAtIGxpc3RpdGVtOlxuICAgIC0gbGluayBcIuODhuOCueODiOaPj+eUu+ODnOODvOODiVwiOlxuICAgICAgLSAvdXJsOiAvZHJhd2luZ3MvMTdcbiAgLSBsaXN0aXRlbTpcbiAgICAtIGxpbmsgXCLjg4bjgrnjg4jmj4/nlLvjg5zjg7zjg4lcIjpcbiAgICAgIC0gL3VybDogL2RyYXdpbmdzLzE4XG4gIC0gbGlzdGl0ZW06XG4gICAgLSBsaW5rIFwi44Oc44O844OJ44K/44Kk44OI44OrXCI6XG4gICAgICAtIC91cmw6IC9kcmF3aW5ncy8xOSJ9"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d748ac400d08b85935ef-b78c973d6986f3fb089f",
+          "file": "auth.spec.ts",
+          "line": 73,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "drawingBoard.spec.ts",
+      "file": "drawingBoard.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "DrawingBoard",
+          "file": "drawingBoard.spec.ts",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should render Toolbar and Canvas components",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 7543,
+                      "error": {
+                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: getByText('テスト描画ボード')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('テスト描画ボード')\u001b[22m\n",
+                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: getByText('テスト描画ボード')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('テスト描画ボード')\u001b[22m\n\n    at /Users/nakanoamane/myworks/artamira/e2e/drawingBoard.spec.ts:38:46",
+                        "location": {
+                          "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingBoard.spec.ts",
+                          "column": 46,
+                          "line": 38
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m expect(canvas)\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 37 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 38 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[32m'テスト描画ボード'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 39 |\u001b[39m   })\n \u001b[90m 40 |\u001b[39m\n \u001b[90m 41 |\u001b[39m   test(\u001b[32m'should change color and brush size via Toolbar'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingBoard.spec.ts",
+                            "column": 46,
+                            "line": 38
+                          },
+                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: getByText('テスト描画ボード')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('テスト描画ボード')\u001b[22m\n\n\n\u001b[0m \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m expect(canvas)\u001b[33m.\u001b[39mtoBeVisible()\n \u001b[90m 37 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 38 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[32m'テスト描画ボード'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 39 |\u001b[39m   })\n \u001b[90m 40 |\u001b[39m\n \u001b[90m 41 |\u001b[39m   test(\u001b[32m'should change color and brush size via Toolbar'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/nakanoamane/myworks/artamira/e2e/drawingBoard.spec.ts:38:46\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-07T12:04:02.821Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "_error-context",
+                          "contentType": "application/json",
+                          "body": "eyJwYWdlU25hcHNob3QiOiItIGJhbm5lcjpcbiAgLSBsaW5rIFwiQXJ0YW1pcmEgSWNvblwiOlxuICAgIC0gL3VybDogL1xuICAgIC0gaW1nIFwiQXJ0YW1pcmEgSWNvblwiXG4gIC0gYnV0dG9uXG4tIGhlYWRpbmcgXCLnhKHpoYzjga7jg5zjg7zjg4lcIiBbbGV2ZWw9MV1cbi0gdGV4dDogXCLmnIDntYLkv53lrZg6IOOBvuOBoOS/neWtmOOBleOCjOOBpuOBhOOBvuOBm+OCkyDjg4Tjg7zjg6tcIlxuLSBidXR0b24gXCLjg5rjg7NcIlxuLSBidXR0b24gXCLmtojjgZfjgrTjg6BcIlxuLSBidXR0b24gXCLnm7Tnt5pcIlxuLSBidXR0b24gXCLlm5vop5JcIlxuLSBidXR0b24gXCLlhoZcIlxuLSB0ZXh0OiDmk43kvZxcbi0gYnV0dG9uIFwi5L+d5a2YXCIgW2Rpc2FibGVkXVxuLSBidXR0b24gXCLjgqjjgq/jgrnjg53jg7zjg4hcIlxuLSB0ZXh0OiDlsaXmrbRcbi0gYnV0dG9uIFwiVW5kb1wiIFtkaXNhYmxlZF1cbi0gYnV0dG9uIFwiUmVkb1wiIFtkaXNhYmxlZF1cbi0gdGV4dDogXCLoibLjgpLpgbjmip4g44OW44Op44K344K144Kk44K6OiAycHhcIlxuLSAnc2xpZGVyIFwi44OW44Op44K344K144Kk44K6OiAycHhcIic6IFwiMlwiIn0="
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingBoard.spec.ts",
+                        "column": 46,
+                        "line": 38
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "f895cda9b2da4c27014f-b43118fc528c736bb86a",
+              "file": "drawingBoard.spec.ts",
+              "line": 30,
+              "column": 7
+            },
+            {
+              "title": "should change color and brush size via Toolbar",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 1724,
+                      "error": {
+                        "message": "Error: expect.toHaveValue: Error: Not an input element\nCall log:\n\u001b[2m  - expect.toHaveValue with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('色を選択')\u001b[22m\n",
+                        "stack": "Error: expect.toHaveValue: Error: Not an input element\nCall log:\n\u001b[2m  - expect.toHaveValue with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('色を選択')\u001b[22m\n\n    at /Users/nakanoamane/myworks/artamira/e2e/drawingBoard.spec.ts:50:30",
+                        "location": {
+                          "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingBoard.spec.ts",
+                          "column": 30,
+                          "line": 50
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 48 |\u001b[39m       }\n \u001b[90m 49 |\u001b[39m     }\u001b[33m,\u001b[39m \u001b[32m'#FF0000'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m expect(colorInput)\u001b[33m.\u001b[39mtoHaveValue(\u001b[32m'#ff0000'\u001b[39m)\n \u001b[90m    |\u001b[39m                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m\n \u001b[90m 52 |\u001b[39m     \u001b[36mconst\u001b[39m brushSizeInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByLabel(\u001b[35m/^ブラシサイズ:/\u001b[39m)\n \u001b[90m 53 |\u001b[39m     \u001b[36mawait\u001b[39m brushSizeInput\u001b[33m.\u001b[39mfill(\u001b[32m'15'\u001b[39m)\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingBoard.spec.ts",
+                            "column": 30,
+                            "line": 50
+                          },
+                          "message": "Error: expect.toHaveValue: Error: Not an input element\nCall log:\n\u001b[2m  - expect.toHaveValue with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByLabel('色を選択')\u001b[22m\n\n\n\u001b[0m \u001b[90m 48 |\u001b[39m       }\n \u001b[90m 49 |\u001b[39m     }\u001b[33m,\u001b[39m \u001b[32m'#FF0000'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m     \u001b[36mawait\u001b[39m expect(colorInput)\u001b[33m.\u001b[39mtoHaveValue(\u001b[32m'#ff0000'\u001b[39m)\n \u001b[90m    |\u001b[39m                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m\n \u001b[90m 52 |\u001b[39m     \u001b[36mconst\u001b[39m brushSizeInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByLabel(\u001b[35m/^ブラシサイズ:/\u001b[39m)\n \u001b[90m 53 |\u001b[39m     \u001b[36mawait\u001b[39m brushSizeInput\u001b[33m.\u001b[39mfill(\u001b[32m'15'\u001b[39m)\u001b[0m\n\u001b[2m    at /Users/nakanoamane/myworks/artamira/e2e/drawingBoard.spec.ts:50:30\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-07T12:04:03.250Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "_error-context",
+                          "contentType": "application/json",
+                          "body": "eyJwYWdlU25hcHNob3QiOiItIGJhbm5lcjpcbiAgLSBsaW5rIFwiQXJ0YW1pcmEgSWNvblwiOlxuICAgIC0gL3VybDogL1xuICAgIC0gaW1nIFwiQXJ0YW1pcmEgSWNvblwiXG4gIC0gYnV0dG9uXG4tIGhlYWRpbmcgXCLnhKHpoYzjga7jg5zjg7zjg4lcIiBbbGV2ZWw9MV1cbi0gdGV4dDogXCLmnIDntYLkv53lrZg6IOOBvuOBoOS/neWtmOOBleOCjOOBpuOBhOOBvuOBm+OCkyDjg4Tjg7zjg6tcIlxuLSBidXR0b24gXCLjg5rjg7NcIlxuLSBidXR0b24gXCLmtojjgZfjgrTjg6BcIlxuLSBidXR0b24gXCLnm7Tnt5pcIlxuLSBidXR0b24gXCLlm5vop5JcIlxuLSBidXR0b24gXCLlhoZcIlxuLSB0ZXh0OiDmk43kvZxcbi0gYnV0dG9uIFwi5L+d5a2YXCIgW2Rpc2FibGVkXVxuLSBidXR0b24gXCLjgqjjgq/jgrnjg53jg7zjg4hcIlxuLSB0ZXh0OiDlsaXmrbRcbi0gYnV0dG9uIFwiVW5kb1wiIFtkaXNhYmxlZF1cbi0gYnV0dG9uIFwiUmVkb1wiIFtkaXNhYmxlZF1cbi0gdGV4dDogXCLoibLjgpLpgbjmip4g44OW44Op44K344K144Kk44K6OiAycHhcIlxuLSAnc2xpZGVyIFwi44OW44Op44K344K144Kk44K6OiAycHhcIic6IFwiMlwiXG4tIHRleHQ6IOaOpee2muS4rS4uLiJ9"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingBoard.spec.ts",
+                        "column": 30,
+                        "line": 50
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "f895cda9b2da4c27014f-5f61e1cfccf505dd8b1d",
+              "file": "drawingBoard.spec.ts",
+              "line": 41,
+              "column": 7
+            },
+            {
+              "title": "should draw a line on the canvas",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1570,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-07T12:04:05.449Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f895cda9b2da4c27014f-8615c3dd56080aeac348",
+              "file": "drawingBoard.spec.ts",
+              "line": 57,
+              "column": 7
+            },
+            {
+              "title": "should reflect drawings in real-time across multiple clients",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4013,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-07T12:04:07.144Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f895cda9b2da4c27014f-57c6744c5b57259052ea",
+              "file": "drawingBoard.spec.ts",
+              "line": 83,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "drawingList.spec.ts",
+      "file": "drawingList.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "DrawingList",
+          "file": "drawingList.spec.ts",
+          "line": 3,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display a list of drawing boards and a creation button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 628,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-07T12:04:10.822Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "bda434e581469fd372fb-16d2dd9ebaeb9e3729bb",
+              "file": "drawingList.spec.ts",
+              "line": 8,
+              "column": 7
+            },
+            {
+              "title": "should navigate to new drawing board creation page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 490,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-07T12:04:11.164Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "bda434e581469fd372fb-43592aef9bfb13bf4782",
+              "file": "drawingList.spec.ts",
+              "line": 19,
+              "column": 7
+            },
+            {
+              "title": "should create a new drawing board and navigate to its detail page",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 5434,
+                      "error": {
+                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: getByText('テストボード_1749297851816')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('テストボード_1749297851816')\u001b[22m\n",
+                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: getByText('テストボード_1749297851816')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('テストボード_1749297851816')\u001b[22m\n\n    at /Users/nakanoamane/myworks/artamira/e2e/drawingList.spec.ts:37:46",
+                        "location": {
+                          "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingList.spec.ts",
+                          "column": 46,
+                          "line": 37
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 35 |\u001b[39m     \u001b[90m// 成功後、新しい描画ボードのURLにリダイレクトされることを期待\u001b[39m\n \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/\\/drawings\\/\\d+/\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 37 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(boardTitle))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m \u001b[90m// 作成したボードのタイトルが表示されていることを確認\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 38 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 39 |\u001b[39m\n \u001b[90m 40 |\u001b[39m   test(\u001b[32m\"should navigate to an existing drawing board detail page\"\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingList.spec.ts",
+                            "column": 46,
+                            "line": 37
+                          },
+                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: getByText('テストボード_1749297851816')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('テストボード_1749297851816')\u001b[22m\n\n\n\u001b[0m \u001b[90m 35 |\u001b[39m     \u001b[90m// 成功後、新しい描画ボードのURLにリダイレクトされることを期待\u001b[39m\n \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/\\/drawings\\/\\d+/\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 37 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(boardTitle))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m \u001b[90m// 作成したボードのタイトルが表示されていることを確認\u001b[39m\n \u001b[90m    |\u001b[39m                                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 38 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 39 |\u001b[39m\n \u001b[90m 40 |\u001b[39m   test(\u001b[32m\"should navigate to an existing drawing board detail page\"\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({\u001b[0m\n\u001b[2m    at /Users/nakanoamane/myworks/artamira/e2e/drawingList.spec.ts:37:46\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-07T12:04:11.581Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "_error-context",
+                          "contentType": "application/json",
+                          "body": "eyJwYWdlU25hcHNob3QiOiItIGJhbm5lcjpcbiAgLSBsaW5rIFwiQXJ0YW1pcmEgSWNvblwiOlxuICAgIC0gL3VybDogL1xuICAgIC0gaW1nIFwiQXJ0YW1pcmEgSWNvblwiXG4gIC0gYnV0dG9uXG4tIGhlYWRpbmcgXCLnhKHpoYzjga7jg5zjg7zjg4lcIiBbbGV2ZWw9MV1cbi0gdGV4dDogXCLmnIDntYLkv53lrZg6IOOBvuOBoOS/neWtmOOBleOCjOOBpuOBhOOBvuOBm+OCkyDjg4Tjg7zjg6tcIlxuLSBidXR0b24gXCLjg5rjg7NcIlxuLSBidXR0b24gXCLmtojjgZfjgrTjg6BcIlxuLSBidXR0b24gXCLnm7Tnt5pcIlxuLSBidXR0b24gXCLlm5vop5JcIlxuLSBidXR0b24gXCLlhoZcIlxuLSB0ZXh0OiDmk43kvZxcbi0gYnV0dG9uIFwi5L+d5a2YXCIgW2Rpc2FibGVkXVxuLSBidXR0b24gXCLjgqjjgq/jgrnjg53jg7zjg4hcIlxuLSB0ZXh0OiDlsaXmrbRcbi0gYnV0dG9uIFwiVW5kb1wiIFtkaXNhYmxlZF1cbi0gYnV0dG9uIFwiUmVkb1wiIFtkaXNhYmxlZF1cbi0gdGV4dDogXCLoibLjgpLpgbjmip4g44OW44Op44K344K144Kk44K6OiAycHhcIlxuLSAnc2xpZGVyIFwi44OW44Op44K344K144Kk44K6OiAycHhcIic6IFwiMlwiIn0="
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingList.spec.ts",
+                        "column": 46,
+                        "line": 37
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "bda434e581469fd372fb-867c81d3fd41f4755e2f",
+              "file": "drawingList.spec.ts",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "should navigate to an existing drawing board detail page",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6210,
+                      "error": {
+                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: getByText('既存ボード_1749297851913')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('既存ボード_1749297851913')\u001b[22m\n",
+                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: getByText('既存ボード_1749297851913')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('既存ボード_1749297851913')\u001b[22m\n\n    at /Users/nakanoamane/myworks/artamira/e2e/drawingList.spec.ts:67:54",
+                        "location": {
+                          "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingList.spec.ts",
+                          "column": 54,
+                          "line": 67
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 65 |\u001b[39m     \u001b[90m// 既存の描画ボード詳細ページに遷移したことを確認\u001b[39m\n \u001b[90m 66 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[32m`/drawings/${newBoardId}`\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 67 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(existingBoardTitle))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 68 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 69 |\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 70 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingList.spec.ts",
+                            "column": 54,
+                            "line": 67
+                          },
+                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m\n\nLocator: getByText('既存ボード_1749297851913')\nExpected: visible\nReceived: <element(s) not found>\nCall log:\n\u001b[2m  - expect.toBeVisible with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText('既存ボード_1749297851913')\u001b[22m\n\n\n\u001b[0m \u001b[90m 65 |\u001b[39m     \u001b[90m// 既存の描画ボード詳細ページに遷移したことを確認\u001b[39m\n \u001b[90m 66 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[32m`/drawings/${newBoardId}`\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 67 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(existingBoardTitle))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 68 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 69 |\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 70 |\u001b[39m\u001b[0m\n\u001b[2m    at /Users/nakanoamane/myworks/artamira/e2e/drawingList.spec.ts:67:54\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-07T12:04:11.658Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "_error-context",
+                          "contentType": "application/json",
+                          "body": "eyJwYWdlU25hcHNob3QiOiItIGJhbm5lcjpcbiAgLSBsaW5rIFwiQXJ0YW1pcmEgSWNvblwiOlxuICAgIC0gL3VybDogL1xuICAgIC0gaW1nIFwiQXJ0YW1pcmEgSWNvblwiXG4gIC0gYnV0dG9uXG4tIGhlYWRpbmcgXCLnhKHpoYzjga7jg5zjg7zjg4lcIiBbbGV2ZWw9MV1cbi0gdGV4dDogXCLmnIDntYLkv53lrZg6IOOBvuOBoOS/neWtmOOBleOCjOOBpuOBhOOBvuOBm+OCkyDjg4Tjg7zjg6tcIlxuLSBidXR0b24gXCLjg5rjg7NcIlxuLSBidXR0b24gXCLmtojjgZfjgrTjg6BcIlxuLSBidXR0b24gXCLnm7Tnt5pcIlxuLSBidXR0b24gXCLlm5vop5JcIlxuLSBidXR0b24gXCLlhoZcIlxuLSB0ZXh0OiDmk43kvZxcbi0gYnV0dG9uIFwi5L+d5a2YXCIgW2Rpc2FibGVkXVxuLSBidXR0b24gXCLjgqjjgq/jgrnjg53jg7zjg4hcIlxuLSB0ZXh0OiDlsaXmrbRcbi0gYnV0dG9uIFwiVW5kb1wiIFtkaXNhYmxlZF1cbi0gYnV0dG9uIFwiUmVkb1wiIFtkaXNhYmxlZF1cbi0gdGV4dDogXCLoibLjgpLpgbjmip4g44OW44Op44K344K144Kk44K6OiAycHhcIlxuLSAnc2xpZGVyIFwi44OW44Op44K344K144Kk44K6OiAycHhcIic6IFwiMlwiIn0="
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/nakanoamane/myworks/artamira/e2e/drawingList.spec.ts",
+                        "column": 54,
+                        "line": 67
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "bda434e581469fd372fb-656111ccaeb8b477fc31",
+              "file": "drawingList.spec.ts",
+              "line": 40,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "example.spec.ts",
+      "file": "example.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "ホームページが正しく表示されること",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 6,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 244,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2025-06-07T12:04:17.476Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a30a6eba6312f6b87ea5-0056c56edd14ab89ee8c",
+          "file": "example.spec.ts",
+          "line": 3,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-06-07T12:04:00.123Z",
+    "duration": 31141.703999999998,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 6,
+    "flaky": 0
+  }
+}

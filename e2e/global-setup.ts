@@ -12,7 +12,7 @@ async function globalSetup(config: FullConfig) {
 
   await loginOrCreateUser(page)
 
-  await page.context().storageState({ path: './tests/storageState.json' })
+  await page.context().storageState({ path: './e2e/storageState.json' })
   await browser.close()
   console.log('Global setup: User logged in and storage state saved.')
 }

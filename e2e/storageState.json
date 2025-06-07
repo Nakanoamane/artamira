@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "session_id",
+      "value": "eyJfcmFpbHMiOnsibWVzc2FnZSI6Ik56TT0iLCJleHAiOiIyMDQ1LTA2LTA3VDEyOjA0OjAwLjA3NVoiLCJwdXIiOiJjb29raWUuc2Vzc2lvbl9pZCJ9fQ%3D%3D--16167b9121fb3723ac1403b95f0c23d72e0a3aa8",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1783857840.077646,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_session_id",
+      "value": "1pZ06ZayTZ8LDvEGTfa4q9NydgLbI7vVIgICL5g9CyGST%2Fg2%2BvGXalWdffnFqsw3tQBDNTOlmcKOz4YSLRKaoc7HXuiQKSh21V%2BC1zdP9kttfBJxclGP%2BSWLS3BVtoLribNsa6wWwG%2B45kuLqsRWNzs5UDCXCIOxotqg9QsFD0j1mTk%3D--Am1rNPqLeKt2Uj3c--WPTRl4UeMzjDq5YZxXcHJg%3D%3D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}
