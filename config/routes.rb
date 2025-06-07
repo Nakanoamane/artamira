@@ -24,6 +24,7 @@ Rails.application.routes.draw do
       resources :drawings do
         resources :elements, controller: 'drawing_elements', only: [:index, :create]
         post 'save', on: :member
+        post 'export', on: :member
       end
       resources :drawing_elements, only: [:show, :update, :destroy]
     end

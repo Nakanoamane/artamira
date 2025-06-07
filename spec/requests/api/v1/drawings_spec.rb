@@ -5,6 +5,20 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
 
   let!(:user) { create(:user) }
 
+  # ダミーのBase64エンコードされた画像データを生成するヘルパーメソッド
+  def generate_dummy_base64_image(format)
+    # 実際の画像データではないが、Base64として有効な短い文字列
+    # 例: 1x1ピクセルの透明PNGのBase64データ
+    case format
+    when 'png'
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    when 'jpeg'
+      "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAIBAQEBAQIBAQECAgICAgEwQCAgIBgWEBAQEBAgEBBAQEBQMDAwYHBgUEBAUDAwMD/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAAC//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAkQA/8QAFAABAAAAAAAAAAAAAAAAAAAAC//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAwQA/8QAFAABAAAAAAAAAAAAAAAAAAAAC//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQQI/8QAFAABAAAAAAAAAAAAAAAAAAAAC//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAiQA/8QAFAABAAAAAAAAAAAAAAAAAAAAC//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAoQA/8QAFAABAAAAAAAAAAAAAAAAAAAAC//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAxQA/8QAFCABAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AwwwA/9k="
+    else
+      nil
+    end
+  end
+
   describe 'GET /api/v1/drawings' do
     context '認証済みユーザーの場合' do
       let!(:drawing1) { create(:drawing, user: user, title: '最初の描画ボード') }
@@ -99,7 +113,6 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
     let!(:drawing) { create(:drawing, user: user) }
 
     context '認証済みユーザーの場合' do
-
       let!(:cookies) { cookies_for_header(user) }
 
       it '描画ボードのlast_saved_atを更新し、200 OKを返す' do
@@ -195,6 +208,93 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
     context '未認証ユーザーの場合' do
       it '401 Unauthorized を返す' do
         get api_v1_drawing_elements_path(drawing), as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
+
+  describe 'POST /api/v1/drawings/:id/export' do
+    let!(:drawing) { create(:drawing, user: user, title: 'テスト描画ボード') }
+
+    context '認証済みユーザーで有効なパラメータの場合' do
+      let!(:cookies) { cookies_for_header(user) }
+
+      it 'PNG形式で描画ボードをエクスポートし、200 OKを返す' do
+        image_data = generate_dummy_base64_image('png')
+        post export_api_v1_drawing_path(drawing), params: { format: 'png', image_data: image_data }, headers: { 'Cookie' => cookies }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.headers['Content-Type']).to eq('image/png')
+        expect(response.headers['Content-Disposition']).to include("filename*=UTF-8''%E3%83%86%E3%82%B9%E3%83%88%E6%8F%8F%E7%94%BB%E3%83%9C%E3%83%BC%E3%83%89.png")
+        expect(response.body).to be_present
+      end
+
+      it 'JPEG形式で描画ボードをエクスポートし、200 OKを返す' do
+        image_data = generate_dummy_base64_image('jpeg')
+        post export_api_v1_drawing_path(drawing), params: { format: 'jpeg', image_data: image_data }, headers: { 'Cookie' => cookies }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.headers['Content-Type']).to eq('image/jpeg')
+        expect(response.headers['Content-Disposition']).to include("filename*=UTF-8''%E3%83%86%E3%82%B9%E3%83%88%E6%8F%8F%E7%94%BB%E3%83%9C%E3%83%BC%E3%83%89.jpeg")
+        expect(response.body).to be_present
+      end
+    end
+
+    context '認証済みユーザーで無効なパラメータの場合' do
+      let!(:cookies) { cookies_for_header(user) }
+
+      it '無効なフォーマットの場合、400 Bad Requestを返す' do
+        image_data = generate_dummy_base64_image('png')
+        post export_api_v1_drawing_path(drawing), params: { format: 'gif', image_data: image_data }, headers: { 'Cookie' => cookies }
+
+        expect(response).to have_http_status(:bad_request)
+        expect(response.parsed_body['error']).to eq('Invalid format or missing image_data.')
+      end
+
+      it 'image_dataが欠落している場合、400 Bad Requestを返す' do
+        post export_api_v1_drawing_path(drawing), params: { format: 'png' }, headers: { 'Cookie' => cookies }
+
+        expect(response).to have_http_status(:bad_request)
+        expect(response.parsed_body['error']).to eq('Invalid format or missing image_data.')
+      end
+
+      it 'image_dataが不正な形式の場合、400 Bad Requestを返す' do
+        post export_api_v1_drawing_path(drawing), params: { format: 'png', image_data: 'invalid_data' }, headers: { 'Cookie' => cookies }
+
+        expect(response).to have_http_status(:bad_request)
+        expect(response.parsed_body['error']).to include('Invalid Base64 characters in image data.')
+      end
+    end
+
+    context '存在しない描画ボードの場合' do
+      let!(:cookies) { cookies_for_header(user) }
+
+      it '404 Not Found を返す' do
+        image_data = generate_dummy_base64_image('png')
+        post export_api_v1_drawing_path(99999), params: { format: 'png', image_data: image_data }, headers: { 'Cookie' => cookies }
+
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context '他のユーザーの描画ボードの場合' do
+      let!(:other_user) { create(:user) }
+      let!(:other_drawing) { create(:drawing, user: other_user) }
+      let!(:cookies) { cookies_for_header(user) }
+
+      it '404 Not Found を返す (認可エラーのため)' do
+        image_data = generate_dummy_base64_image('png')
+        post export_api_v1_drawing_path(other_drawing), params: { format: 'png', image_data: image_data }, headers: { 'Cookie' => cookies }
+
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    context '未認証ユーザーの場合' do
+      it '401 Unauthorized を返す' do
+        image_data = generate_dummy_base64_image('png')
+        post export_api_v1_drawing_path(drawing), params: { format: 'png', image_data: image_data }
+
         expect(response).to have_http_status(:unauthorized)
       end
     end
