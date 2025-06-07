@@ -1,11 +1,13 @@
 import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi, beforeEach, afterEach, describe, it, expect, Mock } from 'vitest'
-import React from 'react'
+import React, { useEffect } from 'react'
 import DrawingBoard from '../../pages/DrawingBoard'
 import { useParams } from 'react-router'
+import { MemoryRouter } from 'react-router-dom'
 import { CanvasProps } from '../../components/Canvas'
 import { HeaderProvider } from '../../contexts/HeaderContext'
+import { AuthProvider } from '../../contexts/AuthContext'
 
 // モック化
 vi.mock('react-router', () => ({
@@ -14,9 +16,11 @@ vi.mock('react-router', () => ({
 }));
 
 vi.mock('../../hooks/usePageTitle', () => ({
-  usePageTitle: vi.fn((title) => {
-    // document.title を実際に設定するモック
-    document.title = title;
+  usePageTitle: vi.fn((pageTitle) => {
+    useEffect(() => {
+      // document.title を実際に設定するモック
+      document.title = pageTitle;
+    }, [pageTitle]);
   }),
 }));
 
@@ -63,7 +67,19 @@ vi.mock('../../components/Toolbar', () => ({
       <button onClick={onRedo} disabled={!canRedo}>Redo</button>
       <button onClick={onSave} disabled={!isDirty}>Save</button>
       <button onClick={onExportClick}>Export</button>
-      {lastSavedAt && !isDirty && <span data-testid="last-saved-at">最終保存: {lastSavedAt.toLocaleTimeString()}</span>}
+      {lastSavedAt && !isDirty && (
+        <span data-testid="last-saved-at">
+          最終保存: {lastSavedAt.toLocaleString('ja-JP', {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            hour12: false,
+          })}
+        </span>
+      )}
       {isDirty && <span data-testid="is-dirty-message">未保存の変更があります</span>}
     </div>
   )),
@@ -90,7 +106,13 @@ describe('DrawingBoard', () => {
     vi.clearAllMocks();
     mockUseParams.mockReturnValue({ id: '1' });
     (global as any).fetch = vi.fn((url: string) => {
-      if (url.includes('/api/v1/drawings/1/')) {
+      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
+        });
+      }
+      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/`) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
@@ -108,7 +130,14 @@ describe('DrawingBoard', () => {
           json: () => Promise.resolve({ last_saved_at: '2023-01-01T12:05:00Z' }),
         });
       }
-      return Promise.reject(new Error('not mocked'));
+      if (url.includes('/api/v1/drawings/1/export')) {
+        return Promise.resolve({
+          ok: true,
+          blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
+          headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
+        });
+      }
+      return Promise.reject(new Error(`not mocked for URL: ${url}`));
     });
     // import.meta.envのモック
     Object.defineProperty(import.meta, 'env', {
@@ -128,7 +157,11 @@ describe('DrawingBoard', () => {
     (global as any).fetch = vi.fn(() => new Promise(() => {}));
     render(
       <HeaderProvider>
-        <DrawingBoard />
+        <AuthProvider>
+          <MemoryRouter>
+            <DrawingBoard />
+          </MemoryRouter>
+        </AuthProvider>
       </HeaderProvider>
     );
     expect(screen.getByText('描画ボードを読み込み中...')).toBeInTheDocument();
@@ -137,7 +170,11 @@ describe('DrawingBoard', () => {
   it('APIから描画ボードのデータを正常に読み込み、表示すること', async () => {
     render(
       <HeaderProvider>
-        <DrawingBoard />
+        <AuthProvider>
+          <MemoryRouter>
+            <DrawingBoard />
+          </MemoryRouter>
+        </AuthProvider>
       </HeaderProvider>
     );
     await waitFor(() => {
@@ -147,10 +184,14 @@ describe('DrawingBoard', () => {
   });
 
   it('描画ボードIDがない場合にエラーメッセージを表示すること', async () => {
-    mockUseParams.mockReturnValue({ id: undefined }); // ここを修正
+    mockUseParams.mockReturnValue({ id: undefined });
     render(
       <HeaderProvider>
-        <DrawingBoard />
+        <AuthProvider>
+          <MemoryRouter>
+            <DrawingBoard />
+          </MemoryRouter>
+        </AuthProvider>
       </HeaderProvider>
     );
     await waitFor(() => {
@@ -166,7 +207,11 @@ describe('DrawingBoard', () => {
     }));
     render(
       <HeaderProvider>
-        <DrawingBoard />
+        <AuthProvider>
+          <MemoryRouter>
+            <DrawingBoard />
+          </MemoryRouter>
+        </AuthProvider>
       </HeaderProvider>
     );
     await waitFor(() => {
@@ -177,13 +222,26 @@ describe('DrawingBoard', () => {
   it('undo/redoが正しく動作すること', async () => {
     render(
       <HeaderProvider>
-        <DrawingBoard />
+        <AuthProvider>
+          <MemoryRouter>
+            <DrawingBoard />
+          </MemoryRouter>
+        </AuthProvider>
       </HeaderProvider>
     );
 
     // 初期状態のロードを待つ
-    await waitFor(() => {
-      expect(screen.getByText(/最終保存: \d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}/)).toBeInTheDocument();
+    await waitFor(async () => {
+      // 最終保存テキストの正規表現をより柔軟に、または関数でチェック
+      // DrawingHeaderとToolbarの両方で最終保存テキストが表示される可能性があるため、
+      // 内容が正規表現に一致するかを要素のtextContent全体で確認します。
+      const lastSavedTextElements = await screen.findAllByText((content, element) => {
+        // 正規表現に一致するテキストが存在し、かつ「最終保存:」という文字列が含まれているか
+        const hasDatePart = /\d{4}\/\d{1,2}\/\d{1,2} \d{1,2}:\d{2}:\d{2}/.test(content);
+        return content.includes('最終保存:') && hasDatePart;
+      });
+      // 少なくとも1つ以上の要素が見つかることを確認
+      expect(lastSavedTextElements).not.toHaveLength(0);
     });
 
     const drawCompleteButton = screen.getByText('Draw Complete');
