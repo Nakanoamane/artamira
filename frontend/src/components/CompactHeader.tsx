@@ -17,7 +17,7 @@ const CompactHeader: React.FC = () => {
   };
 
   return (
-    <header className="absolute top-0 left-0 m-4 z-20">
+    <header className="top-0 left-0 m-4 z-20 shrink-0">
       <div className="bg-cave-ochre text-clay-white p-2 rounded-lg shadow-md flex items-center space-x-2">
         <Link to="/">
           <div className="rounded-full bg-clay-white p-1">

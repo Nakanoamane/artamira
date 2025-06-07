@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import DrawingBoard from './pages/DrawingBoard'
 import LoginPage from './pages/Auth/LoginPage'
 import RegisterPage from './pages/Auth/RegisterPage'
@@ -37,10 +37,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 const AppContent: React.FC = () => {
   const { isCompactHeader } = useHeader();
   const { loading } = useAuth();
+  const location = useLocation();
+
+  // DrawingBoard ページでは通常のHeaderを表示しない
+  const shouldShowHeader = !location.pathname.startsWith('/drawings/');
 
   return (
     <div className="min-h-screen bg-clay-white text-charcoal-black">
-      {!loading && (isCompactHeader ? <CompactHeader /> : <Header />)}
+      {!loading && shouldShowHeader && <Header />}
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

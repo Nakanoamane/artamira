@@ -131,7 +131,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         ctx.stroke()
         ctx.closePath()
       } catch (error) {
-        // console.error('描画中にエラーが発生しました:', error)
+        console.error('描画中にエラーが発生しました:', error)
       }
     }
 
@@ -300,16 +300,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
     };
 
     return (
-      <div className="relative bg-white">
-        <canvas
-          ref={localCanvasRef}
-          data-testid="drawing-canvas"
-          className="border border-gray-300 shadow-lg"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-        />
+      <div className="relative bg-clay-white w-full overflow-scroll px-4">
         {status.error && (
           <div className="absolute top-0 left-0 right-0 bg-red-100 text-red-700 px-4 py-2 rounded-t-lg">
             {status.error}
@@ -320,6 +311,18 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
             接続中...
           </div>
         )}
+
+        <div className="bg-white">
+          <canvas
+            ref={localCanvasRef}
+            data-testid="drawing-canvas"
+            className="border border-gray-300 shadow-lg"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseLeave}
+          />
+        </div>
       </div>
     )
   }

@@ -8,7 +8,7 @@ interface DrawingHeaderProps {
 
 const DrawingHeader: React.FC<DrawingHeaderProps> = ({ title, isDirty, lastSavedAt }) => {
   return (
-    <div className="flex justify-between items-center mb-3 px-8">
+    <div className="flex w-full justify-between items-center">
       <h1 className="text-2xl font-bold text-light-cave-ochre">{title}</h1>
       <div className="flex items-center gap-2 text-right min-h-[48px]">
         {isDirty && (

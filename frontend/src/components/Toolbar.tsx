@@ -53,7 +53,7 @@ const Toolbar = ({
   onExportClick,
 }: ToolbarProps) => {
   return (
-    <div className="flex flex-row items-start p-4 bg-clay-white shadow-md rounded-lg justify-center flex-wrap">
+    <div className="flex flex-row items-start m-2 p-4 bg-clay-white shadow-md rounded-lg justify-center flex-wrap">
 
       {/* ツール選択 */}
       <div className="mb-4 mr-4">

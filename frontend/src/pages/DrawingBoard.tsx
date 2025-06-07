@@ -6,8 +6,9 @@ import { ExportModal } from '../components/ExportModal'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { useDrawingChannel } from '../hooks/useDrawingChannel'
 import { useParams } from 'react-router'
-import { useHeader } from '../contexts/HeaderContext'
+import CompactHeader from '../components/CompactHeader'
 import DrawingHeader from '../components/DrawingHeader'
+import { ArrowPathIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
 
 interface Drawing {
   id: number;
@@ -36,14 +37,6 @@ const DrawingBoard = () => {
   const [exportError, setExportError] = useState<string | null>(null)
 
   const { id } = useParams<{ id: string }>()
-  const { setCompactHeader } = useHeader()
-
-  useEffect(() => {
-    setCompactHeader(true)
-    return () => {
-      setCompactHeader(false)
-    }
-  }, [setCompactHeader])
 
   // Undo/Redo Functions
   const handleUndo = useCallback(() => {
@@ -341,53 +334,65 @@ const DrawingBoard = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <DrawingHeader
-        title={drawing.title}
-        isDirty={isDirty}
-        lastSavedAt={lastSavedAt}
-      />
-      {actionCableError && (
-        <div className="bg-red-100 text-red-700 px-4 py-2 rounded-lg mb-4 text-center">
-          {actionCableError}
+    <div className="flex flex-col min-h-screen bg-clay-white">
+      {loadingDrawing ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <ArrowPathIcon className="h-8 w-8 animate-spin mr-3" />
+          <div className="text-2xl font-semibold">Loading drawing...</div>
         </div>
+      ) : errorDrawing ? (
+        <div className="flex items-center justify-center min-h-screen text-red-500">
+          <ExclamationCircleIcon className="h-8 w-8 mr-3" />
+          <div className="text-2xl font-semibold">Error: {errorDrawing}</div>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-start items-center pr-8 gap-4">
+            <CompactHeader />
+            <DrawingHeader
+              title={drawing?.title || '無題のボード'}
+              isDirty={isDirty}
+              lastSavedAt={lastSavedAt}
+            />
+          </div>
+          <div className="flex flex-col items-center gap-4 pb-10">
+            <Toolbar
+              activeTool={activeTool}
+              activeColor={activeColor}
+              activeBrushSize={activeBrushSize}
+              onToolChange={setActiveTool}
+              onColorChange={setActiveColor}
+              onBrushSizeChange={setActiveBrushSize}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              canUndo={undoStack.length > 0}
+              canRedo={redoStack.length > 0}
+              onSave={handleSave}
+              isDirty={isDirty}
+              lastSavedAt={lastSavedAt}
+              onExportClick={handleExportClick}
+            />
+            <Canvas
+              ref={canvasRef}
+              activeTool={activeTool}
+              color={activeColor}
+              brushSize={activeBrushSize}
+              isDrawing={isDrawing}
+              setIsDrawing={setIsDrawing}
+              onDrawComplete={handleDrawComplete}
+              drawingElementsToRender={drawingElements}
+              status={status}
+            />
+          </div>
+          <ExportModal
+            isOpen={isExportModalOpen}
+            onClose={handleCloseExportModal}
+            onExport={handleExport}
+            isExporting={isExporting}
+            exportError={exportError}
+          />
+        </>
       )}
-      <div className="flex flex-col items-center gap-4">
-        <Toolbar
-          activeTool={activeTool}
-          activeColor={activeColor}
-          activeBrushSize={activeBrushSize}
-          onToolChange={setActiveTool}
-          onColorChange={setActiveColor}
-          onBrushSizeChange={setActiveBrushSize}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          canUndo={undoStack.length > 0}
-          canRedo={redoStack.length > 0}
-          onSave={handleSave}
-          isDirty={isDirty}
-          lastSavedAt={lastSavedAt}
-          onExportClick={handleExportClick}
-        />
-        <Canvas
-          ref={canvasRef}
-          activeTool={activeTool}
-          color={activeColor}
-          brushSize={activeBrushSize}
-          isDrawing={isDrawing}
-          setIsDrawing={setIsDrawing}
-          onDrawComplete={handleDrawComplete}
-          drawingElementsToRender={drawingElements}
-          status={status}
-        />
-      </div>
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={handleCloseExportModal}
-        onExport={handleExport}
-        isExporting={isExporting}
-        exportError={exportError}
-      />
     </div>
   )
 }
