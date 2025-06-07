@@ -16,6 +16,26 @@ interface ToolbarProps {
   onExportClick: () => void
 }
 
+interface ToolbarButtonProps {
+  toolName: string
+  activeTool: string
+  onToolChange: (tool: string) => void
+  children: React.ReactNode
+}
+
+const ToolbarButton = ({ toolName, activeTool, onToolChange, children }: ToolbarButtonProps) => {
+  const isActive = activeTool === toolName
+  const className = `px-4 py-2 rounded-md ${
+    isActive ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray hover:bg-light-cave-ochre hover:text-clay-white'
+  }`
+
+  return (
+    <button className={className} onClick={() => onToolChange(toolName)}>
+      {children}
+    </button>
+  )
+}
+
 const Toolbar = ({
   activeTool,
   activeColor,
@@ -39,46 +59,21 @@ const Toolbar = ({
       <div className="mb-4 mr-4">
         <label className="block text-sm font-medium text-flint-gray mb-2">ツール</label>
         <div className="flex gap-2">
-          <button
-            className={`px-4 py-2 rounded-md ${
-              activeTool === 'pen' ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray'
-            }`}
-            onClick={() => onToolChange('pen')}
-          >
+          <ToolbarButton toolName="pen" activeTool={activeTool} onToolChange={onToolChange}>
             ペン
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md ${
-              activeTool === 'eraser' ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray'
-            }`}
-            onClick={() => onToolChange('eraser')}
-          >
+          </ToolbarButton>
+          <ToolbarButton toolName="eraser" activeTool={activeTool} onToolChange={onToolChange}>
             消しゴム
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md ${
-              activeTool === 'line' ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray'
-            }`}
-            onClick={() => onToolChange('line')}
-          >
+          </ToolbarButton>
+          <ToolbarButton toolName="line" activeTool={activeTool} onToolChange={onToolChange}>
             直線
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md ${
-              activeTool === 'rectangle' ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray'
-            }`}
-            onClick={() => onToolChange('rectangle')}
-          >
+          </ToolbarButton>
+          <ToolbarButton toolName="rectangle" activeTool={activeTool} onToolChange={onToolChange}>
             四角
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md ${
-              activeTool === 'circle' ? 'bg-cave-ochre text-clay-white' : 'bg-light-gray text-flint-gray'
-            }`}
-            onClick={() => onToolChange('circle')}
-          >
+          </ToolbarButton>
+          <ToolbarButton toolName="circle" activeTool={activeTool} onToolChange={onToolChange}>
             円
-          </button>
+          </ToolbarButton>
         </div>
       </div>
 
@@ -94,7 +89,7 @@ const Toolbar = ({
             保存
           </button>
           <button
-            className="px-4 py-2 rounded-md bg-stone-blue text-clay-white hover:bg-dark-stone-blue"
+            className="px-4 py-2 rounded-md border-2 border-stone-blue text-flint-gray hover:bg-stone-blue hover:text-clay-white"
             onClick={onExportClick}
           >
             エクスポート
