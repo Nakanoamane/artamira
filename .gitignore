@@ -55,5 +55,5 @@ Thumbs.db
 /playwright/.cache/
 
 # Playwright storage state
-./e2e/storageState.json
-./e2e/results.json
+e2e/storageState.json
+e2e/results.json
