@@ -9,6 +9,7 @@ import CompactHeader from './components/CompactHeader'
 import DrawingList from './pages/DrawingList'
 import CreateDrawingForm from './pages/CreateDrawingForm'
 import { HeaderProvider, useHeader } from './contexts/HeaderContext'
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -18,7 +19,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ArrowPathIcon className="h-8 w-8 animate-spin mr-3" />
+        <div className="text-2xl font-semibold">Loading...</div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -30,10 +36,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
 const AppContent: React.FC = () => {
   const { isCompactHeader } = useHeader();
+  const { loading } = useAuth();
 
   return (
     <div className="min-h-screen bg-clay-white text-charcoal-black">
-      {isCompactHeader ? <CompactHeader /> : <Header />}
+      {!loading && (isCompactHeader ? <CompactHeader /> : <Header />)}
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
