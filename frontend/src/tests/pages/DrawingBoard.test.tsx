@@ -5,6 +5,7 @@ import React from 'react'
 import DrawingBoard from '../../pages/DrawingBoard'
 import { useParams } from 'react-router'
 import { CanvasProps } from '../../components/Canvas'
+import { HeaderProvider } from '../../contexts/HeaderContext'
 
 // モック化
 vi.mock('react-router', () => ({
@@ -120,12 +121,20 @@ describe('DrawingBoard', () => {
   it('ローディング中に「描画ボードを読み込み中...」と表示されること', () => {
     // fetchが解決されない状態をシミュレート
     (global as any).fetch = vi.fn(() => new Promise(() => {}));
-    render(<DrawingBoard />);
+    render(
+      <HeaderProvider>
+        <DrawingBoard />
+      </HeaderProvider>
+    );
     expect(screen.getByText('描画ボードを読み込み中...')).toBeInTheDocument();
   });
 
   it('APIから描画ボードのデータを正常に読み込み、表示すること', async () => {
-    render(<DrawingBoard />);
+    render(
+      <HeaderProvider>
+        <DrawingBoard />
+      </HeaderProvider>
+    );
     await waitFor(() => {
       expect(screen.getByText('Test Drawing')).toBeInTheDocument();
     });
@@ -135,7 +144,11 @@ describe('DrawingBoard', () => {
 
   it('描画ボードIDがない場合にエラーメッセージを表示すること', async () => {
     mockUseParams.mockReturnValue({ id: undefined }); // ここを修正
-    render(<DrawingBoard />);
+    render(
+      <HeaderProvider>
+        <DrawingBoard />
+      </HeaderProvider>
+    );
     await waitFor(() => {
       expect(screen.getByText('エラー: 描画ボードIDが指定されていません。')).toBeInTheDocument();
     });
@@ -147,14 +160,22 @@ describe('DrawingBoard', () => {
       status: 500,
       statusText: 'Internal Server Error',
     }));
-    render(<DrawingBoard />);
+    render(
+      <HeaderProvider>
+        <DrawingBoard />
+      </HeaderProvider>
+    );
     await waitFor(() => {
       expect(screen.getByText('エラー: HTTP error! status: 500')).toBeInTheDocument();
     });
   });
 
   it('undo/redoが正しく動作すること', async () => {
-    render(<DrawingBoard />);
+    render(
+      <HeaderProvider>
+        <DrawingBoard />
+      </HeaderProvider>
+    );
 
     // 初期状態のロードを待つ
     await waitFor(() => {
