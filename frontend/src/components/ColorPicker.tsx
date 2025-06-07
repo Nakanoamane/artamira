@@ -1,5 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { HexColorInput, HexAlphaColorPicker } from 'react-colorful'
+import useEyeDropper from 'use-eye-dropper'
+import { PaintBrushIcon } from '@heroicons/react/20/solid'
 
 interface ColorPickerProps {
   color: string
@@ -25,6 +27,9 @@ const MAX_HISTORY = 3
 
 const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
   const [isPickerVisible, setPickerVisible] = useState(false)
+  const { open, close, isSupported } = useEyeDropper()
+  const [isEyeDropperActive, setIsEyeDropperActive] = useState(false)
+
   const [history, setHistory] = useState<string[]>(() => {
     try {
       const storedHistory = localStorage.getItem('colorHistory')
@@ -49,18 +54,22 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
     })
   }
 
-  const handleClickOutside = (event: MouseEvent) => {
+  const handleClickOutside = useCallback((event: MouseEvent) => {
     if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
       setPickerVisible(false)
+      if (isEyeDropperActive) {
+        close()
+        setIsEyeDropperActive(false)
+      }
     }
-  }
+  }, [isEyeDropperActive, close]);
 
   useEffect(() => {
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [])
+  }, [handleClickOutside])
 
   useEffect(() => {
     if (prevIsPickerVisibleRef.current === true && !isPickerVisible) {
@@ -69,20 +78,60 @@ const ColorPicker = ({ color, onChange }: ColorPickerProps) => {
     prevIsPickerVisibleRef.current = isPickerVisible;
   }, [isPickerVisible, color])
 
+  const handleEyeDropper = useCallback(async () => {
+    if (isEyeDropperActive) {
+      close()
+      setIsEyeDropperActive(false)
+      setPickerVisible(true)
+      return
+    }
+
+    setPickerVisible(false)
+    setIsEyeDropperActive(true)
+    try {
+      const sRGBHex = await open()
+      if (sRGBHex) {
+        handleColorChange(sRGBHex.sRGBHex)
+        addColorToHistory(sRGBHex.sRGBHex)
+      }
+    } catch (e) {
+      console.error("EyeDropper API error:", e)
+    } finally {
+      setIsEyeDropperActive(false)
+      setPickerVisible(true)
+    }
+  }, [isEyeDropperActive, open, close, handleColorChange, addColorToHistory])
+
   return (
     <div className="relative flex flex-col items-center gap-2" ref={popoverRef}>
       <label htmlFor="color-picker-toggle" className="text-sm font-medium text-flint-gray">
         色を選択
       </label>
-      <div
-        id="color-picker-toggle"
-        aria-label="色を選択トグル"
-        className="w-12 h-12 rounded-lg border border-light-gray cursor-pointer shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
-        style={{ backgroundColor: color }}
-        onClick={() => {
-          setPickerVisible(!isPickerVisible)
-        }}
-      ></div>
+      <div className="flex items-center gap-2">
+        <div
+          id="color-picker-toggle"
+          aria-label="色を選択トグル"
+          className="w-12 h-12 rounded-lg border border-light-gray cursor-pointer shadow-md transition-all duration-200 hover:scale-105 active:scale-95"
+          style={{ backgroundColor: color }}
+          onClick={() => {
+            setPickerVisible(!isPickerVisible)
+            if (isEyeDropperActive) {
+              close()
+              setIsEyeDropperActive(false)
+            }
+          }}
+        ></div>
+        {isSupported() && (
+          <button
+            onClick={handleEyeDropper}
+            className={`p-3 rounded-lg border border-light-gray shadow-md transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center ${isEyeDropperActive ? 'bg-cave-ochre text-white' : 'bg-clay-white text-flint-gray'}`}
+            aria-label="スポイトツール"
+            data-testid="eyedropper-button"
+          >
+            <PaintBrushIcon className="h-6 w-6" />
+          </button>
+        )}
+      </div>
 
       {isPickerVisible && (
         <div className="absolute z-10 mt-20 p-4 bg-clay-white rounded-lg shadow-xl border border-light-gray">
