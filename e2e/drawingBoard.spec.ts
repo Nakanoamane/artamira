@@ -29,25 +29,22 @@ test.describe('DrawingBoard', () => {
 
   test('should render Toolbar and Canvas components', async ({ page }) => {
     await expect(page.getByText('ペン')).toBeVisible()
-    await expect(page.getByLabel('色を選択')).toBeVisible()
+    await expect(page.getByLabel('色を選択トグル')).toBeVisible()
     await expect(page.getByLabel(/^ブラシサイズ:/)).toBeVisible()
 
     const canvas = page.locator('canvas')
     await expect(canvas).toBeVisible()
 
-    await expect(page.getByText('テスト描画ボード')).toBeVisible();
+    // 描画ボードのタイトルが表示されていることを確認
+    await expect(page.locator('h1', { hasText: 'テスト描画ボード' })).toBeVisible({ timeout: 10000 });
   })
 
   test('should change color and brush size via Toolbar', async ({ page }) => {
-    const colorInput = page.getByLabel('色を選択')
-    await page.evaluate((color) => {
-      const input = document.querySelector('input[type="color"]') as HTMLInputElement;
-      if (input) {
-        input.value = color;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    }, '#FF0000');
-    await expect(colorInput).toHaveValue('#ff0000')
+    await page.getByLabel('色を選択トグル').click();
+    const hexColorInput = page.getByTestId('hex-color-input');
+    await hexColorInput.fill('#FF0000');
+    await hexColorInput.press('Enter');
+    await expect(hexColorInput).toHaveValue('FF0000');
 
     const brushSizeInput = page.getByLabel(/^ブラシサイズ:/)
     await brushSizeInput.fill('15')
