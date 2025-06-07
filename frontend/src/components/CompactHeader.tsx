@@ -19,7 +19,11 @@ const CompactHeader: React.FC = () => {
   return (
     <header className="absolute top-0 left-0 m-4 z-20">
       <div className="bg-cave-ochre text-clay-white p-2 rounded-lg shadow-md flex items-center space-x-2">
-        <Link to="/" className="text-xl font-bold">Artamira</Link>
+        <Link to="/">
+          <div className="rounded-full bg-clay-white p-1">
+            <img src="/images/icon.svg" alt="Artamira Icon" className="h-8 w-8" />
+          </div>
+        </Link>
         <div className="relative">
           <button onClick={toggleMenu} className="p-1 rounded-lg hover:bg-dark-cave-ochre">
             <Bars3Icon className="h-5 w-5 text-clay-white" />
