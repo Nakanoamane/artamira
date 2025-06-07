@@ -288,11 +288,11 @@ const DrawingBoard = () => {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-3 px-8">
         <h1 className="text-3xl font-bold">{drawing.title}</h1>
-        <div className="text-right min-h-[48px]">
+        <div className="flex items-center gap-2 text-right min-h-[48px]">
           {isDirty && (
-            <div className="text-orange-500 text-sm">未保存の変更があります</div>
+            <div className="text-orange-500 text-xs">未保存の変更があります</div>
           )}
-          {!isDirty && lastSavedAt && (
+          {lastSavedAt && (
             <div className="text-gray-500 text-xs">
               最終保存: {lastSavedAt ? lastSavedAt.toLocaleString('ja-JP', {
                 year: 'numeric',
