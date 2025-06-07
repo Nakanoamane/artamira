@@ -35,10 +35,10 @@ describe('Toolbar', () => {
 
   it('updates active tool style when activeTool prop changes', () => {
     const { rerender } = render(<Toolbar {...defaultProps} activeTool="pen" />);
-    expect(screen.getByRole('button', { name: 'ペン' })).toHaveClass('bg-blue-500');
+    expect(screen.getByRole('button', { name: 'ペン' })).toHaveClass('bg-cave-ochre');
 
     rerender(<Toolbar {...defaultProps} activeTool="eraser" />);
-    expect(screen.getByRole('button', { name: 'ペン' })).toHaveClass('bg-gray-200');
+    expect(screen.getByRole('button', { name: 'ペン' })).toHaveClass('bg-light-gray');
   });
 
   it('calls onToolChange when tool button is clicked', async () => {
