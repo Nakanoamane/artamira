@@ -22,7 +22,6 @@ describe('ExportModal', () => {
         exportError={null}
       />
     );
-    screen.debug();
     expect(screen.queryByText('エクスポート')).not.toBeInTheDocument();
   });
 
@@ -36,7 +35,6 @@ describe('ExportModal', () => {
         exportError={null}
       />
     );
-    screen.debug();
     expect(screen.getByText('エクスポート')).toBeInTheDocument();
   });
 
@@ -80,9 +78,7 @@ describe('ExportModal', () => {
       />
     );
     const cancelButton = screen.getByRole('button', { name: 'キャンセル' });
-    console.log('Cancel button:', cancelButton);
     await userEvent.click(cancelButton);
-    console.log('mockOnClose calls:', mockOnClose.mock.calls);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
@@ -97,10 +93,7 @@ describe('ExportModal', () => {
       />
     );
     const pngExportButton = screen.getByTestId('png-export-button');
-    console.log('PNG Export button:', pngExportButton);
     await userEvent.click(pngExportButton);
-    console.log('mockOnExport calls (PNG):', mockOnExport.mock.calls);
-    console.log('mockOnClose calls (PNG):', mockOnClose.mock.calls);
     expect(mockOnExport).toHaveBeenCalledTimes(1);
     expect(mockOnExport).toHaveBeenCalledWith('png');
   });
@@ -116,10 +109,7 @@ describe('ExportModal', () => {
       />
     );
     const jpegExportButton = screen.getByTestId('jpeg-export-button');
-    console.log('JPEG Export button:', jpegExportButton);
     await userEvent.click(jpegExportButton);
-    console.log('mockOnExport calls (JPEG):', mockOnExport.mock.calls);
-    console.log('mockOnClose calls (JPEG):', mockOnClose.mock.calls);
     expect(mockOnExport).toHaveBeenCalledTimes(1);
     expect(mockOnExport).toHaveBeenCalledWith('jpeg');
   });
