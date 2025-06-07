@@ -56,13 +56,11 @@ export const useDrawingChannel = (
     const subscription = consumerRef.current.subscriptions.create(
       { channel: channelName, drawing_id: drawingId },
       {
-        initialized: () => console.log('Action Cable channel initialized'),
+        initialized: () => {},
         connected: () => {
-          console.log('Action Cable channel connected');
           setStatus({ isConnected: true, isConnecting: false, isDisconnected: false, error: null });
         },
         disconnected: (reason?: string) => {
-          console.log('Action Cable channel disconnected:', reason);
           setStatus({ isConnected: false, isConnecting: false, isDisconnected: true, error: reason || null });
         },
         rejected: () => {
@@ -70,7 +68,6 @@ export const useDrawingChannel = (
           setStatus({ isConnected: false, isConnecting: false, isDisconnected: true, error: 'Channel rejected' });
         },
         received: (data: any) => {
-          console.log('Action Cable data received:', data);
           onReceivedDataRef.current(data);
         },
       }
@@ -79,7 +76,6 @@ export const useDrawingChannel = (
     setChannel(subscription);
 
     return () => {
-      console.log('Action Cable channel unsubscribing...');
       subscription.unsubscribe();
       setStatus({ isConnected: false, isConnecting: false, isDisconnected: true, error: null });
     };

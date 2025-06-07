@@ -28,7 +28,7 @@ const DrawingBoard = () => {
   const [drawing, setDrawing] = useState<Drawing | null>(null)
   const [loadingDrawing, setLoadingDrawing] = useState(true)
   const [errorDrawing, setErrorDrawing] = useState<string | null>(null)
-  const [actionCableError, setActionCableError] = useState<string | null>(null)
+  const [_, setActionCableError] = useState<string | null>(null)
   const [isDirty, setIsDirty] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
@@ -227,7 +227,6 @@ const DrawingBoard = () => {
       const data = await response.json();
       setIsDirty(false);
       setLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
-      console.log('Drawing saved successfully:', data);
     } catch (e: any) {
       console.error('Failed to save drawing:', e);
       // エラーメッセージをユーザーに表示するなどの処理

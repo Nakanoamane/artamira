@@ -34,7 +34,6 @@ test.describe("DrawingList", () => {
 
     // 成功後、新しい描画ボードのURLにリダイレクトされることを期待
     await expect(page).toHaveURL(/\/drawings\/\d+/);
-    await page.pause(); // デバッグ用
     await expect(page.getByRole('link', { name: boardTitle })).toBeVisible(); // 作成したボードのタイトルが表示されていることを確認
   });
 

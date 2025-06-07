@@ -22,6 +22,7 @@ export interface ActionCableChannel {
 export interface ActionCableHook {
   channel: ActionCableChannel | null
   status: ConnectionStatus
+  receivedData: DrawingData | null
 }
 
 const consumer = createConsumer(`${import.meta.env.VITE_API_URL}/cable`)
@@ -32,6 +33,7 @@ export const useActionCable = (channelName: string): ActionCableHook => {
     isConnected: false,
     error: null,
   })
+  const [receivedData, setReceivedData] = useState<DrawingData | null>(null)
 
   useEffect(() => {
     const subscription = consumer.subscriptions.create(
@@ -39,14 +41,12 @@ export const useActionCable = (channelName: string): ActionCableHook => {
       {
         connected() {
           setStatus({ isConnected: true, error: null })
-          console.log('Connected to the channel')
         },
         disconnected() {
           setStatus({ isConnected: false, error: null })
-          console.log('Disconnected from the channel')
         },
         received(data: DrawingData) {
-          console.log('Received data:', data)
+          setReceivedData(data)
         },
         rejected() {
           setStatus({
@@ -64,5 +64,5 @@ export const useActionCable = (channelName: string): ActionCableHook => {
     }
   }, [channelName])
 
-  return { channel, status }
+  return { channel, status, receivedData }
 }
