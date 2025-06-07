@@ -44,6 +44,9 @@ export interface CanvasProps {
   status: { isConnected: boolean; error: string | null }
 }
 
+const CANVAS_WIDTH = 1200;
+const CANVAS_HEIGHT = 800;
+
 const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
   ({ activeTool, color, brushSize, isDrawing, setIsDrawing, onDrawComplete, drawingElementsToRender, status }, forwardedRef) => {
     const localCanvasRef = useRef<HTMLCanvasElement>(null); // ローカルのref
@@ -66,9 +69,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
     useEffect(() => {
       const canvas = localCanvasRef.current
       if (!canvas) return
-
-      const CANVAS_WIDTH = 1200;
-      const CANVAS_HEIGHT = 800;
 
       canvas.width = CANVAS_WIDTH
       canvas.height = CANVAS_HEIGHT
@@ -300,7 +300,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
     };
 
     return (
-      <div className="relative bg-clay-white w-full overflow-scroll px-4">
+      <div className="relative bg-clay-white px-4" style={{ width: CANVAS_WIDTH + 32, height: CANVAS_HEIGHT }}>
         {status.error && (
           <div className="absolute top-0 left-0 right-0 bg-red-100 text-red-700 px-4 py-2 rounded-t-lg">
             {status.error}
@@ -312,7 +312,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           </div>
         )}
 
-        <div className="bg-white">
+        <div className="bg-white" style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
           <canvas
             ref={localCanvasRef}
             data-testid="drawing-canvas"
@@ -321,6 +321,8 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseLeave}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
           />
         </div>
       </div>
