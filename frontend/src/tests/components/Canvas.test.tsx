@@ -1,11 +1,8 @@
 /// <reference types="vitest/globals" />
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import Canvas, { DrawingElementType } from '../../components/Canvas';
-import { MockCanvasRenderingContext2D } from '../../setupTests'; // MockCanvasRenderingContext2D をインポート
+import { MockCanvasRenderingContext2D } from '../../setupTests';
 import { vi } from 'vitest';
-import { singleMockContextInstance } from '../../setupTests'; // singleMockContextInstance をインポート
-import userEvent from '@testing-library/user-event'; // userEventをインポート
-// import 'jest-canvas-mock'; // jest-canvas-mockをインポート (Vitestでは不要)
 
 describe('Canvas', () => {
   const defaultProps = {

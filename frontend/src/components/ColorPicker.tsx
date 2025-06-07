@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { HexColorInput, HexAlphaColorPicker } from 'react-colorful'
 import useEyeDropper from 'use-eye-dropper'
-import { EyeDropperIcon, PaintBrushIcon } from '@heroicons/react/20/solid'
+import { EyeDropperIcon } from '@heroicons/react/20/solid'
 
 interface ColorPickerProps {
   color: string

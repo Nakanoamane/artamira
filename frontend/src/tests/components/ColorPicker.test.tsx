@@ -89,7 +89,6 @@ describe('ColorPicker', () => {
   })
 
   it('HEXコード入力フィールドで色を変更すると onChange が呼び出される', async () => {
-    const { rerender } = render(<ColorPicker color="#FFFFFF" onChange={mockOnChange} />)
     const toggle = screen.getByLabelText('色を選択トグル') as HTMLElement
     await act(async () => {
       await userEvent.click(toggle)

@@ -50,7 +50,6 @@ const Toolbar = ({
   canRedo,
   onSave,
   isDirty,
-  lastSavedAt,
   onExportClick,
 }: ToolbarProps) => {
   return (
