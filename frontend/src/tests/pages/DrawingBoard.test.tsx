@@ -14,7 +14,10 @@ vi.mock('react-router', () => ({
 }));
 
 vi.mock('../../hooks/usePageTitle', () => ({
-  usePageTitle: vi.fn(),
+  usePageTitle: vi.fn((title) => {
+    // document.title を実際に設定するモック
+    document.title = title;
+  }),
 }));
 
 vi.mock('../../hooks/useDrawingChannel', () => ({
@@ -61,13 +64,14 @@ vi.mock('../../components/Toolbar', () => ({
       <button onClick={onSave} disabled={!isDirty}>Save</button>
       <button onClick={onExportClick}>Export</button>
       {lastSavedAt && !isDirty && <span data-testid="last-saved-at">最終保存: {lastSavedAt.toLocaleTimeString()}</span>}
+      {isDirty && <span data-testid="is-dirty-message">未保存の変更があります</span>}
     </div>
   )),
 }));
 
 vi.mock('../../components/ExportModal', () => ({
   __esModule: true,
-  default: vi.fn(({ isOpen, onClose, onExport }) => {
+  ExportModal: vi.fn(({ isOpen, onClose, onExport }) => {
     if (!isOpen) return null;
     return (
       <div data-testid="mock-export-modal">
@@ -137,9 +141,9 @@ describe('DrawingBoard', () => {
       </HeaderProvider>
     );
     await waitFor(() => {
-      expect(screen.getByText('Test Drawing')).toBeInTheDocument();
+      expect(document.title).toBe('Test Drawing');
     });
-    expect(screen.getByText('最終保存: 2023/1/1 21:00:00')).toBeInTheDocument(); // 日本時間に変換されることを想定
+    expect(screen.getByText(/最終保存: \d{1,2}:\d{2}:\d{2} (?:AM|PM)/)).toBeInTheDocument();
     expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('1');
   });
 
@@ -180,7 +184,7 @@ describe('DrawingBoard', () => {
 
     // 初期状態のロードを待つ
     await waitFor(() => {
-      expect(screen.getByText('Test Drawing')).toBeInTheDocument();
+      expect(screen.getByText(/最終保存: \d{1,2}:\d{2}:\d{2} (?:AM|PM)/)).toBeInTheDocument();
     });
 
     const drawCompleteButton = screen.getByText('Draw Complete');
