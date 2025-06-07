@@ -90,12 +90,12 @@ describe('DrawingBoard', () => {
     vi.clearAllMocks();
     mockUseParams.mockReturnValue({ id: '1' });
     (global as any).fetch = vi.fn((url: string) => {
-      if (url.includes('/api/v1/drawings/1/elements')) {
+      if (url.includes('/api/v1/drawings/1/')) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            drawing_title: 'Test Drawing',
-            drawing_elements: [
+            title: 'Test Drawing',
+            elements: [
               { id: '1', type: 'line', points: [{ x: 10, y: 20 }, { x: 30, y: 40 }], color: '#000000', brushSize: 2 }
             ],
             last_saved_at: '2023-01-01T12:00:00Z',
@@ -183,7 +183,7 @@ describe('DrawingBoard', () => {
 
     // 初期状態のロードを待つ
     await waitFor(() => {
-      expect(screen.getByText(/最終保存: \d{1,2}:\d{2}:\d{2} (?:AM|PM)/)).toBeInTheDocument();
+      expect(screen.getByText(/最終保存: \d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}/)).toBeInTheDocument();
     });
 
     const drawCompleteButton = screen.getByText('Draw Complete');
