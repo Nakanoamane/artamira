@@ -9,6 +9,12 @@ module Api
       end
 
       def show
+        if @drawing.last_saved_at.present?
+          @drawing_elements_after_save = @drawing.drawing_elements.where('created_at > ?', @drawing.last_saved_at).order(:created_at)
+        else
+          # last_saved_at が存在しない場合は、全ての drawing_elements を返す
+          @drawing_elements_after_save = @drawing.drawing_elements.order(:created_at)
+        end
         render :show
       end
 

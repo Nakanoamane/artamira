@@ -93,6 +93,47 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
         expect(response.parsed_body['title']).to eq(drawing.title)
         expect(response.parsed_body['canvas_data']).to eq(drawing.canvas_data)
         expect(Time.zone.parse(response.parsed_body['last_saved_at']).to_i).to eq(drawing.last_saved_at.to_i)
+        expect(response.parsed_body['drawing_elements_after_save']).to be_empty # この場合は要素がないことを確認
+      end
+
+      context 'last_saved_at が存在し、それ以降に描画要素がある場合' do
+        let!(:old_element) { create(:drawing_element, drawing: drawing, user: user, created_at: drawing.last_saved_at - 1.minute) }
+        let!(:new_element1) { create(:drawing_element, drawing: drawing, user: user, created_at: drawing.last_saved_at + 1.minute) }
+        let!(:new_element2) { create(:drawing_element, drawing: drawing, user: user, created_at: drawing.last_saved_at + 2.minutes) }
+
+        it 'last_saved_at 以降の描画要素のみを返す' do
+          get api_v1_drawing_path(drawing), headers: { 'Cookie' => cookies }, as: :json
+          expect(response).to have_http_status(:ok)
+          expect(response.parsed_body['id']).to eq(drawing.id)
+          expect(response.parsed_body['title']).to eq(drawing.title)
+          expect(response.parsed_body['canvas_data']).to eq(drawing.canvas_data)
+          expect(Time.zone.parse(response.parsed_body['last_saved_at']).to_i).to eq(drawing.last_saved_at.to_i)
+
+          elements = response.parsed_body['drawing_elements_after_save']
+          expect(elements.length).to eq(2)
+          expect(elements.map { |e| e['id'] }).to contain_exactly(new_element1.id, new_element2.id)
+          expect(elements.first['element_type']).to eq(new_element1.element_type) # order by created_at
+        end
+      end
+
+      context 'last_saved_at が存在せず、描画要素がある場合' do
+        let!(:drawing_no_save) { create(:drawing, user: user, title: '保存なしボード', canvas_data: nil, last_saved_at: nil) }
+        let!(:element_for_no_save1) { create(:drawing_element, drawing: drawing_no_save, user: user, created_at: 1.day.ago) }
+        let!(:element_for_no_save2) { create(:drawing_element, drawing: drawing_no_save, user: user, created_at: Time.current) }
+
+        it '全ての描画要素を返す' do
+          get api_v1_drawing_path(drawing_no_save), headers: { 'Cookie' => cookies }, as: :json
+          expect(response).to have_http_status(:ok)
+          expect(response.parsed_body['id']).to eq(drawing_no_save.id)
+          expect(response.parsed_body['title']).to eq(drawing_no_save.title)
+          expect(response.parsed_body['canvas_data']).to be_nil
+          expect(response.parsed_body['last_saved_at']).to be_nil
+
+          elements = response.parsed_body['drawing_elements_after_save']
+          expect(elements.length).to eq(2)
+          expect(elements.map { |e| e['id'] }).to contain_exactly(element_for_no_save1.id, element_for_no_save2.id)
+          expect(elements.first['element_type']).to eq(element_for_no_save1.element_type) # order by created_at
+        end
       end
 
       context '存在しない描画ボードの場合' do
