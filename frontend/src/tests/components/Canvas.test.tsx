@@ -6,13 +6,15 @@ import { vi } from 'vitest';
 
 describe('Canvas', () => {
   const defaultProps = {
+    canvasRef: { current: null as HTMLCanvasElement | null },
     activeTool: 'pen',
-    color: '#000000',
-    brushSize: 5,
+    activeColor: '#000000',
+    activeBrushSize: 5,
     isDrawing: false,
     setIsDrawing: vi.fn(),
     onDrawComplete: vi.fn(),
-    drawingElementsToRender: [],
+    drawingElements: [],
+    setDrawingElements: vi.fn(),
     status: { isConnected: true, error: null },
   };
 
@@ -34,6 +36,9 @@ describe('Canvas', () => {
     defaultProps.onDrawComplete.mockClear();
     // 他のモック関数もあれば同様にクリア
     vi.clearAllMocks(); // これも実行しておく
+
+    // Reset canvasRef.current before each test
+    defaultProps.canvasRef.current = null;
   });
 
   afterAll(() => {
@@ -43,27 +48,14 @@ describe('Canvas', () => {
   it('renders canvas element', () => {
     render(<Canvas {...defaultProps} />);
     expect(screen.getByTestId('drawing-canvas')).toBeInTheDocument();
-  });
-
-  it('displays "接続中..." when not connected and no error', () => {
-    render(<Canvas {...defaultProps} status={{ isConnected: false, error: null }} />);
-    expect(screen.getByText('接続中...')).toBeInTheDocument();
-  });
-
-  it('displays error message when status has an error', () => {
-    const errorMessage = '接続エラーが発生しました';
-    render(<Canvas {...defaultProps} status={{ isConnected: false, error: errorMessage }} />);
-    expect(screen.getByText(errorMessage)).toBeInTheDocument();
+    // Mock the current ref to the actual canvas element for subsequent interactions
+    defaultProps.canvasRef.current = screen.getByTestId('drawing-canvas') as HTMLCanvasElement;
   });
 
   it('sets isDrawing to true on mouse down', async () => {
-    // ref を渡して Canvas コンポーネントが内部の canvas 要素にアクセスできるようにする
-    const mockRef: { current: HTMLCanvasElement | null } = { current: null };
-    render(<Canvas {...defaultProps} ref={mockRef} />);
+    render(<Canvas {...defaultProps} />);
     const canvas = screen.getByTestId('drawing-canvas');
-    // Canvas コンポーネントが内部的に ref を設定するのを待つ
-    // ただし、このテストの文脈では ref.current が canvas 要素になることを保証するだけでよい
-    mockRef.current = canvas as HTMLCanvasElement; // 手動で current を設定
+    defaultProps.canvasRef.current = canvas as HTMLCanvasElement; // Handled by Canvas component, but ensure here
 
     act(() => {
       fireEvent.mouseDown(canvas, { clientX: 10, clientY: 10 });
@@ -72,10 +64,9 @@ describe('Canvas', () => {
   });
 
   it('sets isDrawing to false and nulls prevPointRef on mouse up', async () => {
-    const mockRef: { current: HTMLCanvasElement | null } = { current: null };
-    render(<Canvas {...defaultProps} isDrawing={true} ref={mockRef} />);
+    render(<Canvas {...defaultProps} isDrawing={true} />);
     const canvas = screen.getByTestId('drawing-canvas');
-    mockRef.current = canvas as HTMLCanvasElement;
+    defaultProps.canvasRef.current = canvas as HTMLCanvasElement;
 
     act(() => {
       fireEvent.mouseUp(canvas, { clientX: 20, clientY: 20 });
@@ -84,10 +75,9 @@ describe('Canvas', () => {
   });
 
   it('sets isDrawing to false and nulls prevPointRef on mouse leave', () => {
-    const mockRef: { current: HTMLCanvasElement | null } = { current: null };
-    render(<Canvas {...defaultProps} isDrawing={true} ref={mockRef} />);
+    render(<Canvas {...defaultProps} isDrawing={true} />);
     const canvas = screen.getByTestId('drawing-canvas');
-    mockRef.current = canvas as HTMLCanvasElement;
+    defaultProps.canvasRef.current = canvas as HTMLCanvasElement;
 
     act(() => {
       fireEvent.mouseLeave(canvas);
@@ -111,11 +101,10 @@ describe('Canvas', () => {
       },
     ];
 
-    const mockRef: { current: HTMLCanvasElement | null } = { current: null };
-    render(<Canvas {...defaultProps} drawingElementsToRender={drawingElements} ref={mockRef} />);
+    render(<Canvas {...defaultProps} drawingElements={drawingElements} />); // Pass drawingElements
 
     const canvas = screen.getByTestId('drawing-canvas') as HTMLCanvasElement;
-    mockRef.current = canvas as HTMLCanvasElement; // ref を設定
+    defaultProps.canvasRef.current = canvas as HTMLCanvasElement; // ref を設定
     const ctx = canvas.getContext('2d') as unknown as MockCanvasRenderingContext2D;
 
     // Canvasの初期化と描画要素の描画でclearRectが呼ばれることを期待

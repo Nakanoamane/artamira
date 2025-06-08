@@ -1,14 +1,17 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router'
-import Canvas, { DrawingElementType } from '../components/Canvas'
-import Toolbar from '../components/Toolbar'
-import { ExportModal } from '../components/ExportModal'
-import { usePageTitle } from '../hooks/usePageTitle'
-import { useDrawingChannel } from '../hooks/useDrawingChannel'
-import { useParams } from 'react-router'
-import CompactHeader from '../components/CompactHeader'
-import DrawingHeader from '../components/DrawingHeader'
-import { ArrowPathIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useNavigate } from "react-router";
+import Canvas, { DrawingElementType } from "../components/Canvas";
+import Toolbar from "../components/Toolbar";
+import { ExportModal } from "../components/ExportModal";
+import { usePageTitle } from "../hooks/usePageTitle";
+import { useDrawingChannel } from "../hooks/useDrawingChannel";
+import { useParams } from "react-router";
+import CompactHeader from "../components/CompactHeader";
+import DrawingHeader from "../components/DrawingHeader";
+import {
+  ArrowPathIcon,
+  ExclamationCircleIcon,
+} from "@heroicons/react/24/outline";
 
 interface Drawing {
   id: number;
@@ -17,26 +20,28 @@ interface Drawing {
 }
 
 const DrawingBoard = () => {
-  const navigate = useNavigate()
-  const [activeTool, setActiveTool] = useState('pen')
-  const [activeColor, setActiveColor] = useState('#000000')
-  const [activeBrushSize, setActiveBrushSize] = useState(2)
-  const [isDrawing, setIsDrawing] = useState(false)
-  const [drawingElements, setDrawingElements] = useState<DrawingElementType[]>([])
-  const [undoStack, setUndoStack] = useState<DrawingElementType[][]>([])
-  const [redoStack, setRedoStack] = useState<DrawingElementType[][]>([])
-  const [drawing, setDrawing] = useState<Drawing | null>(null)
-  const [loadingDrawing, setLoadingDrawing] = useState(true)
-  const [errorDrawing, setErrorDrawing] = useState<string | null>(null)
-  const [_, setActionCableError] = useState<string | null>(null)
-  const [isDirty, setIsDirty] = useState(false)
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [isExporting, setIsExporting] = useState(false)
-  const [exportError, setExportError] = useState<string | null>(null)
+  const navigate = useNavigate();
+  const [activeTool, setActiveTool] = useState("pen");
+  const [activeColor, setActiveColor] = useState("#000000");
+  const [activeBrushSize, setActiveBrushSize] = useState(2);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [drawingElements, setDrawingElements] = useState<DrawingElementType[]>(
+    []
+  );
+  const [undoStack, setUndoStack] = useState<DrawingElementType[][]>([]);
+  const [redoStack, setRedoStack] = useState<DrawingElementType[][]>([]);
+  const [drawing, setDrawing] = useState<Drawing | null>(null);
+  const [loadingDrawing, setLoadingDrawing] = useState(true);
+  const [errorDrawing, setErrorDrawing] = useState<string | null>(null);
+  const [_, setActionCableError] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
-  const { id } = useParams<{ id: string }>()
+  const { id } = useParams<{ id: string }>();
 
   // Undo/Redo Functions
   const handleUndo = useCallback(() => {
@@ -67,119 +72,197 @@ const DrawingBoard = () => {
     });
   }, [drawingElements]);
 
-  const handleReceivedData = useCallback((receivedActionCableData: any) => {
-    if (receivedActionCableData.type === 'drawing_element_created' && receivedActionCableData.drawing_element) {
-      const { element_type, data: drawingElementData } = receivedActionCableData.drawing_element;
-      const receivedElementId = drawingElementData.id;
+  const handleReceivedData = useCallback(
+    (receivedActionCableData: any) => {
+      if (
+        receivedActionCableData.type === "drawing_element_created" &&
+        receivedActionCableData.drawing_element
+      ) {
+        const { element_type, data: drawingElementData } =
+          receivedActionCableData.drawing_element;
+        const receivedElementId = drawingElementData.id;
 
-      if (receivedElementId && drawingElements.some(el => el.id === receivedElementId)) {
-        return;
+        if (
+          receivedElementId &&
+          drawingElements.some((el) => el.id === receivedElementId)
+        ) {
+          return;
+        }
+
+        let receivedElement: DrawingElementType | null = null;
+
+        if (element_type === "line") {
+          receivedElement = {
+            id: receivedElementId,
+            type: "line",
+            points: drawingElementData.path.map((p: [number, number]) => ({
+              x: p[0],
+              y: p[1],
+            })),
+            color: drawingElementData.color,
+            brushSize: drawingElementData.lineWidth,
+          };
+        } else if (element_type === "rectangle") {
+          receivedElement = {
+            id: receivedElementId,
+            type: "rectangle",
+            start: {
+              x: drawingElementData.start.x,
+              y: drawingElementData.start.y,
+            },
+            end: { x: drawingElementData.end.x, y: drawingElementData.end.y },
+            color: drawingElementData.color,
+            brushSize: drawingElementData.lineWidth,
+          };
+        } else if (element_type === "circle") {
+          receivedElement = {
+            id: receivedElementId,
+            type: "circle",
+            center: {
+              x: drawingElementData.center.x,
+              y: drawingElementData.center.y,
+            },
+            radius: drawingElementData.radius,
+            color: drawingElementData.color,
+            brushSize: drawingElementData.lineWidth,
+          };
+        }
+
+        if (receivedElement) {
+          setUndoStack((prev) => [...prev, drawingElements]);
+          setRedoStack([]);
+          setDrawingElements((prev) => [...prev, receivedElement]);
+          setIsDirty(true); // 他のユーザーからの描画でもDirtyになる
+        }
+      } else if (
+        receivedActionCableData.type === "drawing_saved" &&
+        receivedActionCableData.drawing_id === drawing?.id
+      ) {
+        // 保存完了通知を受信した場合
+        setIsDirty(false);
+        setLastSavedAt(
+          receivedActionCableData.last_saved_at
+            ? new Date(receivedActionCableData.last_saved_at)
+            : null
+        );
       }
+    },
+    [drawingElements, drawing?.id]
+  );
 
-      let receivedElement: DrawingElementType | null = null;
+  const drawingId = id ? parseInt(id, 10) : undefined;
 
-      if (element_type === 'line') {
-        receivedElement = {
-          id: receivedElementId,
-          type: 'line',
-          points: drawingElementData.path.map((p: [number, number]) => ({ x: p[0], y: p[1] })),
-          color: drawingElementData.color,
-          brushSize: drawingElementData.lineWidth,
-        };
-      } else if (element_type === 'rectangle') {
-        receivedElement = {
-          id: receivedElementId,
-          type: 'rectangle',
-          start: { x: drawingElementData.start.x, y: drawingElementData.start.y },
-          end: { x: drawingElementData.end.x, y: drawingElementData.end.y },
-          color: drawingElementData.color,
-          brushSize: drawingElementData.lineWidth,
-        };
-      } else if (element_type === 'circle') {
-        receivedElement = {
-          id: receivedElementId,
-          type: 'circle',
-          center: { x: drawingElementData.center.x, y: drawingElementData.center.y },
-          radius: drawingElementData.radius,
-          color: drawingElementData.color,
-          brushSize: drawingElementData.lineWidth,
-        };
-      }
+  const { channel, status } = useDrawingChannel(
+    "DrawingChannel",
+    drawingId,
+    handleReceivedData
+  );
 
-      if (receivedElement) {
-        setUndoStack((prev) => [...prev, drawingElements])
-        setRedoStack([])
-        setDrawingElements((prev) => [...prev, receivedElement]);
-        setIsDirty(true); // 他のユーザーからの描画でもDirtyになる
-      }
-    } else if (receivedActionCableData.type === 'drawing_saved' && receivedActionCableData.drawing_id === drawing?.id) {
-      // 保存完了通知を受信した場合
-      setIsDirty(false);
-      setLastSavedAt(receivedActionCableData.last_saved_at ? new Date(receivedActionCableData.last_saved_at) : null);
-    }
-  }, [drawingElements, drawing?.id]);
-
-  const drawingId = id ? parseInt(id, 10) : undefined
-
-  const { channel, status } = useDrawingChannel('DrawingChannel', drawingId, handleReceivedData)
-
-  usePageTitle(drawing ? drawing.title : '描画ボード')
+  usePageTitle(drawing ? drawing.title : "描画ボード");
 
   useEffect(() => {
     const fetchDrawingData = async () => {
       if (!drawingId) {
-        setErrorDrawing('描画ボードIDが指定されていません。')
-        setLoadingDrawing(false)
-        return
+        setErrorDrawing("描画ボードIDが指定されていません。");
+        setLoadingDrawing(false);
+        return;
       }
+
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}/`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        })
+        // Step 1: Try to fetch canvas_data from the new endpoint
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}`,
+          {
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          }
+        );
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          // If the primary endpoint fails, perhaps try the old one or throw error
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json()
-        // Drawingモデルのタイトルも取得できるように変更
-        setDrawing({ id: drawingId, title: data.title || '無題のボード' });
-        setDrawingElements(data.elements || []);
-        setLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
-        setIsDirty(false); // 初期ロード時はDirtyではない
-      } catch (e: any) {
-        setErrorDrawing(e.message)
-      } finally {
-        setLoadingDrawing(false)
-      }
-    }
+        const data = await response.json();
 
-    fetchDrawingData()
-  }, [drawingId])
+        // Assuming drawing title is handled elsewhere or is not critical for this initial load
+        setDrawing({ id: drawingId, title: data.title || "無題のボード" }); // Title might be undefined from new API, default to '無題のボード'
+
+        if (data.canvas_data) {
+          // If canvas_data exists, use it
+          try {
+            const parsedCanvasData: DrawingElementType[] = JSON.parse(
+              data.canvas_data
+            );
+            setDrawingElements(parsedCanvasData);
+            setLastSavedAt(
+              data.last_saved_at ? new Date(data.last_saved_at) : null
+            );
+            setIsDirty(false);
+          } catch (parseError) {
+            console.error("Failed to parse canvas_data:", parseError);
+            // Fallback to fetching drawing elements if canvas_data is invalid
+            await fetchDrawingElementsFallback(drawingId);
+          }
+        } else {
+          // If canvas_data does not exist, fetch drawing elements as fallback
+          await fetchDrawingElementsFallback(drawingId);
+        }
+      } catch (e: any) {
+        setErrorDrawing(e.message);
+      } finally {
+        setLoadingDrawing(false);
+      }
+    };
+
+    const fetchDrawingElementsFallback = async (id: number) => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/v1/drawings/${id}/elements`,
+          {
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setDrawingElements(data.drawing_elements || []);
+        setLastSavedAt(
+          data.last_saved_at ? new Date(data.last_saved_at) : null
+        );
+        setIsDirty(false);
+      } catch (e: any) {
+        setErrorDrawing(e.message);
+      }
+    };
+
+    fetchDrawingData();
+  }, [drawingId]);
 
   useEffect(() => {
     // TODO: 認証チェック
-  }, [navigate])
+  }, [navigate]);
 
   const handleDrawComplete = (newElement: DrawingElementType) => {
-    setUndoStack((prev) => [...prev, drawingElements])
-    setRedoStack([])
-    setDrawingElements((prev) => [...prev, newElement])
+    setUndoStack((prev) => [...prev, drawingElements]);
+    setRedoStack([]);
+    setDrawingElements((prev) => [...prev, newElement]);
     setIsDirty(true); // 描画操作でDirtyにする
 
     if (channel && status.isConnected) {
       let elementDataToSend: any;
-      if (newElement.type === 'line') {
+      if (newElement.type === "line") {
         elementDataToSend = {
           id: newElement.id,
-          path: newElement.points.map(p => [p.x, p.y]),
+          path: newElement.points.map((p) => [p.x, p.y]),
           color: newElement.color,
           lineWidth: newElement.brushSize,
         };
-      } else if (newElement.type === 'rectangle') {
+      } else if (newElement.type === "rectangle") {
         elementDataToSend = {
           id: newElement.id,
           start: newElement.start,
@@ -187,38 +270,48 @@ const DrawingBoard = () => {
           color: newElement.color,
           lineWidth: newElement.brushSize,
         };
-      } else if (newElement.type === 'circle') {
+      } else if (newElement.type === "circle") {
         elementDataToSend = {
           id: newElement.id,
           center: newElement.center,
           radius: newElement.radius,
           color: newElement.color,
-          lineWidth: newElement.brushSize,
+          brushSize: newElement.brushSize,
         };
       }
 
-      channel.perform('draw', {
+      channel.perform("draw", {
         element_type: newElement.type,
         element_data: elementDataToSend,
-      })
+      });
       setActionCableError(null);
     } else {
-      console.warn('WebSocket接続が確立されていないため、描画データを送信できません。')
-      setActionCableError('描画データを送信できません。WebSocket接続が確立されていません。');
+      console.warn(
+        "WebSocket接続が確立されていないため、描画データを送信できません。"
+      );
+      setActionCableError(
+        "描画データを送信できません。WebSocket接続が確立されていません。"
+      );
     }
-  }
+  };
 
   const handleSave = async () => {
     if (!drawingId || !isDirty) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}/save`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
+      const canvasDataString = JSON.stringify(drawingElements);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}/save`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ canvas_data: canvasDataString }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -228,7 +321,7 @@ const DrawingBoard = () => {
       setIsDirty(false);
       setLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
     } catch (e: any) {
-      console.error('Failed to save drawing:', e);
+      console.error("Failed to save drawing:", e);
       // エラーメッセージをユーザーに表示するなどの処理
     }
   };
@@ -237,12 +330,12 @@ const DrawingBoard = () => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (isDirty) {
         event.preventDefault();
-        event.returnValue = '';
+        event.returnValue = "";
       }
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [isDirty]);
 
@@ -250,20 +343,9 @@ const DrawingBoard = () => {
     setIsExportModalOpen(true);
   }, []);
 
-  const handleCloseExportModal = useCallback(() => {
-    setIsExportModalOpen(false);
-    setExportError(null);
-  }, []);
-
-  const handleExport = async (format: 'png' | 'jpeg') => {
-    if (!drawingId) {
-      setExportError('描画ボードIDが指定されていません。');
-      return;
-    }
-
-    const canvas = canvasRef.current;
-    if (!canvas) {
-      setExportError('描画キャンバスが見つかりません。');
+  const handleExport = async (format: "png" | "jpeg") => {
+    if (!canvasRef.current) {
+      setExportError("Canvasが利用できません。");
       return;
     }
 
@@ -271,69 +353,43 @@ const DrawingBoard = () => {
     setExportError(null);
 
     try {
-      const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-      const imageDataURL = canvas.toDataURL(mimeType);
+      const canvas = canvasRef.current;
+      const dataURL = canvas.toDataURL(`image/${format}`);
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}/export`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          format: format,
-          image_data: imageDataURL,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      // ファイル名を取得 (Content-Disposition ヘッダーから)
-      const contentDisposition = response.headers.get('Content-Disposition');
-      let filename = `untitled.${format}`;
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-        if (filenameMatch && filenameMatch[1]) {
-          filename = filenameMatch[1];
-        }
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-
-      handleCloseExportModal();
+      // 動的に<a>タグを作成してダウンロードをトリガー
+      const link = document.createElement("a");
+      link.href = dataURL;
+      link.download = `drawing.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (e: any) {
-      console.error('Failed to export drawing:', e);
+      console.error("Export failed:", e);
       setExportError(`エクスポートに失敗しました: ${e.message}`);
     } finally {
       setIsExporting(false);
+      setIsExportModalOpen(false);
     }
   };
 
   if (loadingDrawing) {
-    return <div className="text-center py-4">描画ボードを読み込み中...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen text-lg">
+        描画ボードを読み込み中...
+      </div>
+    );
   }
 
   if (errorDrawing) {
-    return <div className="text-center py-4 text-red-500">エラー: {errorDrawing}</div>;
-  }
-
-  if (!drawing) {
-    return <div className="text-center mt-8">描画ボードが見つかりません。</div>
+    return (
+      <div className="flex justify-center items-center h-screen text-red-500 text-lg">
+        エラー: {errorDrawing}
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-clay-white">
+    <div className="flex flex-col min-h-screen">
       {loadingDrawing ? (
         <div className="flex items-center justify-center min-h-screen">
           <ArrowPathIcon className="h-8 w-8 animate-spin mr-3" />
@@ -349,51 +405,55 @@ const DrawingBoard = () => {
           <div className="flex justify-start items-center pr-8 gap-4">
             <CompactHeader />
             <DrawingHeader
-              title={drawing?.title || '無題のボード'}
-              isDirty={isDirty}
+              title={drawing?.title || "無題のボード"}
               lastSavedAt={lastSavedAt}
+              isDirty={isDirty}
             />
           </div>
+
           <div className="flex flex-col items-center gap-4 pb-10">
             <Toolbar
               activeTool={activeTool}
+              setActiveTool={setActiveTool}
               activeColor={activeColor}
+              setActiveColor={setActiveColor}
               activeBrushSize={activeBrushSize}
-              onToolChange={setActiveTool}
-              onColorChange={setActiveColor}
-              onBrushSizeChange={setActiveBrushSize}
+              setActiveBrushSize={setActiveBrushSize}
+              onSave={handleSave}
+              onExportClick={handleExportClick}
               onUndo={handleUndo}
               onRedo={handleRedo}
               canUndo={undoStack.length > 0}
               canRedo={redoStack.length > 0}
-              onSave={handleSave}
               isDirty={isDirty}
-              lastSavedAt={lastSavedAt}
-              onExportClick={handleExportClick}
             />
             <Canvas
-              ref={canvasRef}
+              canvasRef={canvasRef}
+              drawingElements={drawingElements}
+              setDrawingElements={setDrawingElements}
               activeTool={activeTool}
-              color={activeColor}
-              brushSize={activeBrushSize}
+              activeColor={activeColor}
+              activeBrushSize={activeBrushSize}
               isDrawing={isDrawing}
               setIsDrawing={setIsDrawing}
               onDrawComplete={handleDrawComplete}
-              drawingElementsToRender={drawingElements}
               status={status}
             />
           </div>
-          <ExportModal
-            isOpen={isExportModalOpen}
-            onClose={handleCloseExportModal}
-            onExport={handleExport}
-            isExporting={isExporting}
-            exportError={exportError}
-          />
+
+          {isExportModalOpen && (
+            <ExportModal
+              isOpen={isExportModalOpen}
+              onClose={() => setIsExportModalOpen(false)}
+              onExport={handleExport}
+              isExporting={isExporting}
+              exportError={exportError}
+            />
+          )}
         </>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default DrawingBoard
+export default DrawingBoard;

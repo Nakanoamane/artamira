@@ -4,16 +4,15 @@ interface ToolbarProps {
   activeTool: string
   activeColor: string
   activeBrushSize: number
-  onToolChange: (tool: string) => void
-  onColorChange: (color: string) => void
-  onBrushSizeChange: (size: number) => void
+  setActiveTool: (tool: string) => void
+  setActiveColor: (color: string) => void
+  setActiveBrushSize: (size: number) => void
   onUndo: () => void
   onRedo: () => void
   canUndo: boolean
   canRedo: boolean
   onSave: () => void
   isDirty: boolean
-  lastSavedAt: Date | null
   onExportClick: () => void
 }
 
@@ -41,9 +40,9 @@ const Toolbar = ({
   activeTool,
   activeColor,
   activeBrushSize,
-  onToolChange,
-  onColorChange,
-  onBrushSizeChange,
+  setActiveTool,
+  setActiveColor,
+  setActiveBrushSize,
   onUndo,
   onRedo,
   canUndo,
@@ -59,19 +58,19 @@ const Toolbar = ({
       <div className="mb-4 mr-4">
         <label className="block text-sm font-medium text-flint-gray mb-2">ツール</label>
         <div className="flex gap-2">
-          <ToolbarButton toolName="pen" activeTool={activeTool} onToolChange={onToolChange}>
+          <ToolbarButton toolName="pen" activeTool={activeTool} onToolChange={setActiveTool}>
             ペン
           </ToolbarButton>
-          <ToolbarButton toolName="eraser" activeTool={activeTool} onToolChange={onToolChange}>
+          <ToolbarButton toolName="eraser" activeTool={activeTool} onToolChange={setActiveTool}>
             消しゴム
           </ToolbarButton>
-          <ToolbarButton toolName="line" activeTool={activeTool} onToolChange={onToolChange}>
+          <ToolbarButton toolName="line" activeTool={activeTool} onToolChange={setActiveTool}>
             直線
           </ToolbarButton>
-          <ToolbarButton toolName="rectangle" activeTool={activeTool} onToolChange={onToolChange}>
+          <ToolbarButton toolName="rectangle" activeTool={activeTool} onToolChange={setActiveTool}>
             四角
           </ToolbarButton>
-          <ToolbarButton toolName="circle" activeTool={activeTool} onToolChange={onToolChange}>
+          <ToolbarButton toolName="circle" activeTool={activeTool} onToolChange={setActiveTool}>
             円
           </ToolbarButton>
         </div>
@@ -120,7 +119,7 @@ const Toolbar = ({
 
       {/* カラーピッカー */}
       <div className="mb-4 mr-4">
-        <ColorPicker color={activeColor} onChange={onColorChange} />
+        <ColorPicker color={activeColor} onChange={setActiveColor} />
       </div>
 
       {/* ブラシサイズ選択 */}
@@ -134,7 +133,7 @@ const Toolbar = ({
           min="1"
           max="100"
           value={activeBrushSize}
-          onChange={(e) => onBrushSizeChange(Number(e.target.value))}
+          onChange={(e) => setActiveBrushSize(Number(e.target.value))}
           className="w-32 h-2 bg-light-gray rounded-lg appearance-none cursor-pointer"
         />
       </div>

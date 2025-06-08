@@ -11,9 +11,9 @@ describe('Toolbar', () => {
       activeTool: 'pen',
       activeColor: '#000000',
       activeBrushSize: 5,
-      onToolChange: vi.fn(),
-      onColorChange: vi.fn(),
-      onBrushSizeChange: vi.fn(),
+      setActiveTool: vi.fn(),
+      setActiveColor: vi.fn(),
+      setActiveBrushSize: vi.fn(),
       onUndo: vi.fn(),
       onRedo: vi.fn(),
       canUndo: false,
@@ -41,40 +41,40 @@ describe('Toolbar', () => {
     expect(screen.getByRole('button', { name: 'ペン' })).toHaveClass('bg-light-gray');
   });
 
-  it('calls onToolChange when tool button is clicked', async () => {
+  it('calls setActiveTool when tool button is clicked', async () => {
     render(<Toolbar {...defaultProps} />);
     await userEvent.click(screen.getByRole('button', { name: 'ペン' }));
-    expect(defaultProps.onToolChange).toHaveBeenCalledWith('pen');
+    expect(defaultProps.setActiveTool).toHaveBeenCalledWith('pen');
   });
 
-  it('calls onColorChange when color picker value changes', async () => {
+  it('calls setActiveColor when color picker value changes', async () => {
     render(<Toolbar {...defaultProps} />);
     const colorPickerToggle = screen.getByLabelText('色を選択トグル');
     await userEvent.click(colorPickerToggle);
-    defaultProps.onColorChange('#ff0000');
-    expect(defaultProps.onColorChange).toHaveBeenCalledWith('#ff0000');
+    defaultProps.setActiveColor('#ff0000');
+    expect(defaultProps.setActiveColor).toHaveBeenCalledWith('#ff0000');
   });
 
-  it('calls onBrushSizeChange when brush size slider value changes', async () => {
+  it('calls setActiveBrushSize when brush size slider value changes', async () => {
     render(<Toolbar {...defaultProps} />);
     const brushSizeSlider = screen.getByLabelText('ブラシサイズ: 5px');
     fireEvent.change(brushSizeSlider, { target: { value: '10' } });
-    expect(defaultProps.onBrushSizeChange).toHaveBeenCalledWith(10);
+    expect(defaultProps.setActiveBrushSize).toHaveBeenCalledWith(10);
   });
 
-  it('色変更時にonColorChangeが呼ばれること', async () => {
+  it('色変更時にsetActiveColorが呼ばれること', async () => {
     render(<Toolbar {...defaultProps} />);
     const colorPickerToggle = screen.getByLabelText('色を選択トグル');
     await userEvent.click(colorPickerToggle);
-    defaultProps.onColorChange('#FF0000');
-    expect(defaultProps.onColorChange).toHaveBeenCalledWith('#FF0000');
+    defaultProps.setActiveColor('#FF0000');
+    expect(defaultProps.setActiveColor).toHaveBeenCalledWith('#FF0000');
   });
 
-  it('ブラシサイズ変更時にonBrushSizeChangeが呼ばれること', async () => {
+  it('ブラシサイズ変更時にsetActiveBrushSizeが呼ばれること', async () => {
     render(<Toolbar {...defaultProps} />);
     const brushSizeSlider = screen.getByLabelText('ブラシサイズ: 5px');
     fireEvent.change(brushSizeSlider, { target: { value: '10' } });
-    expect(defaultProps.onBrushSizeChange).toHaveBeenCalledWith(10);
+    expect(defaultProps.setActiveBrushSize).toHaveBeenCalledWith(10);
   });
 
   it('calls onSave when save button is clicked and isDirty is true', async () => {
