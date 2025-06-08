@@ -90,10 +90,9 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
         get api_v1_drawing_path(drawing), headers: { 'Cookie' => cookies }, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body['id']).to eq(drawing.id)
+        expect(response.parsed_body['title']).to eq(drawing.title)
         expect(response.parsed_body['canvas_data']).to eq(drawing.canvas_data)
         expect(Time.zone.parse(response.parsed_body['last_saved_at']).to_i).to eq(drawing.last_saved_at.to_i)
-        # title は show.json.jbuilder で返されなくなったため、ここでは検証しない
-        expect(response.parsed_body).not_to have_key('title')
       end
 
       context '存在しない描画ボードの場合' do
