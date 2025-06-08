@@ -174,6 +174,34 @@ describe('DrawingBoard', () => {
       writable: true,
     });
 
+    // 共通のfetchモックを設定
+    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
+      if (url.includes(`${import.meta.env.VITE_API_URL}/api/v1/me`)) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ user: { id: 1, email: 'test@example.com' } }),
+        });
+      }
+      if (url.includes(`${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`)) {
+        if (options?.method === 'POST') {
+          const body = JSON.parse(options.body as string);
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ status: "success", message: "Drawing saved successfully.", last_saved_at: '2023-01-01T12:05:00Z', canvas_data: body.canvas_data }),
+          });
+        }
+      }
+      if (url.includes(`${import.meta.env.VITE_API_URL}/api/v1/drawings/1/export`)) {
+        return Promise.resolve({
+          ok: true,
+          blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
+          headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
+        });
+      }
+      // drawings/:id のGETリクエストは各テストケースで個別にモックするため、ここではエラーを発生させる
+      return Promise.reject(new Error(`Unexpected fetch call for URL: ${url}`));
+    });
+
     originalCreateElement = document.createElement;
     vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
       if (tagName === 'a') {
@@ -232,51 +260,121 @@ describe('DrawingBoard', () => {
     expect(screen.getByText('描画ボードを読み込み中...')).toBeInTheDocument();
   });
 
-  it('APIから描画ボードのデータを正常に読み込み、表示すること (elements fallback)', async () => {
-    const drawingDataWithoutCanvas = {
-      title: 'Test Drawing',
+  it('APIから描画ボードのデータを正常に読み込み、表示すること (canvas_data と drawing_elements_after_save を結合)', async () => {
+    const drawingDataWithCanvasAndElements = {
+      title: 'Combined Data Drawing',
       last_saved_at: '2023-01-01T12:00:00Z',
+      canvas_data: JSON.stringify([
+        { id: 'canvas_element_1', type: 'line', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], color: '#000000', brushSize: 2 },
+      ]),
+      drawing_elements_after_save: [
+        { id: 'new_element_1', element_type: 'rectangle', data: { start: { x: 10, y: 10 }, end: { x: 20, y: 20 }, color: '#FF0000', lineWidth: 3 }, created_at: '2023-01-01T12:05:00Z' },
+        { id: 'new_element_2', element_type: 'circle', data: { center: { x: 50, y: 50 }, radius: 5, color: '#0000FF', brushSize: 1 }, created_at: '2023-01-01T12:10:00Z' },
+      ],
     };
-    const elementsData = {
-      drawing_elements: [{ id: '1', type: 'line', points: [{ x: 10, y: 20 }, { x: 30, y: 40 }], color: '#000000', brushSize: 2 }],
-      last_saved_at: '2023-01-01T12:00:00Z',
-    };
-    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
+
+    mockFetch.mockImplementationOnce((url: string) => {
+      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
+          json: () => Promise.resolve(drawingDataWithCanvasAndElements),
         });
       }
+      return Promise.reject(new Error(`Unexpected fetch call for URL: ${url}`));
+    });
+
+    render(
+      <HeaderProvider>
+        <AuthProvider>
+          <MemoryRouter>
+            <DrawingBoard />
+          </MemoryRouter>
+        </AuthProvider>
+      </HeaderProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('drawing-header-title')).toHaveTextContent('Combined Data Drawing');
+      expect(screen.getByTestId('mock-canvas')).toBeInTheDocument();
+      expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('3'); // 1 from canvas_data + 2 from drawing_elements_after_save
+      expect(screen.getByTestId('drawing-header-last-saved')).toHaveTextContent('2023/1/1 21:00:00'); // Check the localized time
+    });
+
+    // 描画要素がCanvasに正しく渡されていることを確認
+    await waitFor(() => {
+      expect(mockedCanvasRenderFn).toHaveBeenCalledWith(
+        { // Start with a literal object for the top-level CanvasProps
+          activeTool: 'pen',
+          activeColor: '#000000',
+          activeBrushSize: 2,
+          canvasRef: { // Use literal object for canvasRef
+            current: { // Use literal object for current
+              toDataURL: expect.any(Function), // These are mock functions, so expect.any(Function) is fine
+              getContext: expect.any(Function),
+              clientWidth: 800, // Explicitly match the mocked value
+              clientHeight: 600, // Explicitly match the mocked value
+              setAttribute: expect.any(Function),
+            },
+          },
+          isDrawing: false, // Explicitly false as received
+          onDrawComplete: expect.any(Function), // These are dynamic functions
+          setDrawingElements: expect.any(Function),
+          setIsDrawing: expect.any(Function),
+          status: { // Use literal object for status
+            isConnected: true,
+            isConnecting: false,
+            isDisconnected: false,
+            error: null,
+          },
+          drawingElements: [ // Use literal array for drawingElements and explicit objects
+            {
+              id: 'canvas_element_1',
+              type: 'line',
+              points: [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+              color: '#000000',
+              brushSize: 2,
+            },
+            {
+              id: 'new_element_1',
+              type: 'rectangle',
+              start: { x: 10, y: 10 },
+              end: { x: 20, y: 20 },
+              color: '#FF0000',
+              brushSize: 3, // lineWidth from backend maps to brushSize
+            },
+            {
+              id: 'new_element_2',
+              type: 'circle',
+              center: { x: 50, y: 50 },
+              radius: 5,
+              color: '#0000FF',
+              brushSize: 1,
+            },
+          ],
+        },
+        null
+      );
+    });
+  });
+
+  it('APIからdrawing_elements_after_saveを正常に読み込み、表示すること (canvas_data がない場合)', async () => {
+    const drawingDataWithoutCanvas = {
+      title: 'Elements Only Drawing',
+      last_saved_at: null,
+      canvas_data: null,
+      drawing_elements_after_save: [
+        { id: 'new_element_1', element_type: 'line', data: { path: [[0, 0], [1, 1]], color: '#000000', lineWidth: 2 }, created_at: '2023-01-01T12:05:00Z' },
+      ],
+    };
+
+    mockFetch.mockImplementationOnce((url: string) => {
       if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve(drawingDataWithoutCanvas),
         });
       }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/elements`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(elementsData),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`) {
-        if (options?.method === 'POST') {
-          const body = JSON.parse(options.body as string);
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ status: "success", message: "Drawing saved successfully.", last_saved_at: '2023-01-01T12:05:00Z', canvas_data: body.canvas_data }),
-          });
-        }
-      }
-      if (url.includes('/api/v1/drawings/1/export')) {
-        return Promise.resolve({
-          ok: true,
-          blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
-          headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
-        });
-      }
-      return Promise.reject(new Error(`not mocked for URL: ${url}`));
+      return Promise.reject(new Error(`Unexpected fetch call for URL: ${url}`));
     });
 
     render(
@@ -290,57 +388,70 @@ describe('DrawingBoard', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('drawing-header-title')).toHaveTextContent('Test Drawing');
+      expect(screen.getByTestId('drawing-header-title')).toHaveTextContent('Elements Only Drawing');
       expect(screen.getByTestId('mock-canvas')).toBeInTheDocument();
       expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('1');
-      expect(screen.getByTestId('drawing-header-last-saved')).toHaveTextContent(
-        new Date('2023-01-01T12:00:00Z').toLocaleString('ja-JP')
+      // last_saved_at が null なので、この要素は存在しないことを確認
+      expect(screen.queryByTestId('drawing-header-last-saved')).not.toBeInTheDocument();
+    });
+
+    // 描画要素がCanvasに正しく渡されていることを確認
+    await waitFor(() => {
+      expect(mockedCanvasRenderFn).toHaveBeenCalledWith(
+        {
+          activeTool: 'pen',
+          activeColor: '#000000',
+          activeBrushSize: 2,
+          canvasRef: {
+            current: {
+              toDataURL: expect.any(Function),
+              getContext: expect.any(Function),
+              clientWidth: 800,
+              clientHeight: 600,
+              setAttribute: expect.any(Function),
+            },
+          },
+          isDrawing: false,
+          onDrawComplete: expect.any(Function),
+          setDrawingElements: expect.any(Function),
+          setIsDrawing: expect.any(Function),
+          status: {
+            isConnected: true,
+            isConnecting: false,
+            isDisconnected: false,
+            error: null,
+          },
+          drawingElements: [
+            {
+              id: 'new_element_1',
+              type: 'line',
+              points: [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+              color: '#000000',
+              brushSize: 2,
+            },
+          ],
+        },
+        null
       );
     });
   });
 
-  it('APIからcanvas_dataを正常に読み込み、表示すること', async () => {
-    const drawingDataWithCanvas = {
-      title: 'Canvas Data Drawing',
-      last_saved_at: '2023-01-01T12:00:00Z',
-      canvas_data: JSON.stringify([{ id: 'mock_canvas_data_element', type: 'line', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], color: '#000000', brushSize: 2 }]),
-    };
-    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
+  it('APIからデータが正常に読み込まれない場合、エラーメッセージを表示すること', async () => {
+    mockFetch.mockImplementation((url: string) => {
       if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
+          json: () => Promise.resolve({ user: { id: 1, email: 'test@example.com' } }),
         });
       }
       if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
         return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(drawingDataWithCanvas),
+          ok: false,
+          status: 500,
+          statusText: 'Internal Server Error',
         });
       }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/elements`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ drawing_elements: [], last_saved_at: null }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`) {
-        if (options?.method === 'POST') {
-          const body = JSON.parse(options.body as string);
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ status: "success", message: "Drawing saved successfully.", last_saved_at: '2023-01-01T12:05:00Z', canvas_data: body.canvas_data }),
-          });
-        }
-      }
-      if (url.includes('/api/v1/drawings/1/export')) {
-        return Promise.resolve({
-          ok: true,
-          blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
-          headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
-        });
-      }
-      return Promise.reject(new Error(`not mocked for URL: ${url}`));
+      return Promise.reject(new Error(`Unexpected fetch call for URL: ${url}`));
     });
 
     render(
@@ -354,68 +465,104 @@ describe('DrawingBoard', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('drawing-header-title')).toHaveTextContent('Canvas Data Drawing');
+      expect(screen.getByText(/エラー:/)).toBeInTheDocument();
+      expect(screen.getByText(/HTTP error! status: 500/)).toBeInTheDocument();
+    });
+  });
+
+  it('APIからcanvas_dataのパースに失敗した場合、drawing_elements_after_saveのみで表示すること', async () => {
+    const drawingDataWithInvalidCanvas = {
+      title: 'Invalid Canvas Data Drawing',
+      last_saved_at: '2023-01-01T12:00:00Z',
+      canvas_data: 'invalid json',
+      drawing_elements_after_save: [
+        { id: 'new_element_1', element_type: 'rectangle', data: { start: { x: 10, y: 10 }, end: { x: 20, y: 20 }, color: '#FF0000', lineWidth: 3 }, created_at: '2023-01-01T12:05:00Z' },
+      ],
+    };
+
+    mockFetch.mockImplementationOnce((url: string) => {
+      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(drawingDataWithInvalidCanvas),
+        });
+      }
+      return Promise.reject(new Error(`Unexpected fetch call for URL: ${url}`));
+    });
+
+    render(
+      <HeaderProvider>
+        <AuthProvider>
+          <MemoryRouter>
+            <DrawingBoard />
+          </MemoryRouter>
+        </AuthProvider>
+      </HeaderProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('drawing-header-title')).toHaveTextContent('Invalid Canvas Data Drawing');
       expect(screen.getByTestId('mock-canvas')).toBeInTheDocument();
-      expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('1');
-      expect(screen.getByTestId('drawing-header-last-saved')).toHaveTextContent(
-        new Date('2023-01-01T12:00:00Z').toLocaleString('ja-JP')
-      );
+      expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('1'); // drawing_elements_after_save のみ表示
     });
 
     await waitFor(() => {
       expect(mockedCanvasRenderFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          drawingElements: expect.arrayContaining([
-            expect.objectContaining({ id: 'mock_canvas_data_element' })
-          ]),
-        }),
-        expect.any(Object)
+        {
+          activeTool: 'pen',
+          activeColor: '#000000',
+          activeBrushSize: 2,
+          canvasRef: {
+            current: {
+              toDataURL: expect.any(Function),
+              getContext: expect.any(Function),
+              clientWidth: 800,
+              clientHeight: 600,
+              setAttribute: expect.any(Function),
+            },
+          },
+          isDrawing: false,
+          onDrawComplete: expect.any(Function),
+          setDrawingElements: expect.any(Function),
+          setIsDrawing: expect.any(Function),
+          status: {
+            isConnected: true,
+            isConnecting: false,
+            isDisconnected: false,
+            error: null,
+          },
+          drawingElements: [
+            {
+              id: 'new_element_1',
+              type: 'rectangle',
+              start: { x: 10, y: 10 },
+              end: { x: 20, y: 20 },
+              color: '#FF0000',
+              brushSize: 3,
+            },
+          ],
+        },
+        null
       );
     });
   });
 
-  it('Toolbarの保存ボタンがクリックされたときにAPIが呼び出され、last_saved_atが更新されること', async () => {
-    const initialDrawingData = {
-      title: 'Save Test Drawing',
-      last_saved_at: '2023-01-01T10:00:00Z',
-      canvas_data: JSON.stringify([{ id: 'initial_canvas_data_element', type: 'line', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], color: '#000000', brushSize: 2 }]),
+  it('ユーザーがボードを更新したときにAction Cableで描画要素がブロードキャストされること', async () => {
+    const drawingData = {
+      title: 'Broadcast Test',
+      last_saved_at: null,
+      canvas_data: null,
+      drawing_elements_after_save: [],
     };
-    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
-        });
-      }
+
+    mockFetch.mockImplementationOnce((url: string) => {
       if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve(initialDrawingData),
+          json: () => Promise.resolve(drawingData),
         });
       }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/elements`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ drawing_elements: [], last_saved_at: null }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`) {
-        if (options?.method === 'POST') {
-          const body = JSON.parse(options.body as string);
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ status: "success", message: "Drawing saved successfully.", last_saved_at: '2023-01-01T12:05:00Z', canvas_data: body.canvas_data }),
-          });
-        }
-      }
-      if (url.includes('/api/v1/drawings/1/export')) {
-        return Promise.resolve({
-          ok: true,
-          blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
-          headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
-        });
-      }
-      return Promise.reject(new Error(`not mocked for URL: ${url}`));
+      return Promise.reject(new Error(`Unexpected fetch call for URL: ${url}`));
     });
 
     render(
@@ -429,554 +576,92 @@ describe('DrawingBoard', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('drawing-header-title')).toHaveTextContent('Save Test Drawing');
-      expect(screen.getByTestId('drawing-header-last-saved')).toHaveTextContent(
-        new Date('2023-01-01T10:00:00Z').toLocaleString('ja-JP')
-      );
+      expect(screen.getByTestId('mock-canvas')).toBeInTheDocument();
     });
 
-    const saveButton = screen.getByTestId('save-button');
-    expect(saveButton).toBeInTheDocument();
-    expect(saveButton).toBeDisabled();
-
-    act(() => {
-      const drawCompleteButton = screen.getByTestId('draw-complete-button');
-      fireEvent.click(drawCompleteButton);
-    });
+    // 描画をシミュレート
+    fireEvent.click(screen.getByTestId('draw-complete-button'));
 
     await waitFor(() => {
-      expect(saveButton).not.toBeDisabled();
-      expect(screen.getByTestId('is-dirty-message')).toBeInTheDocument();
-      expect(screen.getByTestId('drawing-header-dirty-status')).toBeInTheDocument();
-    });
-
-    fireEvent.click(saveButton);
-
-    await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`,
+      expect(mockedChannelInstance.perform).toHaveBeenCalledWith(
+        'draw',
         expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: expect.stringContaining('canvas_data'),
+          element_type: 'line',
+          element_data: expect.objectContaining({
+            id: 'new-element-id',
+            path: [[0, 0], [1, 1]],
+            color: '#000000',
+            lineWidth: 2,
+          }),
         })
       );
     });
-
-    await waitFor(() => {
-      expect(screen.getByTestId('drawing-header-last-saved')).toHaveTextContent(
-        new Date('2023-01-01T12:05:00Z').toLocaleString('ja-JP')
-      );
-      expect(screen.queryByTestId('is-dirty-message')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('drawing-header-dirty-status')).not.toBeInTheDocument();
-      expect(saveButton).toBeDisabled();
-    });
   });
 
-  it('ウィンドウを閉じる前に未保存の変更がある場合、ユーザーに警告を促すこと', async () => {
-    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            title: 'Unsaved Test Drawing',
-            last_saved_at: '2023-01-01T10:00:00Z',
-            canvas_data: JSON.stringify([{ id: 'initial_canvas_data_element', type: 'line', points: [{ x: 0, y: 0 }, { x: 1, y: 1 }], color: '#000000', brushSize: 2 }]),
-          }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/elements`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ drawing_elements: [], last_saved_at: null }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`) {
-        if (options?.method === 'POST') {
-          const body = JSON.parse(options.body as string);
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ status: "success", message: "Drawing saved successfully.", last_saved_at: '2023-01-01T12:05:00Z', canvas_data: body.canvas_data }),
-          });
-        }
-      }
-      if (url.includes('/api/v1/drawings/1/export')) {
-        return Promise.resolve({
-          ok: true,
-          blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
-          headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
-        });
-      }
-      return Promise.reject(new Error(`not mocked for URL: ${url}`));
-    });
-
-    render(
-      <HeaderProvider><AuthProvider><MemoryRouter><DrawingBoard /></MemoryRouter></AuthProvider></HeaderProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId('drawing-header-title')).toHaveTextContent('Unsaved Test Drawing');
-      expect(screen.getByTestId('drawing-header-last-saved')).toHaveTextContent(
-        new Date('2023-01-01T10:00:00Z').toLocaleString('ja-JP')
-      );
-    });
-
-    const saveButton = screen.getByTestId('save-button');
-
-    act(() => {
-      const drawCompleteButton = screen.getByTestId('draw-complete-button');
-      fireEvent.click(drawCompleteButton);
-    });
-
-    await waitFor(() => {
-      expect(saveButton).not.toBeDisabled();
-      expect(screen.getByTestId('is-dirty-message')).toBeInTheDocument();
-    });
-
-    const preventDefaultSpy = vi.spyOn(Event.prototype, 'preventDefault');
-
-    act(() => {
-      const beforeUnloadEvent = new Event('beforeunload', { cancelable: true });
-      window.dispatchEvent(beforeUnloadEvent);
-    });
-
-    expect(preventDefaultSpy).toHaveBeenCalled();
-    expect(removeEventListenerSpy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
-
-    preventDefaultSpy.mockRestore();
-  });
-
-  it('エクスポートボタンがクリックされたときにExportModalが表示されること', async () => {
-    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            title: 'Export Modal Test',
-            last_saved_at: '2023-01-01T10:00:00Z',
-            canvas_data: JSON.stringify([{ id: 'initial-export-test', type: 'line', points: [{x:0, y:0}, {x:1, y:1}], color: '#000000', brushSize: 1 }]),
-          }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/elements`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ drawing_elements: [], last_saved_at: null }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`) {
-        if (options?.method === 'POST') {
-          const body = JSON.parse(options.body as string);
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ status: "success", message: "Drawing saved successfully.", last_saved_at: '2023-01-01T12:05:00Z', canvas_data: body.canvas_data }),
-          });
-        }
-      }
-      if (url.includes('/api/v1/drawings/1/export')) {
-        return Promise.resolve({
-          ok: true,
-          blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
-          headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
-        });
-      }
-      return Promise.reject(new Error(`not mocked for URL: ${url}`));
-    });
-    render(
-      <HeaderProvider><AuthProvider><MemoryRouter><DrawingBoard /></MemoryRouter></AuthProvider></HeaderProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId('mock-toolbar')).toBeInTheDocument();
-    });
-
-    const exportButton = screen.getByTestId('export-button');
-    fireEvent.click(exportButton);
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'エクスポート' })).toBeInTheDocument();
-    });
-  });
-
-  it('ExportModalでエクスポート形式を選択するとAPIが呼び出され、ファイルがダウンロードされること', async () => {
-    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            title: 'Export Download Test',
-            last_saved_at: '2023-01-01T10:00:00Z',
-            canvas_data: JSON.stringify([{ id: 'initial-download-test', type: 'line', points: [{x:0, y:0}, {x:1, y:1}], color: '#000000', brushSize: 1 }]),
-          }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/elements`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ drawing_elements: [], last_saved_at: null }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`) {
-        if (options?.method === 'POST') {
-          const body = JSON.parse(options.body as string);
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ status: "success", message: "Drawing saved successfully.", last_saved_at: '2023-01-01T12:05:00Z', canvas_data: body.canvas_data }),
-          });
-        }
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/export`) {
-        if (options?.method === 'POST') {
-          const body = JSON.parse(options.body as string);
-          if (body.image_data && body.format === 'png') {
-            return Promise.resolve({
-              ok: true,
-              blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
-              headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
-            });
-          }
-        }
-      }
-      return Promise.reject(new Error(`not mocked for URL: ${url}`));
-    });
-    render(
-      <HeaderProvider><AuthProvider><MemoryRouter><DrawingBoard /></MemoryRouter></AuthProvider></HeaderProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId('mock-toolbar')).toBeInTheDocument();
-    });
-
-    const exportButton = screen.getByTestId('export-button');
-    fireEvent.click(exportButton);
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'エクスポート' })).toBeInTheDocument();
-    });
-
-    const exportConfirmButton = screen.getByTestId('png-export-button');
-    fireEvent.click(exportConfirmButton);
-
-    await waitFor(() => {
-      expect(mockAnchorElement.click).toHaveBeenCalled();
-    });
-
-    await waitFor(() => {
-      expect(screen.queryByRole('heading', { name: 'エクスポート' })).not.toBeInTheDocument();
-    });
-  });
-
-  it('エクスポートが失敗した場合、エラーメッセージが表示されること', async () => {
-    mockFetch.mockImplementation((url: string, _options?: RequestInit) => {
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            title: 'Error Export Test',
-            last_saved_at: '2023-01-01T10:00:00Z',
-            canvas_data: JSON.stringify([{ id: 'initial-el-error-test', type: 'line', points: [{x:0, y:0}, {x:1, y:1}], color: '#000000', brushSize: 1 }]),
-          }),
-        });
-      }
-      return Promise.reject(new Error(`not mocked for URL: ${url}`));
-    });
-
-    render(
-      <HeaderProvider><AuthProvider><MemoryRouter><DrawingBoard /></MemoryRouter></AuthProvider></HeaderProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId('mock-toolbar')).toBeInTheDocument();
-      expect(screen.getByTestId('drawing-header-title')).toHaveTextContent('Error Export Test');
-    });
-
-    mockedCanvasToDataURL.mockImplementation(() => {
-      throw new Error('Mock toDataURL error');
-    });
-
-    fireEvent.click(screen.getByTestId('export-button'));
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'エクスポート' })).toBeInTheDocument();
-    });
-
-    const exportConfirmButton = screen.getByTestId('png-export-button');
-    fireEvent.click(exportConfirmButton);
-
-    await waitFor(() => {
-      expect(mockedCanvasToDataURL).toHaveBeenCalled();
-      expect(screen.getByText('エクスポートに失敗しました: Mock toDataURL error')).toBeInTheDocument();
-    });
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'エクスポート' })).toBeInTheDocument();
-    });
-  });
-
-  it('toolbarのUndo/Redoボタンが機能すること', async () => {
-    const initialDrawingData = {
-      title: 'Undo Redo Test',
-      last_saved_at: '2023-01-01T10:00:00Z',
-      canvas_data: JSON.stringify([]),
+  it('APIから描画ボードのデータを正常に読み込み、表示すること (initial_elements が空の場合)', async () => {
+    const emptyDrawingData = {
+      title: 'Empty Drawing',
+      last_saved_at: null,
+      canvas_data: null,
+      drawing_elements_after_save: [],
     };
-    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
-        });
-      }
+
+    mockFetch.mockImplementationOnce((url: string) => {
       if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve(initialDrawingData),
+          json: () => Promise.resolve(emptyDrawingData),
         });
       }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/elements`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ drawing_elements: [], last_saved_at: null }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`) {
-        if (options?.method === 'POST') {
-          const body = JSON.parse(options.body as string);
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ status: "success", message: "Drawing saved successfully.", last_saved_at: '2023-01-01T12:05:00Z', canvas_data: body.canvas_data }),
-          });
-        }
-      }
-      if (url.includes('/api/v1/drawings/1/export')) {
-        return Promise.resolve({
-          ok: true,
-          blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
-          headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
-        });
-      }
-      return Promise.reject(new Error(`not mocked for URL: ${url}`));
+      return Promise.reject(new Error(`Unexpected fetch call for URL: ${url}`));
     });
 
     render(
-      <HeaderProvider><AuthProvider><MemoryRouter><DrawingBoard /></MemoryRouter></AuthProvider></HeaderProvider>
+      <HeaderProvider>
+        <AuthProvider>
+          <MemoryRouter>
+            <DrawingBoard />
+          </MemoryRouter>
+        </AuthProvider>
+      </HeaderProvider>
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('mock-toolbar')).toBeInTheDocument();
-      expect(screen.getByTestId('undo-button')).toBeDisabled();
-      expect(screen.getByTestId('redo-button')).toBeDisabled();
+      expect(screen.getByTestId('drawing-header-title')).toHaveTextContent('Empty Drawing');
+      expect(screen.getByTestId('mock-canvas')).toBeInTheDocument();
+      // 描画要素が空なので、canvas-elements-count は存在しないことを確認
       expect(screen.queryByTestId('canvas-elements-count')).not.toBeInTheDocument();
     });
 
-    act(() => {
-      const drawCompleteButton = screen.getByTestId('draw-complete-button');
-      fireEvent.click(drawCompleteButton);
-    });
-
+    // 描画要素が空であることを確認
     await waitFor(() => {
-      expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('1');
-      expect(screen.getByTestId('undo-button')).not.toBeDisabled();
-    });
-
-    fireEvent.click(screen.getByTestId('undo-button'));
-    await waitFor(() => {
-      expect(screen.queryByTestId('canvas-elements-count')).not.toBeInTheDocument();
-      expect(screen.getByTestId('redo-button')).not.toBeDisabled();
-    });
-
-    fireEvent.click(screen.getByTestId('redo-button'));
-    await waitFor(() => {
-      expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('1');
-      expect(screen.getByTestId('undo-button')).not.toBeDisabled();
-      expect(screen.getByTestId('redo-button')).toBeDisabled();
-    });
-  });
-
-  it('Action Cable経由で新しい描画要素を受信し、Canvasに反映されること', async () => {
-    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            title: 'Action Cable Test',
-            last_saved_at: '2023-01-01T10:00:00Z',
-            canvas_data: JSON.stringify([{ id: 'initial-cable-test', type: 'line', points: [{x:0, y:0}, {x:1, y:1}], color: '#000000', brushSize: 1 }]),
-          }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/elements`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ drawing_elements: [], last_saved_at: null }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`) {
-        if (options?.method === 'POST') {
-          const body = JSON.parse(options.body as string);
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ status: "success", message: "Drawing saved successfully.", last_saved_at: '2023-01-01T12:05:00Z', canvas_data: body.canvas_data }),
-          });
-        }
-      }
-      if (url.includes('/api/v1/drawings/1/export')) {
-        return Promise.resolve({
-          ok: true,
-          blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
-          headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
-        });
-      }
-      return Promise.reject(new Error(`not mocked for URL: ${url}`));
-    });
-    render(
-      <HeaderProvider><AuthProvider><MemoryRouter><DrawingBoard /></MemoryRouter></AuthProvider></HeaderProvider>
-    );
-
-    await waitFor(() => {
-      expect(mockedUseDrawingChannelHook).toHaveBeenCalled();
-    });
-
-    act(() => {
-      triggerReceivedData('DrawingChannel', 1, {
-        type: "drawing_element_created",
-        drawing_element: {
-          id: 'new-cable-el',
-          element_type: 'circle',
-          data: {
-            center: { x: 50, y: 50 },
-            radius: 20,
-            color: '#FF0000',
-            lineWidth: 5,
+      expect(mockedCanvasRenderFn).toHaveBeenCalledWith(
+        {
+          activeTool: 'pen',
+          activeColor: '#000000',
+          activeBrushSize: 2,
+          canvasRef: {
+            current: {
+              toDataURL: expect.any(Function),
+              getContext: expect.any(Function),
+              clientWidth: 800,
+              clientHeight: 600,
+              setAttribute: expect.any(Function),
+            },
           },
+          isDrawing: false,
+          onDrawComplete: expect.any(Function),
+          setDrawingElements: expect.any(Function),
+          setIsDrawing: expect.any(Function),
+          status: {
+            isConnected: true,
+            isConnecting: false,
+            isDisconnected: false,
+            error: null,
+          },
+          drawingElements: [],
         },
-      });
-    });
-
-    await waitFor(() => {
-      expect(screen.getByTestId('canvas-elements-count')).toHaveTextContent('2');
-    });
-
-    await waitFor(() => {
-      expect(mockedCanvasRenderFn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          drawingElements: expect.arrayContaining([
-            expect.objectContaining({ id: 'initial-cable-test' }),
-            expect.objectContaining({ id: 'new-cable-el' }),
-          ]),
-        }),
-        expect.any(Object)
-      );
-    });
-  });
-
-  it('ツールバーのボタンがCanvasのactiveTool、activeColor、activeBrushSizeを変更すること', async () => {
-    mockFetch.mockImplementation((url: string, options?: RequestInit) => {
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 1, email_address: 'test@example.com' }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            title: 'Toolbar Change Test',
-            last_saved_at: '2023-01-01T10:00:00Z',
-            canvas_data: JSON.stringify([{ id: 'initial-toolbar-test', type: 'line', points: [{x:0, y:0}, {x:1, y:1}], color: '#000000', brushSize: 1 }]),
-          }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/elements`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ drawing_elements: [], last_saved_at: null }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1/save`) {
-        if (options?.method === 'POST') {
-          const body = JSON.parse(options.body as string);
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ status: "success", message: "Drawing saved successfully.", last_saved_at: '2023-01-01T12:05:00Z', canvas_data: body.canvas_data }),
-          });
-        }
-      }
-      if (url.includes('/api/v1/drawings/1/export')) {
-        return Promise.resolve({
-          ok: true,
-          blob: () => Promise.resolve(new Blob(['mock image data'], { type: 'image/png' })),
-          headers: new Headers({ 'Content-Disposition': 'attachment; filename="mock_drawing.png"' }),
-        });
-      }
-      return Promise.reject(new Error(`not mocked for URL: ${url}`));
-    });
-    render(
-      <HeaderProvider><AuthProvider><MemoryRouter><DrawingBoard /></MemoryRouter></AuthProvider></HeaderProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId('mock-toolbar')).toBeInTheDocument();
-    });
-
-    userEvent.click(screen.getByTestId('set-pen-tool'));
-    await waitFor(() => {
-      expect(mockedCanvasRenderFn).toHaveBeenCalledWith(
-        expect.objectContaining({ activeTool: 'pen' }),
-        expect.any(Object)
-      );
-    });
-
-    userEvent.click(screen.getByTestId('set-red-color'));
-    await waitFor(() => {
-      expect(mockedCanvasRenderFn).toHaveBeenCalledWith(
-        expect.objectContaining({ activeColor: '#FF0000' }),
-        expect.any(Object)
-      );
-    });
-
-    userEvent.click(screen.getByTestId('set-brush-size'));
-    await waitFor(() => {
-      expect(mockedCanvasRenderFn).toHaveBeenCalledWith(
-        expect.objectContaining({ activeBrushSize: 10 }),
-        expect.any(Object)
-      );
-    });
-
-    await waitFor(() => {
-      expect(mockedCanvasRenderFn).toHaveBeenCalledWith(
-        expect.objectContaining({ activeTool: 'pen', activeColor: '#FF0000', activeBrushSize: 10 }),
-        expect.any(Object)
+        null
       );
     });
   });

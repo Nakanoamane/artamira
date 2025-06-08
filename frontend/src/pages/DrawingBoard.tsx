@@ -124,7 +124,7 @@ const DrawingBoard = () => {
             },
             radius: drawingElementData.radius,
             color: drawingElementData.color,
-            brushSize: drawingElementData.lineWidth,
+            brushSize: drawingElementData.brushSize,
           };
         }
 
@@ -172,7 +172,6 @@ const DrawingBoard = () => {
       }
 
       try {
-        // Step 1: Try to fetch canvas_data from the new endpoint
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}`,
           {
@@ -182,64 +181,69 @@ const DrawingBoard = () => {
         );
 
         if (!response.ok) {
-          // If the primary endpoint fails, perhaps try the old one or throw error
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
 
-        // Assuming drawing title is handled elsewhere or is not critical for this initial load
-        setDrawing({ id: drawingId, title: data.title || "無題のボード" }); // Title might be undefined from new API, default to '無題のボード'
+        setDrawing({ id: drawingId, title: data.title || "無題のボード" });
 
+        let initialElements: DrawingElementType[] = [];
         if (data.canvas_data) {
-          // If canvas_data exists, use it
           try {
-            const parsedCanvasData: DrawingElementType[] = JSON.parse(
-              data.canvas_data
-            );
-            setDrawingElements(parsedCanvasData);
-            setLastSavedAt(
-              data.last_saved_at ? new Date(data.last_saved_at) : null
-            );
-            setIsDirty(false);
+            initialElements = JSON.parse(data.canvas_data);
           } catch (parseError) {
             console.error("Failed to parse canvas_data:", parseError);
-            // Fallback to fetching drawing elements if canvas_data is invalid
-            await fetchDrawingElementsFallback(drawingId);
+            // パースエラーが発生した場合は、canvas_dataは無視してdrawing_elements_after_saveのみ使用する
           }
-        } else {
-          // If canvas_data does not exist, fetch drawing elements as fallback
-          await fetchDrawingElementsFallback(drawingId);
         }
+
+        // canvas_dataの要素に、drawing_elements_after_saveの要素を追加する
+        if (data.drawing_elements_after_save && Array.isArray(data.drawing_elements_after_save)) {
+          // receivedElementに型変換する処理 (handleReceivedData と同じロジック)
+          const parsedNewElements: DrawingElementType[] = data.drawing_elements_after_save.map((el: any) => {
+            let element: DrawingElementType | null = null;
+            if (el.element_type === "line") {
+              element = {
+                id: el.id,
+                type: "line",
+                points: el.data.path.map((p: [number, number]) => ({ x: p[0], y: p[1] })),
+                color: el.data.color,
+                brushSize: el.data.lineWidth,
+              };
+            } else if (el.element_type === "rectangle") {
+              element = {
+                id: el.id,
+                type: "rectangle",
+                start: { x: el.data.start.x, y: el.data.start.y },
+                end: { x: el.data.end.x, y: el.data.end.y },
+                color: el.data.color,
+                brushSize: el.data.lineWidth,
+              };
+            } else if (el.element_type === "circle") {
+              element = {
+                id: el.id,
+                type: "circle",
+                center: { x: el.data.center.x, y: el.data.center.y },
+                radius: el.data.radius,
+                color: el.data.color,
+                brushSize: el.data.brushSize,
+              };
+            }
+            return element;
+          }).filter(Boolean);
+
+          initialElements = [...initialElements, ...parsedNewElements];
+        }
+
+        setDrawingElements(initialElements);
+        setLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
+        setIsDirty(false);
+
       } catch (e: any) {
         setErrorDrawing(e.message);
       } finally {
         setLoadingDrawing(false);
-      }
-    };
-
-    const fetchDrawingElementsFallback = async (id: number) => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/drawings/${id}/elements`,
-          {
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setDrawingElements(data.drawing_elements || []);
-        setLastSavedAt(
-          data.last_saved_at ? new Date(data.last_saved_at) : null
-        );
-        setIsDirty(false);
-      } catch (e: any) {
-        setErrorDrawing(e.message);
       }
     };
 
