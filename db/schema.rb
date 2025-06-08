@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_02_120353) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_08_083915) do
   create_table "drawing_elements", force: :cascade do |t|
     t.integer "drawing_id", null: false
     t.integer "user_id", null: false
@@ -28,6 +28,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_02_120353) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "last_saved_at"
+    t.text "canvas_data"
     t.index ["user_id"], name: "index_drawings_on_user_id"
   end
 
