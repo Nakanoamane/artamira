@@ -9,7 +9,7 @@ module Api
       end
 
       def show
-        render json: @drawing
+        render :show
       end
 
       def create
@@ -36,7 +36,12 @@ module Api
       end
 
       def save
-        if @drawing.update(last_saved_at: Time.current)
+        canvas_data_param = params[:canvas_data]
+
+        if @drawing.update(last_saved_at: Time.current, canvas_data: canvas_data_param)
+          # 古い DrawingElement のクリーンアップジョブを非同期で実行
+          CleanupDrawingElementsJob.perform_later(@drawing.id, @drawing.last_saved_at)
+
           ActionCable.server.broadcast "drawing_#{@drawing.id}", {
             type: 'drawing_saved',
             drawing_id: @drawing.id,

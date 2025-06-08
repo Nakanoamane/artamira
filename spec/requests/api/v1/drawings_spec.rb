@@ -81,16 +81,19 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
   end
 
   describe 'GET /api/v1/drawings/:id' do
-    let!(:drawing) { create(:drawing, user: user, title: 'テスト詳細ボード') }
+    let!(:drawing) { create(:drawing, user: user, title: 'テスト詳細ボード', canvas_data: '初期キャンバスデータ', last_saved_at: Time.current) }
 
     context '認証済みユーザーの場合' do
       let!(:cookies) { cookies_for_header(user) }
 
-      it '描画ボードの詳細を返す' do
+      it '描画ボードの詳細とcanvas_data, last_saved_atを返す' do
         get api_v1_drawing_path(drawing), headers: { 'Cookie' => cookies }, as: :json
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body['id']).to eq(drawing.id)
-        expect(response.parsed_body['title']).to eq('テスト詳細ボード')
+        expect(response.parsed_body['canvas_data']).to eq(drawing.canvas_data)
+        expect(Time.zone.parse(response.parsed_body['last_saved_at']).to_i).to eq(drawing.last_saved_at.to_i)
+        # title は show.json.jbuilder で返されなくなったため、ここでは検証しない
+        expect(response.parsed_body).not_to have_key('title')
       end
 
       context '存在しない描画ボードの場合' do
@@ -115,32 +118,41 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
     context '認証済みユーザーの場合' do
       let!(:cookies) { cookies_for_header(user) }
 
-      it '描画ボードのlast_saved_atを更新し、200 OKを返す' do
-        # API呼び出し前のlast_saved_atを記録
+      it '描画ボードのlast_saved_atとcanvas_dataを更新し、200 OKを返す' do
         old_last_saved_at = drawing.last_saved_at
-        travel 1.second # 1秒進めて更新を明確にする
+        old_canvas_data = drawing.canvas_data
+        new_canvas_data = '新しいキャンバスデータ'
+        travel 1.second
 
-        post save_api_v1_drawing_path(drawing), headers: { 'Cookie' => cookies }, as: :json
+        post save_api_v1_drawing_path(drawing), params: { canvas_data: new_canvas_data }, headers: { 'Cookie' => cookies }, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body['status']).to eq('success')
         expect(response.parsed_body['message']).to eq('Drawing saved successfully.')
 
-        # データベースのlast_saved_atが更新されていることを確認
         drawing.reload
         expect(drawing.last_saved_at).not_to be_nil
         expect(drawing.last_saved_at).not_to eq(old_last_saved_at)
+        expect(drawing.canvas_data).to eq(new_canvas_data)
         expect(response.parsed_body['last_saved_at']).to be_present
       end
 
       it '描画ボードが保存されたことをAction Cableでブロードキャストする' do
+        new_canvas_data = 'ブロードキャスト用のキャンバスデータ'
         expect do
-          post save_api_v1_drawing_path(drawing), headers: { 'Cookie' => cookies }, as: :json
+          post save_api_v1_drawing_path(drawing), params: { canvas_data: new_canvas_data }, headers: { 'Cookie' => cookies }, as: :json
         end.to have_broadcasted_to("drawing_#{drawing.id}").from_channel(DrawingChannel).with { |data|
           data['type'] == 'drawing_saved' &&
           data['drawing_id'] == drawing.id &&
           Time.zone.parse(data['last_saved_at']).to_i == drawing.reload.last_saved_at.to_i
         }
+      end
+
+      it 'CleanupDrawingElementsJobがエンキューされる' do
+        new_canvas_data = 'ジョブエンキュー用のキャンバスデータ'
+        expect do
+          post save_api_v1_drawing_path(drawing), params: { canvas_data: new_canvas_data }, headers: { 'Cookie' => cookies }, as: :json
+        end.to have_enqueued_job(CleanupDrawingElementsJob).with(drawing.id, kind_of(Time))
       end
 
       context '存在しない描画ボードの場合' do
