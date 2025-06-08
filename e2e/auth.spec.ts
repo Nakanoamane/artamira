@@ -1,4 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
+import { registerAndLogin } from "./utils";
 
 // ヘルパー関数: ユニークなユーザー情報を生成
 function generateUniqueUser() {
@@ -7,23 +8,6 @@ function generateUniqueUser() {
     email: `testuser-${randomString}@example.com`,
     password: "password",
   };
-}
-
-// 共通のログイン処理を行うヘルパー関数
-async function registerAndLogin(page: Page) {
-  const user = generateUniqueUser();
-
-  await page.goto("/register");
-  await expect(page.locator('h3:has-text("アカウント作成")')).toBeVisible();
-  await page.fill('input[name="email"]', user.email);
-  await page.fill('input[name="password"]', user.password);
-  await page.fill('input[name="password_confirmation"]', user.password);
-  await page.getByRole('button', { name: '登録' }).click();
-
-  await page.waitForURL("/drawings");
-  await expect(page).toHaveTitle(/Artamira - Boards/);
-
-  return user;
 }
 
 // ユーザー登録テスト
@@ -36,9 +20,13 @@ test("新規ユーザー登録ができること", async ({ page }) => {
   await page.fill('input[name="email"]', user.email);
   await page.fill('input[name="password"]', user.password);
   await page.fill('input[name="password_confirmation"]', user.password);
-  await page.getByRole('button', { name: '登録' }).click();
+  const registerButton = page.locator('button:has-text("登録")');
+  await expect(registerButton).toBeVisible();
+  await expect(registerButton).toBeEnabled();
+  await registerButton.click();
 
-  await page.waitForURL("/drawings");
+  await page.waitForURL("/");
+  await expect(page).toHaveURL(/\/drawings/);
   await expect(page).toHaveTitle(/Artamira - Boards/);
 });
 
