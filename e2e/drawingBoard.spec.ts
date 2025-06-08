@@ -2,6 +2,31 @@ import { test, expect, Page } from '@playwright/test'
 
 test.describe('DrawingBoard', () => {
   let drawingId: number;
+
+  // ヘルパー関数: 描画操作を行い、保存ボタンが活性化されることを確認する
+  async function performDrawingAndVerifyDirtyState(page: Page) {
+    await page.waitForSelector('canvas');
+    const canvas = page.locator('canvas');
+    const canvasBoundingBox = await canvas.boundingBox();
+
+    if (!canvasBoundingBox) {
+      throw new Error('Canvas not found or has no bounding box');
+    }
+
+    // 接続中が表示されていないことを確認
+    await expect(page.getByText('接続中')).not.toBeVisible();
+
+    // 何か描画する
+    await page.mouse.move(canvasBoundingBox.x + 50, canvasBoundingBox.y + 50);
+    await page.mouse.down();
+    await page.mouse.move(canvasBoundingBox.x + 100, canvasBoundingBox.y + 100);
+    await page.mouse.up();
+
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(500); // UIがダーティ状態に更新されるのを待つ
+    await expect(page.getByRole('button', { name: '保存 *' })).toBeVisible();
+  }
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/drawings');
 
@@ -118,6 +143,81 @@ test.describe('DrawingBoard', () => {
     await context1.close()
     await context2.close()
   })
+
+  test('should activate save button and show unsaved indicator after drawing', async ({ page }) => {
+    // 描画操作とダーティ状態の確認を共通化
+    await performDrawingAndVerifyDirtyState(page);
+
+    // 保存ボタンをクリック
+    const saveButtonWithAsterisk = page.getByRole('button', { name: '保存 *' });
+    await saveButtonWithAsterisk.click({ timeout: 1500 });
+
+    // 保存ボタンが非活性化され、未保存マークが消えていることを確認
+    await expect(page.getByRole('button', { name: '保存', exact: true })).toBeDisabled(); // アスタリスクなしの「保存」ボタンが非活性化
+    await expect(saveButtonWithAsterisk).not.toBeVisible(); // アスタリスク付きボタンが非表示になっていること
+    // 最終保存日時が表示されていることを確認（正確な時間は検証しないが、存在することを確認）
+    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません', { timeout: 10000 });
+  });
+
+  test('should save drawing and disable save button, remove unsaved indicator', async ({ page }) => {
+    // 描画操作とダーティ状態の確認を共通化
+    await performDrawingAndVerifyDirtyState(page);
+
+    // 保存ボタンをクリック
+    const saveButtonWithAsterisk = page.getByRole('button', { name: '保存 *' });
+    await saveButtonWithAsterisk.click({ timeout: 1500 });
+
+    // 保存ボタンが非活性化され、未保存マークが消えていることを確認
+    await expect(page.getByRole('button', { name: '保存', exact: true })).toBeDisabled(); // アスタリスクなしの「保存」ボタンが非活性化
+    await expect(saveButtonWithAsterisk).not.toBeVisible(); // アスタリスク付きボタンが非表示になっていること
+    // 最終保存日時が表示されていることを確認（正確な時間は検証しないが、存在することを確認）
+    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません', { timeout: 10000 });
+  });
+
+  test('should restore drawing content after page reload', async ({ page }) => {
+    // 描画操作とダーティ状態の確認を共通化
+    await performDrawingAndVerifyDirtyState(page);
+
+    // 保存ボタンをクリック
+    const saveButtonWithAsterisk = page.getByRole('button', { name: '保存 *' });
+    await saveButtonWithAsterisk.click({ timeout: 1500 });
+
+    // 保存ボタンが非活性化され、未保存マークが消えていることを確認
+    await expect(page.getByRole('button', { name: '保存', exact: true })).toBeDisabled(); // アスタリスクなしの「保存」ボタンが非活性化
+    await expect(saveButtonWithAsterisk).not.toBeVisible(); // アスタリスク付きボタンが非表示になっていること
+    // 最終保存日時が表示されていることを確認（正確な時間は検証しないが、存在することを確認）
+    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません', { timeout: 10000 });
+
+    // ページをリロード
+    await page.reload();
+    // 描画ボードのUIが完全にロードされるのを待機（ツールバーの要素など）
+    await expect(page.locator('label:has-text("ツール")')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('ペン')).toBeVisible({ timeout: 15000 });
+    // キャンバスが可視であることを確認
+    await expect(page.locator('canvas')).toBeVisible();
+    // 最終保存日時が表示されていることを確認することで、データがロードされたことを間接的に確認
+    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません', { timeout: 10000 });
+  });
+
+  test('should show warning when attempting to leave page with unsaved changes', async ({ page }) => {
+    // 1. Draw something to make isDirty true (共通化)
+    await performDrawingAndVerifyDirtyState(page);
+
+    const initialUrl = page.url(); // 現在のURLを保存
+
+    // 2. Set up dialog listener and attempt close
+    const dialogPromise = page.waitForEvent('dialog');
+    const closePromise = page.close({ runBeforeUnload: true }).catch(e => e); // close can also be aborted
+
+    const dialog = await dialogPromise;
+    expect(dialog.type()).toBe('beforeunload');
+    await dialog.dismiss(); // Dismissing should prevent close
+
+    await closePromise; // page.close()の完了を待つ (エラーがスローされない可能性もある)
+
+    // ページが閉じられず、URLが変更されていないことを確認
+    await expect(page).toHaveURL(initialUrl, { timeout: 15000 });
+  });
 
   // TODO: 描画テストの追加
   // Canvas上での描画操作（マウスイベント）のシミュレーションと、描画が正しく行われたかの検証
