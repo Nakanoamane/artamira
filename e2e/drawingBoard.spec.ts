@@ -3,7 +3,25 @@ import { test, expect, Page } from '@playwright/test'
 test.describe('DrawingBoard', () => {
   let drawingId: number;
   test.beforeEach(async ({ page }) => {
-    // global-setupでログイン状態が共有されているため、ここではログイン処理は不要
+    await page.goto('/drawings');
+
+    await page.waitForSelector('a:has-text("新規描画ボードを作成")');
+    await page.click('a:has-text("新規描画ボードを作成")');
+    await page.fill('input[placeholder="新しい描画ボードのタイトル"]', 'テスト描画ボード');
+    await page.click('button:has-text("作成")');
+
+    // 新しい描画ボードのURLに遷移したことを確認し、IDを抽出
+    await page.waitForURL(/\/drawings\/\d+/, { timeout: 15000 });
+    const url = page.url();
+    const match = url.match(/\/drawings\/(\d+)/);
+    if (match && match[1]) {
+      drawingId = parseInt(match[1], 10);
+    } else {
+      throw new Error('Failed to extract drawing ID from URL');
+    }
+
+    await expect(page.locator('label:has-text("ツール")')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('ペン')).toBeVisible({ timeout: 15000 });
   })
 
   test('should render Toolbar and Canvas components', async ({ page }) => {
@@ -53,7 +71,7 @@ test.describe('DrawingBoard', () => {
 
   test('should reflect drawings in real-time across multiple clients', async ({ browser }) => {
     // クライアント1のセットアップ
-    const context1 = await browser.newContext()
+    const context1 = await browser.newContext({ storageState: './e2e/storageState.json' })
     const page1 = await context1.newPage()
     await page1.goto('/drawings')
     await page1.click('a:has-text("新規描画ボードを作成")')
@@ -65,7 +83,7 @@ test.describe('DrawingBoard', () => {
     if (!drawingId) throw new Error('Failed to get drawing ID for real-time test')
 
     // クライアント2のセットアップ
-    const context2 = await browser.newContext()
+    const context2 = await browser.newContext({ storageState: './e2e/storageState.json' })
     const page2 = await context2.newPage()
     await page2.goto(`/drawings/${drawingId}`)
     await page2.waitForSelector('canvas')

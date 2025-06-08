@@ -57,3 +57,4 @@ Thumbs.db
 # Playwright storage state
 e2e/storageState.json
 e2e/test-results/results.json
+e2e/screenshots/
