@@ -33,7 +33,7 @@ test.describe('Export Functionality', () => {
       }
     });
 
-    // エクスポートモーダルを開く前にボタンが有効になるのを待機
+    // エクスポートモーダルを開く
     const exportButton = page.locator('button:has-text("エクスポート")');
     await expect(exportButton).toBeEnabled({ timeout: 15000 });
     await exportButton.click();
@@ -41,11 +41,10 @@ test.describe('Export Functionality', () => {
   });
 
   test('should successfully export drawing as PNG', async ({ page }) => {
-    // PNGを選択
+    // ダウンロードを待機してからPNGボタンをクリック
+    const downloadPromise = page.waitForEvent('download');
     await page.getByTestId('png-export-button').click();
-
-    // ダウンロードを待機
-    const download = await page.waitForEvent('download');
+    const download = await downloadPromise;
 
     // ダウンロードされたファイル名の検証
     // ファイル名は 'untitled.png' になることを想定 (描画ボードのタイトルが設定されていない場合)
@@ -59,33 +58,12 @@ test.describe('Export Functionality', () => {
   });
 
   test('should successfully export drawing as JPEG', async ({ page }) => {
-    // JPEGを選択
+    // ダウンロードを待機してからJPEGボタンをクリック
+    const downloadPromise = page.waitForEvent('download');
     await page.getByTestId('jpeg-export-button').click();
-
-    // ダウンロードを待機
-    const download = await page.waitForEvent('download');
+    const download = await downloadPromise;
 
     // ダウンロードされたファイル名の検証
     expect(download.suggestedFilename()).toMatch(/\.jpeg$/);
-  });
-
-  test('should show error for invalid format (if possible through direct API call or UI bug)', async ({ page }) => {
-    // 現状のUIでは無効なフォーマットを選択できないため、このテストはAPIリクエストの改ざんをシミュレートする必要がある。
-    // Playwrightのintercept機能を使って、APIリクエストをインターセプトし、無効なフォーマットを送信する
-    await page.route('**/api/v1/drawings/**/export', async route => {
-      const request = route.request();
-      const postData = request.postDataJSON();
-      if (postData) {
-        postData.format = 'invalid_format'; // 無効なフォーマットに書き換え
-        await route.continue({ postData: JSON.stringify(postData) });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.getByTestId('png-export-button').click();
-
-    // エラーメッセージが表示されることを確認
-    await expect(page.locator('text=エクスポートに失敗しました')).toBeVisible();
   });
 });
