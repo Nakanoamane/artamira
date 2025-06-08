@@ -80,7 +80,7 @@ const DrawingBoard = () => {
       ) {
         const { element_type, data: drawingElementData } =
           receivedActionCableData.drawing_element;
-        const receivedElementId = drawingElementData.id;
+        const receivedElementId = receivedActionCableData.drawing_element.id;
 
         if (
           receivedElementId &&
@@ -131,7 +131,10 @@ const DrawingBoard = () => {
         if (receivedElement) {
           setUndoStack((prev) => [...prev, drawingElements]);
           setRedoStack([]);
-          setDrawingElements((prev) => [...prev, receivedElement]);
+          setDrawingElements((prev) => {
+            const newState = [...prev, receivedElement];
+            return newState;
+          });
           setIsDirty(true); // 他のユーザーからの描画でもDirtyになる
         }
       } else if (
@@ -340,6 +343,7 @@ const DrawingBoard = () => {
   }, [isDirty]);
 
   const handleExportClick = useCallback(() => {
+    // console.log("handleExportClick called. Setting isExportModalOpen to true."); // デバッグログ
     setIsExportModalOpen(true);
   }, []);
 
@@ -363,12 +367,17 @@ const DrawingBoard = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      setIsExportModalOpen(false); // <-- 成功時のみモーダルを閉じる
     } catch (e: any) {
       console.error("Export failed:", e);
       setExportError(`エクスポートに失敗しました: ${e.message}`);
+      // console.log("Export failed. isExportModalOpen should remain true."); // デバッグログ
+      // エラー時はモーダルを閉じない
     } finally {
-      setIsExporting(false);
-      setIsExportModalOpen(false);
+      setIsExporting(false); // エクスポート中のステータスは解除
+      // console.log("handleExport finally block. isExporting set to false."); // デバッグログ
+      // setIsExportModalOpen(false); // ここからは削除
     }
   };
 
@@ -444,7 +453,10 @@ const DrawingBoard = () => {
           {isExportModalOpen && (
             <ExportModal
               isOpen={isExportModalOpen}
-              onClose={() => setIsExportModalOpen(false)}
+              onClose={() => {
+                // console.log("ExportModal onClose called. Setting isExportModalOpen to false."); // デバッグログ
+                setIsExportModalOpen(false);
+              }}
               onExport={handleExport}
               isExporting={isExporting}
               exportError={exportError}
