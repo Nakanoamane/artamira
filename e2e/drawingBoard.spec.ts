@@ -1,29 +1,9 @@
 import { test, expect, Page } from '@playwright/test'
-import { loginOrCreateUser } from './loginHelper';
 
 test.describe('DrawingBoard', () => {
   let drawingId: number;
   test.beforeEach(async ({ page }) => {
-    await loginOrCreateUser(page);
-    await page.goto('/drawings');
-
-    await page.waitForSelector('a:has-text("新規描画ボードを作成")');
-    await page.click('a:has-text("新規描画ボードを作成")');
-    await page.fill('input[placeholder="新しい描画ボードのタイトル"]', 'テスト描画ボード');
-    await page.click('button:has-text("作成")');
-
-    // 新しい描画ボードのURLに遷移したことを確認し、IDを抽出
-    await page.waitForURL(/\/drawings\/\d+/, { timeout: 15000 });
-    const url = page.url();
-    const match = url.match(/\/drawings\/(\d+)/);
-    if (match && match[1]) {
-      drawingId = parseInt(match[1], 10);
-    } else {
-      throw new Error('Failed to extract drawing ID from URL');
-    }
-
-    await expect(page.locator('label:has-text("ツール")')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('ペン')).toBeVisible({ timeout: 15000 });
+    // global-setupでログイン状態が共有されているため、ここではログイン処理は不要
   })
 
   test('should render Toolbar and Canvas components', async ({ page }) => {
@@ -75,7 +55,6 @@ test.describe('DrawingBoard', () => {
     // クライアント1のセットアップ
     const context1 = await browser.newContext()
     const page1 = await context1.newPage()
-    await loginOrCreateUser(page1)
     await page1.goto('/drawings')
     await page1.click('a:has-text("新規描画ボードを作成")')
     await page1.fill('input[placeholder="新しい描画ボードのタイトル"]', 'リアルタイムテストボード')
@@ -88,7 +67,6 @@ test.describe('DrawingBoard', () => {
     // クライアント2のセットアップ
     const context2 = await browser.newContext()
     const page2 = await context2.newPage()
-    await loginOrCreateUser(page2)
     await page2.goto(`/drawings/${drawingId}`)
     await page2.waitForSelector('canvas')
 
