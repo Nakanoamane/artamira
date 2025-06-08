@@ -3,8 +3,8 @@ import { test, expect, Page } from '@playwright/test'
 test.describe('DrawingBoard', () => {
   let drawingId: number;
 
-  // ヘルパー関数: 描画操作を行い、保存ボタンが活性化されることを確認する
-  async function performDrawingAndVerifyDirtyState(page: Page) {
+  // ヘルパー関数: 予測可能な四角形を描画し、ダーティ状態になることを確認する
+  async function drawRectangle(page: Page) {
     await page.waitForSelector('canvas');
     const canvas = page.locator('canvas');
     const canvasBoundingBox = await canvas.boundingBox();
@@ -16,14 +16,20 @@ test.describe('DrawingBoard', () => {
     // 接続中が表示されていないことを確認
     await expect(page.getByText('接続中')).not.toBeVisible();
 
-    // 何か描画する
-    await page.mouse.move(canvasBoundingBox.x + 50, canvasBoundingBox.y + 50);
+    // 四角形ツールを選択
+    await page.getByRole('button', { name: '四角' }).click();
+
+    // 四角形を描画
+    const startX = canvasBoundingBox.x + 50;
+    const startY = canvasBoundingBox.y + 50;
+    const endX = canvasBoundingBox.x + 150;
+    const endY = canvasBoundingBox.y + 150;
+
+    await page.mouse.move(startX, startY);
     await page.mouse.down();
-    await page.mouse.move(canvasBoundingBox.x + 100, canvasBoundingBox.y + 100);
+    await page.mouse.move(endX, endY);
     await page.mouse.up();
 
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(500); // UIがダーティ状態に更新されるのを待つ
     await expect(page.getByRole('button', { name: '保存 *' })).toBeVisible();
   }
 
@@ -53,7 +59,8 @@ test.describe('DrawingBoard', () => {
     const canvas = page.locator('canvas')
     await expect(canvas).toBeVisible()
 
-    await expect(page.locator('h1', { hasText: 'テスト描画ボード' })).toBeVisible({ timeout: 10000 });
+    await page.pause();
+    await expect(page.locator('h1', { hasText: 'テスト描画ボード' })).toBeVisible();
   })
 
   test('should change color and brush size via Toolbar', async ({ page }) => {
@@ -146,47 +153,50 @@ test.describe('DrawingBoard', () => {
 
   test('should activate save button and show unsaved indicator after drawing', async ({ page }) => {
     // 描画操作とダーティ状態の確認を共通化
-    await performDrawingAndVerifyDirtyState(page);
+    await drawRectangle(page);
 
     // 保存ボタンをクリック
     const saveButtonWithAsterisk = page.getByRole('button', { name: '保存 *' });
-    await saveButtonWithAsterisk.click({ timeout: 1500 });
+    await saveButtonWithAsterisk.click({ timeout: 3000 });
 
     // 保存ボタンが非活性化され、未保存マークが消えていることを確認
-    await expect(page.getByRole('button', { name: '保存', exact: true })).toBeDisabled(); // アスタリスクなしの「保存」ボタンが非活性化
+    await expect(page.getByRole('button', { name: '保存', exact: true })).toBeDisabled({ timeout: 3000 }); // アスタリスクなしの「保存」ボタンが非活性化
     await expect(saveButtonWithAsterisk).not.toBeVisible(); // アスタリスク付きボタンが非表示になっていること
     // 最終保存日時が表示されていることを確認（正確な時間は検証しないが、存在することを確認）
-    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません', { timeout: 10000 });
+    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません');
   });
 
   test('should save drawing and disable save button, remove unsaved indicator', async ({ page }) => {
     // 描画操作とダーティ状態の確認を共通化
-    await performDrawingAndVerifyDirtyState(page);
+    await drawRectangle(page);
 
     // 保存ボタンをクリック
     const saveButtonWithAsterisk = page.getByRole('button', { name: '保存 *' });
-    await saveButtonWithAsterisk.click({ timeout: 1500 });
+    await saveButtonWithAsterisk.click({ timeout: 3000 });
 
     // 保存ボタンが非活性化され、未保存マークが消えていることを確認
     await expect(page.getByRole('button', { name: '保存', exact: true })).toBeDisabled(); // アスタリスクなしの「保存」ボタンが非活性化
     await expect(saveButtonWithAsterisk).not.toBeVisible(); // アスタリスク付きボタンが非表示になっていること
     // 最終保存日時が表示されていることを確認（正確な時間は検証しないが、存在することを確認）
-    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません', { timeout: 10000 });
+    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません');
   });
 
   test('should restore drawing content after page reload', async ({ page }) => {
+    const canvas = page.locator('canvas');
+    await expect(canvas).toBeVisible();
+
     // 描画操作とダーティ状態の確認を共通化
-    await performDrawingAndVerifyDirtyState(page);
+    await drawRectangle(page);
 
     // 保存ボタンをクリック
     const saveButtonWithAsterisk = page.getByRole('button', { name: '保存 *' });
-    await saveButtonWithAsterisk.click({ timeout: 1500 });
+    await saveButtonWithAsterisk.click({ timeout: 3000 });
 
     // 保存ボタンが非活性化され、未保存マークが消えていることを確認
     await expect(page.getByRole('button', { name: '保存', exact: true })).toBeDisabled(); // アスタリスクなしの「保存」ボタンが非活性化
     await expect(saveButtonWithAsterisk).not.toBeVisible(); // アスタリスク付きボタンが非表示になっていること
     // 最終保存日時が表示されていることを確認（正確な時間は検証しないが、存在することを確認）
-    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません', { timeout: 10000 });
+    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません');
 
     // ページをリロード
     await page.reload();
@@ -196,12 +206,113 @@ test.describe('DrawingBoard', () => {
     // キャンバスが可視であることを確認
     await expect(page.locator('canvas')).toBeVisible();
     // 最終保存日時が表示されていることを確認することで、データがロードされたことを間接的に確認
-    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません', { timeout: 10000 });
+    await expect(page.getByText('最終保存:', { exact: false })).not.toContainText('まだ保存されていません');
+
+    // 描画内容が正確に復元されていることをスナップショットで検証
+    await expect(canvas).toHaveScreenshot('restored_rectangle.png', {
+      maxDiffPixels: 100, // 描画のわずかな差異を許容
+    });
+  });
+
+  test('should load drawing from canvas_data when available', async ({ page }) => {
+    const API_URL = 'http://localhost:3000';
+
+    // APIレスポンスをモックしてcanvas_dataを返す
+    await page.route(`${API_URL}/api/v1/drawings/${drawingId}`, async (route) => {
+      const mockCanvasData = [
+        {
+          id: 'mock_rect_1',
+          type: 'rectangle',
+          start: { x: 50, y: 50 },
+          end: { x: 150, y: 150 },
+          color: '#FF0000',
+          brushSize: 5,
+        },
+      ];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: drawingId,
+          title: 'モック描画ボード with canvas_data',
+          last_saved_at: new Date().toISOString(),
+          canvas_data: JSON.stringify(mockCanvasData), // JSON形式でシリアライズされた文字列
+        }),
+      });
+    });
+
+    // 描画ボードにアクセス
+    await page.goto(`/drawings/${drawingId}`);
+    await expect(page.locator('canvas')).toBeVisible();
+    await expect(page.getByText('モック描画ボード with canvas_data')).toBeVisible();
+    await expect(page.getByText('最終保存:')).toBeVisible();
+
+    // キャンバスの内容をスナップショットで検証
+    const canvas = page.locator('canvas');
+    await expect(canvas).toHaveScreenshot('loaded_canvas_data_rectangle.png', {
+      maxDiffPixels: 100,
+    });
+
+    // 保存ボタンがロード時に非活性であることを確認
+    await expect(page.getByRole('button', { name: '保存', exact: true })).toBeDisabled();
+  });
+
+  test('should fallback to drawing_elements when canvas_data is not available', async ({ page }) => {
+    const API_URL = 'http://localhost:3000';
+
+    // /api/v1/drawings/:id のAPIレスポンスをモックしてcanvas_dataを返さない
+    await page.route(`${API_URL}/api/v1/drawings/${drawingId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: drawingId,
+          title: 'モック描画ボード without canvas_data',
+          last_saved_at: null,
+          canvas_data: null,
+        }),
+      });
+    });
+
+    // /api/v1/drawings/:id/elements のAPIレスポンスをモックしてdrawing_elementsを返す
+    await page.route(`${API_URL}/api/v1/drawings/${drawingId}/elements`, async (route) => {
+      const mockDrawingElements = [
+        {
+          id: 1,
+          element_type: 'line',
+          data: {
+            path: [[200, 200], [300, 300]],
+            color: '#0000FF',
+            lineWidth: 3,
+          },
+        },
+      ];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ drawing_elements: mockDrawingElements }),
+      });
+    });
+
+    // 描画ボードにアクセス
+    await page.goto(`/drawings/${drawingId}`);
+    await expect(page.locator('canvas')).toBeVisible();
+    await expect(page.getByText('モック描画ボード without canvas_data')).toBeVisible();
+    await expect(page.getByText('最終保存:')).toContainText('まだ保存されていません'); // 最終保存日時がないことを確認
+
+    // キャンバスの内容をスナップショットで検証
+    const canvas = page.locator('canvas');
+    await expect(canvas).toHaveScreenshot('loaded_drawing_elements_line.png', {
+      maxDiffPixels: 100,
+    });
+
+    // 保存ボタンがロード時に非活性であることを確認
+    await expect(page.getByRole('button', { name: '保存', exact: true })).toBeDisabled();
   });
 
   test('should show warning when attempting to leave page with unsaved changes', async ({ page }) => {
     // 1. Draw something to make isDirty true (共通化)
-    await performDrawingAndVerifyDirtyState(page);
+    await drawRectangle(page);
 
     const initialUrl = page.url(); // 現在のURLを保存
 
@@ -216,7 +327,7 @@ test.describe('DrawingBoard', () => {
     await closePromise; // page.close()の完了を待つ (エラーがスローされない可能性もある)
 
     // ページが閉じられず、URLが変更されていないことを確認
-    await expect(page).toHaveURL(initialUrl, { timeout: 15000 });
+    await expect(page).toHaveURL(initialUrl);
   });
 
   // TODO: 描画テストの追加
