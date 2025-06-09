@@ -21,16 +21,54 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
 
   describe 'GET /api/v1/drawings' do
     context '認証済みユーザーの場合' do
-      let!(:drawing1) { create(:drawing, user: user, title: '最初の描画ボード') }
-      let!(:drawing2) { create(:drawing, user: user, title: '二番目の描画ボード') }
+      let!(:drawing1) { create(:drawing, user: user, title: '最初の描画ボード', created_at: 3.days.ago) }
+      let!(:drawing2) { create(:drawing, user: user, title: '二番目の描画ボード', created_at: 2.days.ago) }
+      let!(:drawing3) { create(:drawing, user: user, title: '三番目の描画ボード', created_at: 1.day.ago) }
       let!(:cookies) { cookies_for_header(user) }
 
-      it '描画ボードのリストを返す' do
+      it '描画ボードのリストを新しい順に返し、ページネーションメタデータを含む' do
         get api_v1_drawings_path, headers: { 'Cookie' => cookies }, as: :json
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body.length).to eq(2)
-        expect(response.parsed_body[0]['title']).to eq('最初の描画ボード')
-        expect(response.parsed_body[1]['title']).to eq('二番目の描画ボード')
+        expect(response.parsed_body['drawings'].length).to eq(3)
+        expect(response.parsed_body['drawings'][0]['title']).to eq('三番目の描画ボード')
+        expect(response.parsed_body['drawings'][1]['title']).to eq('二番目の描画ボード')
+        expect(response.parsed_body['drawings'][2]['title']).to eq('最初の描画ボード')
+
+        meta = response.parsed_body['meta']
+        expect(meta['total_pages']).to eq(1)
+        expect(meta['total_count']).to eq(3)
+        expect(meta['current_page']).to eq(1)
+        expect(meta['per_page']).to eq(10)
+      end
+
+      context 'pageパラメータが指定された場合' do
+        before do
+          15.times { |i| create(:drawing, user: user, created_at: (15 - i).hours.ago) } # 20個の描画ボードを作成
+        end
+
+        it '指定されたページの描画ボードを返す' do
+          get api_v1_drawings_path(page: 2, per_page: 5), headers: { 'Cookie' => cookies }, as: :json
+          expect(response).to have_http_status(:ok)
+          expect(response.parsed_body['drawings'].length).to eq(5)
+          expect(response.parsed_body['meta']['current_page']).to eq(2)
+          expect(response.parsed_body['meta']['per_page']).to eq(5)
+          expect(response.parsed_body['meta']['total_count']).to eq(18) # 既存の3つ + 新しく作成した15個
+          expect(response.parsed_body['meta']['total_pages']).to eq(4) # 18 / 5 = 3.6 -> 4ページ
+        end
+      end
+
+      context 'per_pageパラメータが指定された場合' do
+        before do
+          15.times { |i| create(:drawing, user: user, created_at: (15 - i).hours.ago) }
+        end
+
+        it '指定された件数の描画ボードを返す' do
+          get api_v1_drawings_path(per_page: 5), headers: { 'Cookie' => cookies }, as: :json
+          expect(response).to have_http_status(:ok)
+          expect(response.parsed_body['drawings'].length).to eq(5)
+          expect(response.parsed_body['meta']['per_page']).to eq(5)
+          expect(response.parsed_body['meta']['total_count']).to eq(18)
+        end
       end
     end
 

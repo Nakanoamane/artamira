@@ -4,8 +4,8 @@ module Api
       before_action :set_drawing, only: [:show, :update, :destroy, :save, :export]
 
       def index
-        @drawings = Drawing.all
-        render json: @drawings
+        @drawings = Drawing.order(created_at: :desc).page(params[:page]).per(params[:per_page] || 10)
+        render "index"
       end
 
       def show
