@@ -15,11 +15,17 @@ interface UsePaginationResult {
 
 const usePagination = ({ currentPage, totalPages, onPageChange, maxPagesToShow = 5 }: UsePaginationProps): UsePaginationResult => {
   const handlePreviousPage = () => {
-    onPageChange(Math.max(currentPage - 1, 1));
+    const newPage = Math.max(currentPage - 1, 1);
+    if (newPage !== currentPage) {
+      onPageChange(newPage);
+    }
   };
 
   const handleNextPage = () => {
-    onPageChange(Math.min(currentPage + 1, totalPages));
+    const newPage = Math.min(currentPage + 1, totalPages);
+    if (newPage !== currentPage) {
+      onPageChange(newPage);
+    }
   };
 
   const renderPageNumbers = () => {

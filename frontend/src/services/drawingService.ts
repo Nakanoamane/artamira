@@ -1,6 +1,6 @@
 interface Drawing {
   id: number;
-  title: string;
+  title: string | null | undefined;
 }
 
 interface DrawingsResponse {
