@@ -75,26 +75,46 @@ docker compose up frontend
 ```
 
 ### テストの実行
+**注意:** E2Eテストを実行する前に、開発環境のDockerイメージ（`artamira-api` および `artamira-frontend`）がビルドされている必要があります。これは、`docker compose up -d` コマンドを一度実行することで行われます。
+
+新しいE2Eテスト環境の起動とテスト実行、クリーンアップは、以下のnpmスクリプトで行います。
+
 ```bash
-# DBのセットアップ
-docker compose exec api bundle exec rails db:test:prepare
-
-# 全てのバックエンドテストを実行
-docker compose exec api bundle exec rspec
-
-# 特定のバックエンドテストを実行
-docker compose exec api bundle exec rspec spec/models/drawing_element_spec.rb
-
-# フロントエンドのコンポーネント単体テストを実行
-docker compose exec frontend npm test
-
-# 特定のフロントエンドのコンポーネント単体テストを実行
-docker compose exec frontend npx vitest run src/tests/components/ColorPicker.test.tsx
-
-# E2Eテストを実行
-# 事前にdocker compose up -dでコンテナを起動しておく必要があります。
 npm run test:e2e
 ```
+
+**詳細オプション:**
+
+*   ヘッドレスモードを無効にしてブラウザのUIを表示しながらテストを実行:
+    ```bash
+    npm run test:e2e:headed
+    ```
+
+*   PlaywrightのデバッグUIを表示しながらテストを実行:
+    ```bash
+    npm run test:e2e:debug
+    ```
+
+*   バックエンドテスト（Rspec）
+    ```bash
+    # DBのセットアップ
+    docker compose exec api bundle exec rails db:test:prepare
+
+    # 全てのバックエンドテストを実行
+    docker compose exec api bundle exec rspec
+
+    # 特定のバックエンドテストを実行
+    docker compose exec api bundle exec rspec spec/models/drawing_element_spec.rb
+    ```
+
+*   フロントエンドのコンポーネント単体テスト (Vitest)
+    ```bash
+    # 全てのフロントエンドのコンポーネント単体テストを実行
+    docker compose exec frontend npm test
+
+    # 特定のフロントエンドのコンポーネント単体テストを実行
+    docker compose exec frontend npx vitest run src/tests/components/ColorPicker.test.tsx
+    ```
 
 ### コンソールの起動
 ```bash

@@ -8,7 +8,13 @@
     "test": "test"
   },
   "scripts": {
-    "test:e2e": "playwright test"
+    "start:dev": "docker compose up -d",
+    "stop:dev": "docker compose down",
+    "start:test:env": "docker compose -f docker-compose.test.yml -p artamira_test up -d",
+    "stop:test:env": "docker compose -f docker-compose.test.yml -p artamira_test down -v",
+    "test:e2e": "npm run start:test:env && npx playwright test && npm run stop:test:env",
+    "test:e2e:headed": "npm run start:test:env && npx playwright test --headed && npm run stop:test:env",
+    "test:e2e:debug": "npm run start:test:env && npx playwright test --debug && npm run stop:test:env"
   },
   "keywords": [],
   "author": "",

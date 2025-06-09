@@ -1,3 +1,5 @@
+require 'logger' # ロガーを使用するために必要
+
 # The test environment is used exclusively to run your application's
 # test suite. You never need to work with it otherwise. Remember that
 # your test database is "scratch space" for the test suite and is wiped
@@ -5,6 +7,10 @@
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
+
+  # ログを標準出力に設定し、詳細なログを出力します。
+  config.logger = ActiveSupport::Logger.new($stdout)
+  config.log_level = :debug
 
   # While tests run files are not watched, reloading is not necessary.
   config.enable_reloading = false
@@ -53,4 +59,5 @@ Rails.application.configure do
   config.action_cable.allowed_request_origins = ["http://localhost:5173"]
 
   config.hosts << "www.example.com"
+  config.hosts << "localhost"
 end

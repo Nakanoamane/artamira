@@ -19,7 +19,7 @@ async function globalSetup(config: FullConfig) {
   await page.getByRole('button', { name: 'ログイン' }).click()
 
   try {
-    await page.waitForURL(`${baseURL}/drawings`, { timeout: 10000 })
+    await page.waitForURL(`${baseURL}/drawings`, { timeout: 30000 })
     const storageStatePath = storageState as string;
     await page.context().storageState({ path: storageStatePath })
   } catch (error) {

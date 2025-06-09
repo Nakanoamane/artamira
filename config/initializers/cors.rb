@@ -7,7 +7,7 @@
 
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins 'http://localhost:5173' # フロントエンドのURL
+    origins 'http://localhost:5173', 'http://localhost:5174' # フロントエンドのURLとテスト環境のURL
 
     resource '*',
       headers: :any,
