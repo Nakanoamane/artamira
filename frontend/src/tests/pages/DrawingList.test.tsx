@@ -7,6 +7,15 @@ import { vi } from 'vitest'
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
+// react-router-dom から Link をモックする
+vi.mock('react-router-dom', () => ({
+  Link: ({ to, children, ...rest }: { to: string; children: React.ReactNode; [key: string]: any }) => (
+    <a href={to} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
 describe('DrawingList', () => {
   beforeEach(() => {
     // 各テストの前にfetchのモックをリセット
