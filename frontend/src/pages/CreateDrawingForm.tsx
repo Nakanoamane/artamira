@@ -1,49 +1,17 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../contexts/AuthContext'
+import { useCreateDrawing } from '../hooks/useCreateDrawing'
 
 const CreateDrawingForm = () => {
   const [title, setTitle] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { handleCreateDrawing, loading, error } = useCreateDrawing()
   const navigate = useNavigate()
   const { user } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    if (!user) {
-      setError('ユーザーが認証されていません。')
-      setLoading(false)
-      return
-    }
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/drawings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // 認証トークンが必要な場合はここに追加
-          // 'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ drawing: { title, user_id: user.id } }),
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-      }
-
-      const newDrawing = await response.json()
-      navigate(`/drawings/${newDrawing.id}`)
-    } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
+    await handleCreateDrawing(title)
   }
 
   return (
