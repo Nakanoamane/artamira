@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import useDrawings from '../../hooks/useDrawings';
 import { fetchDrawingsApi } from '../../services/drawingService';
 import { vi, Mock } from 'vitest';
@@ -86,7 +86,9 @@ describe('useDrawings', () => {
     expect(result.current.drawings).toEqual(mockDataPage1.drawings);
 
     // ページを2に変更
-    result.current.setCurrentPage(2);
+    await act(async () => {
+      result.current.setCurrentPage(2);
+    });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
