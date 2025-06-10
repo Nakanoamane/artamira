@@ -1,6 +1,7 @@
 /// <reference types="vitest/globals" />
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import Canvas, { DrawingElementType } from '../../components/Canvas';
+import Canvas from '../../components/Canvas';
+import { DrawingElementType } from '../../utils/drawingElementsParser';
 import { MockCanvasRenderingContext2D } from '../../setupTests';
 import { vi } from 'vitest';
 
@@ -10,8 +11,6 @@ describe('Canvas', () => {
     activeTool: 'pen',
     activeColor: '#000000',
     activeBrushSize: 5,
-    isDrawing: false,
-    setIsDrawing: vi.fn(),
     onDrawComplete: vi.fn(),
     drawingElements: [],
     setDrawingElements: vi.fn(),
@@ -32,7 +31,7 @@ describe('Canvas', () => {
     // `vi.clearAllMocks()` はすべてのモックの呼び出し履歴をクリアしますが、モック関数自体は再作成されません。
     // defaultProps.setIsDrawing は describe スコープで一度だけ作成されているため、
     // 各テストで新しいモック関数を割り当てる必要があります。
-    defaultProps.setIsDrawing.mockClear();
+    // defaultProps.setIsDrawing.mockClear(); // 削除
     defaultProps.onDrawComplete.mockClear();
     // 他のモック関数もあれば同様にクリア
     vi.clearAllMocks(); // これも実行しておく
@@ -52,49 +51,18 @@ describe('Canvas', () => {
     defaultProps.canvasRef.current = screen.getByTestId('drawing-canvas') as HTMLCanvasElement;
   });
 
-  it('sets isDrawing to true on mouse down', async () => {
-    render(<Canvas {...defaultProps} />);
-    const canvas = screen.getByTestId('drawing-canvas');
-    defaultProps.canvasRef.current = canvas as HTMLCanvasElement; // Handled by Canvas component, but ensure here
-
-    act(() => {
-      fireEvent.mouseDown(canvas, { clientX: 10, clientY: 10 });
-    });
-    expect(defaultProps.setIsDrawing).toHaveBeenCalledWith(true);
-  });
-
-  it('sets isDrawing to false and nulls prevPointRef on mouse up', async () => {
-    render(<Canvas {...defaultProps} isDrawing={true} />);
-    const canvas = screen.getByTestId('drawing-canvas');
-    defaultProps.canvasRef.current = canvas as HTMLCanvasElement;
-
-    act(() => {
-      fireEvent.mouseUp(canvas, { clientX: 20, clientY: 20 });
-    });
-    expect(defaultProps.setIsDrawing).toHaveBeenCalledWith(false);
-  });
-
-  it('sets isDrawing to false and nulls prevPointRef on mouse leave', () => {
-    render(<Canvas {...defaultProps} isDrawing={true} />);
-    const canvas = screen.getByTestId('drawing-canvas');
-    defaultProps.canvasRef.current = canvas as HTMLCanvasElement;
-
-    act(() => {
-      fireEvent.mouseLeave(canvas);
-    });
-    expect(defaultProps.setIsDrawing).toHaveBeenCalledWith(false);
-  });
-
   it('draws elements to render on canvas', async () => {
     const drawingElements: DrawingElementType[] = [
       {
         type: 'line',
+        id: 'test-line-1',
         points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
         color: '#FF0000',
         brushSize: 5
       },
       {
         type: 'line',
+        id: 'test-line-2',
         points: [{ x: 20, y: 20 }, { x: 30, y: 30 }],
         color: '#00FF00',
         brushSize: 10

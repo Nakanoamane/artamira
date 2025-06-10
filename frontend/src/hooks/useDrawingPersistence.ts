@@ -64,9 +64,12 @@ export const useDrawingPersistence = ({
         let elements: DrawingElementType[] = [];
         if (data.canvas_data) {
           try {
-            elements = JSON.parse(data.canvas_data);
+            const parsedCanvasData = JSON.parse(data.canvas_data);
+            if (parsedCanvasData && Array.isArray(parsedCanvasData.elements)) {
+              elements = parseRawElements(parsedCanvasData.elements);
+            }
           } catch (parseError) {
-            console.error("Failed to parse canvas_data:", parseError);
+            setErrorDrawing((parseError as Error).message);
           }
         }
 
@@ -115,7 +118,7 @@ export const useDrawingPersistence = ({
       setIsDirty(false);
       setLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
     } catch (e: any) {
-      console.error("Failed to save drawing:", e);
+      // console.error("Failed to save drawing:", e);
     }
   }, [drawingId, isDirty]);
 

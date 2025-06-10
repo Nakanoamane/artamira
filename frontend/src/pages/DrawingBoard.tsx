@@ -8,10 +8,6 @@ import { useParams } from "react-router";
 import CompactHeader from "../components/CompactHeader";
 import DrawingHeader from "../components/DrawingHeader";
 import { useHeader } from "../contexts/HeaderContext";
-import {
-  ArrowPathIcon,
-  ExclamationCircleIcon,
-} from "@heroicons/react/24/outline";
 import { DrawingElementType } from "../utils/drawingElementsParser";
 import { useDrawingTools } from "../hooks/useDrawingTools";
 import { useDrawingElements } from "../hooks/useDrawingElements";
@@ -19,17 +15,10 @@ import { useDrawingChannelIntegration } from "../hooks/useDrawingChannelIntegrat
 import { useDrawingPersistence } from "../hooks/useDrawingPersistence";
 import { useDrawingExport } from "../hooks/useDrawingExport";
 
-interface Drawing {
-  id: number;
-  title: string;
-  last_saved_at?: string;
-}
-
 const DrawingBoard = () => {
   const navigate = useNavigate();
   const { setShowHeader } = useHeader();
   const { activeTool, setActiveTool, activeColor, setActiveColor, activeBrushSize, setActiveBrushSize } = useDrawingTools();
-  const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const { id } = useParams<{ id: string }>();
@@ -78,10 +67,6 @@ const DrawingBoard = () => {
     };
   }, [setShowHeader]);
 
-  useEffect(() => {
-    // TODO: 認証チェック
-  }, [navigate]);
-
   if (loadingDrawing) {
     return (
       <div className="flex justify-center items-center h-screen text-lg">
@@ -100,68 +85,52 @@ const DrawingBoard = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {loadingDrawing ? (
-        <div className="flex items-center justify-center min-h-screen">
-          <ArrowPathIcon className="h-8 w-8 animate-spin mr-3" />
-          <div className="text-2xl font-semibold">Loading drawing...</div>
-        </div>
-      ) : errorDrawing ? (
-        <div className="flex items-center justify-center min-h-screen text-red-500">
-          <ExclamationCircleIcon className="h-8 w-8 mr-3" />
-          <div className="text-2xl font-semibold">Error: {errorDrawing}</div>
-        </div>
-      ) : (
-        <>
-          <div className="flex justify-start items-center pr-8 gap-4">
-            <CompactHeader />
-            <DrawingHeader
-              title={drawing?.title || "無題のボード"}
-              lastSavedAt={lastSavedAt}
-              isDirty={isDirty}
-            />
-          </div>
+      <div className="flex justify-start items-center pr-8 gap-4">
+        <CompactHeader />
+        <DrawingHeader
+          title={drawing?.title || "無題のボード"}
+          lastSavedAt={lastSavedAt}
+          isDirty={isDirty}
+        />
+      </div>
 
-          <div className="flex flex-col items-center gap-4 pb-10">
-            <Toolbar
-              activeTool={activeTool}
-              setActiveTool={setActiveTool}
-              activeColor={activeColor}
-              setActiveColor={setActiveColor}
-              activeBrushSize={activeBrushSize}
-              setActiveBrushSize={setActiveBrushSize}
-              onSave={() => handleSave(drawingElements)}
-              onExportClick={handleExportClick}
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              isDirty={isDirty}
-            />
-            <Canvas
-              canvasRef={canvasRef}
-              drawingElements={drawingElements}
-              setDrawingElements={setDrawingElements}
-              activeTool={activeTool}
-              activeColor={activeColor}
-              activeBrushSize={activeBrushSize}
-              isDrawing={isDrawing}
-              setIsDrawing={setIsDrawing}
-              onDrawComplete={handleDrawComplete}
-            />
-          </div>
+      <div className="flex flex-col items-center gap-4 pb-10">
+        <Toolbar
+          activeTool={activeTool}
+          setActiveTool={setActiveTool}
+          activeColor={activeColor}
+          setActiveColor={setActiveColor}
+          activeBrushSize={activeBrushSize}
+          setActiveBrushSize={setActiveBrushSize}
+          onSave={() => handleSave(drawingElements)}
+          onExportClick={handleExportClick}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          isDirty={isDirty}
+        />
+        <Canvas
+          canvasRef={canvasRef}
+          drawingElements={drawingElements}
+          setDrawingElements={setDrawingElements}
+          activeTool={activeTool}
+          activeColor={activeColor}
+          activeBrushSize={activeBrushSize}
+          onDrawComplete={handleDrawComplete}
+        />
+      </div>
 
-          {isExportModalOpen && (
-            <ExportModal
-              isOpen={isExportModalOpen}
-              onClose={() => {
-                setIsExportModalOpen(false);
-              }}
-              onExport={(format) => handleExport(format, canvasRef)}
-              isExporting={isExporting}
-              exportError={exportError}
-            />
-          )}
-        </>
+      {isExportModalOpen && (
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => {
+            setIsExportModalOpen(false);
+          }}
+          onExport={(format) => handleExport(format, canvasRef)}
+          isExporting={isExporting}
+          exportError={exportError}
+        />
       )}
     </div>
   );
