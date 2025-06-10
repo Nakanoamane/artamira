@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router";
-import Canvas, { DrawingElementType } from "../components/Canvas";
+import Canvas from "../components/Canvas";
 import Toolbar from "../components/Toolbar";
 import { ExportModal } from "../components/ExportModal";
 import { usePageTitle } from "../hooks/usePageTitle";
-import { useDrawingChannel } from "../hooks/useDrawingChannel";
 import { useParams } from "react-router";
 import CompactHeader from "../components/CompactHeader";
 import DrawingHeader from "../components/DrawingHeader";
@@ -13,6 +12,10 @@ import {
   ArrowPathIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
+import { DrawingElementType, parseRawElements } from "../utils/drawingElementsParser";
+import { useDrawingTools } from "../hooks/useDrawingTools";
+import { useDrawingElements } from "../hooks/useDrawingElements";
+import { useDrawingChannelIntegration } from "../hooks/useDrawingChannelIntegration";
 
 interface Drawing {
   id: number;
@@ -23,19 +26,11 @@ interface Drawing {
 const DrawingBoard = () => {
   const navigate = useNavigate();
   const { setShowHeader } = useHeader();
-  const [activeTool, setActiveTool] = useState("pen");
-  const [activeColor, setActiveColor] = useState("#000000");
-  const [activeBrushSize, setActiveBrushSize] = useState(2);
+  const { activeTool, setActiveTool, activeColor, setActiveColor, activeBrushSize, setActiveBrushSize } = useDrawingTools();
   const [isDrawing, setIsDrawing] = useState(false);
-  const [drawingElements, setDrawingElements] = useState<DrawingElementType[]>(
-    []
-  );
-  const [undoStack, setUndoStack] = useState<DrawingElementType[][]>([]);
-  const [redoStack, setRedoStack] = useState<DrawingElementType[][]>([]);
   const [drawing, setDrawing] = useState<Drawing | null>(null);
   const [loadingDrawing, setLoadingDrawing] = useState(true);
   const [errorDrawing, setErrorDrawing] = useState<string | null>(null);
-  const [_, setActionCableError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -44,124 +39,27 @@ const DrawingBoard = () => {
   const [exportError, setExportError] = useState<string | null>(null);
 
   const { id } = useParams<{ id: string }>();
-
-  // Undo/Redo Functions
-  const handleUndo = useCallback(() => {
-    setUndoStack((prev) => {
-      const newUndoStack = [...prev];
-      const lastState = newUndoStack.pop(); // 最後の状態を取り出す
-
-      if (lastState) {
-        setRedoStack((redoPrev) => [...redoPrev, drawingElements]); // 現在の状態をredoStackに保存
-        setDrawingElements(lastState); // 描画要素を元に戻す
-        setIsDirty(true); // UndoでもDirtyになる
-      }
-      return newUndoStack;
-    });
-  }, [drawingElements]);
-
-  const handleRedo = useCallback(() => {
-    setRedoStack((prev) => {
-      const newRedoStack = [...prev];
-      const nextState = newRedoStack.pop(); // 次の状態を取り出す
-
-      if (nextState) {
-        setUndoStack((undoPrev) => [...undoPrev, drawingElements]); // 現在の状態をundoStackに保存
-        setDrawingElements(nextState); // 描画要素を進める
-        setIsDirty(true); // RedoでもDirtyになる
-      }
-      return newRedoStack;
-    });
-  }, [drawingElements]);
-
-  const handleReceivedData = useCallback(
-    (receivedActionCableData: any) => {
-      if (
-        receivedActionCableData.type === "drawing_element_created" &&
-        receivedActionCableData.drawing_element
-      ) {
-        const { element_type, data: drawingElementData } =
-          receivedActionCableData.drawing_element;
-        const receivedElementId = receivedActionCableData.drawing_element.id;
-
-        if (
-          receivedElementId &&
-          drawingElements.some((el) => el.id === receivedElementId)
-        ) {
-          return;
-        }
-
-        let receivedElement: DrawingElementType | null = null;
-
-        if (element_type === "line") {
-          receivedElement = {
-            id: receivedElementId,
-            type: "line",
-            points: drawingElementData.path.map((p: [number, number]) => ({
-              x: p[0],
-              y: p[1],
-            })),
-            color: drawingElementData.color,
-            brushSize: drawingElementData.lineWidth,
-          };
-        } else if (element_type === "rectangle") {
-          receivedElement = {
-            id: receivedElementId,
-            type: "rectangle",
-            start: {
-              x: drawingElementData.start.x,
-              y: drawingElementData.start.y,
-            },
-            end: { x: drawingElementData.end.x, y: drawingElementData.end.y },
-            color: drawingElementData.color,
-            brushSize: drawingElementData.lineWidth,
-          };
-        } else if (element_type === "circle") {
-          receivedElement = {
-            id: receivedElementId,
-            type: "circle",
-            center: {
-              x: drawingElementData.center.x,
-              y: drawingElementData.center.y,
-            },
-            radius: drawingElementData.radius,
-            color: drawingElementData.color,
-            brushSize: drawingElementData.brushSize,
-          };
-        }
-
-        if (receivedElement) {
-          setUndoStack((prev) => [...prev, drawingElements]);
-          setRedoStack([]);
-          setDrawingElements((prev) => {
-            const newState = [...prev, receivedElement];
-            return newState;
-          });
-          setIsDirty(true); // 他のユーザーからの描画でもDirtyになる
-        }
-      } else if (
-        receivedActionCableData.type === "drawing_saved" &&
-        receivedActionCableData.drawing_id === drawing?.id
-      ) {
-        // 保存完了通知を受信した場合
-        setIsDirty(false);
-        setLastSavedAt(
-          receivedActionCableData.last_saved_at
-            ? new Date(receivedActionCableData.last_saved_at)
-            : null
-        );
-      }
-    },
-    [drawingElements, drawing?.id]
-  );
-
   const drawingId = id ? parseInt(id, 10) : undefined;
 
-  const { channel, status } = useDrawingChannel(
-    "DrawingChannel",
-    drawingId,
-    handleReceivedData
+  const { drawingElements, setDrawingElements, handleUndo, handleRedo, handleDrawComplete, canUndo, canRedo, addDrawingElementFromExternalSource } = useDrawingElements(
+    setIsDirty,
+    (newElement) => { // onNewElementCreatedコールバック
+      // Action Cableで描画要素を送信
+      sendDrawingElement(newElement);
+    }
   );
+
+  const { sendDrawingElement } = useDrawingChannelIntegration({
+    drawingId: drawingId,
+    addDrawingElement: (element) => {
+      // 他のユーザーからの描画を受信した場合、useDrawingElementsの関数を介して描画要素を追加
+      addDrawingElementFromExternalSource(element);
+    },
+    onDrawingSaved: (savedAt) => {
+      setIsDirty(false);
+      setLastSavedAt(savedAt);
+    },
+  });
 
   usePageTitle(drawing ? drawing.title : "描画ボード");
 
@@ -210,39 +108,7 @@ const DrawingBoard = () => {
 
         // canvas_dataの要素に、drawing_elements_after_saveの要素を追加する
         if (data.drawing_elements_after_save && Array.isArray(data.drawing_elements_after_save)) {
-          // receivedElementに型変換する処理 (handleReceivedData と同じロジック)
-          const parsedNewElements: DrawingElementType[] = data.drawing_elements_after_save.map((el: any) => {
-            let element: DrawingElementType | null = null;
-            if (el.element_type === "line") {
-              element = {
-                id: el.id,
-                type: "line",
-                points: el.data.path.map((p: [number, number]) => ({ x: p[0], y: p[1] })),
-                color: el.data.color,
-                brushSize: el.data.lineWidth,
-              };
-            } else if (el.element_type === "rectangle") {
-              element = {
-                id: el.id,
-                type: "rectangle",
-                start: { x: el.data.start.x, y: el.data.start.y },
-                end: { x: el.data.end.x, y: el.data.end.y },
-                color: el.data.color,
-                brushSize: el.data.lineWidth,
-              };
-            } else if (el.element_type === "circle") {
-              element = {
-                id: el.id,
-                type: "circle",
-                center: { x: el.data.center.x, y: el.data.center.y },
-                radius: el.data.radius,
-                color: el.data.color,
-                brushSize: el.data.brushSize,
-              };
-            }
-            return element;
-          }).filter(Boolean);
-
+          const parsedNewElements: DrawingElementType[] = parseRawElements(data.drawing_elements_after_save);
           initialElements = [...initialElements, ...parsedNewElements];
         }
 
@@ -258,59 +124,11 @@ const DrawingBoard = () => {
     };
 
     fetchDrawingData();
-  }, [drawingId]);
+  }, [drawingId, setDrawingElements, setLastSavedAt, setIsDirty]);
 
   useEffect(() => {
     // TODO: 認証チェック
   }, [navigate]);
-
-  const handleDrawComplete = (newElement: DrawingElementType) => {
-    setUndoStack((prev) => [...prev, drawingElements]);
-    setRedoStack([]);
-    setDrawingElements((prev) => [...prev, newElement]);
-    setIsDirty(true); // 描画操作でDirtyにする
-
-    if (channel && status.isConnected) {
-      let elementDataToSend: any;
-      if (newElement.type === "line") {
-        elementDataToSend = {
-          id: newElement.id,
-          path: newElement.points.map((p) => [p.x, p.y]),
-          color: newElement.color,
-          lineWidth: newElement.brushSize,
-        };
-      } else if (newElement.type === "rectangle") {
-        elementDataToSend = {
-          id: newElement.id,
-          start: newElement.start,
-          end: newElement.end,
-          color: newElement.color,
-          lineWidth: newElement.brushSize,
-        };
-      } else if (newElement.type === "circle") {
-        elementDataToSend = {
-          id: newElement.id,
-          center: newElement.center,
-          radius: newElement.radius,
-          color: newElement.color,
-          brushSize: newElement.brushSize,
-        };
-      }
-
-      channel.perform("draw", {
-        element_type: newElement.type,
-        element_data: elementDataToSend,
-      });
-      setActionCableError(null);
-    } else {
-      console.warn(
-        "WebSocket接続が確立されていないため、描画データを送信できません。"
-      );
-      setActionCableError(
-        "描画データを送信できません。WebSocket接続が確立されていません。"
-      );
-    }
-  };
 
   const handleSave = async () => {
     if (!drawingId || !isDirty) return;
@@ -357,7 +175,6 @@ const DrawingBoard = () => {
   }, [isDirty]);
 
   const handleExportClick = useCallback(() => {
-    // console.log("handleExportClick called. Setting isExportModalOpen to true."); // デバッグログ
     setIsExportModalOpen(true);
   }, []);
 
@@ -374,7 +191,6 @@ const DrawingBoard = () => {
       const canvas = canvasRef.current;
       const dataURL = canvas.toDataURL(`image/${format}`);
 
-      // 動的に<a>タグを作成してダウンロードをトリガー
       const link = document.createElement("a");
       link.href = dataURL;
       link.download = `drawing.${format}`;
@@ -382,16 +198,12 @@ const DrawingBoard = () => {
       link.click();
       document.body.removeChild(link);
 
-      setIsExportModalOpen(false); // <-- 成功時のみモーダルを閉じる
+      setIsExportModalOpen(false);
     } catch (e: any) {
       console.error("Export failed:", e);
       setExportError(`エクスポートに失敗しました: ${e.message}`);
-      // console.log("Export failed. isExportModalOpen should remain true."); // デバッグログ
-      // エラー時はモーダルを閉じない
     } finally {
-      setIsExporting(false); // エクスポート中のステータスは解除
-      // console.log("handleExport finally block. isExporting set to false."); // デバッグログ
-      // setIsExportModalOpen(false); // ここからは削除
+      setIsExporting(false);
     }
   };
 
@@ -446,8 +258,8 @@ const DrawingBoard = () => {
               onExportClick={handleExportClick}
               onUndo={handleUndo}
               onRedo={handleRedo}
-              canUndo={undoStack.length > 0}
-              canRedo={redoStack.length > 0}
+              canUndo={canUndo}
+              canRedo={canRedo}
               isDirty={isDirty}
             />
             <Canvas
@@ -467,7 +279,6 @@ const DrawingBoard = () => {
             <ExportModal
               isOpen={isExportModalOpen}
               onClose={() => {
-                // console.log("ExportModal onClose called. Setting isExportModalOpen to false."); // デバッグログ
                 setIsExportModalOpen(false);
               }}
               onExport={handleExport}
