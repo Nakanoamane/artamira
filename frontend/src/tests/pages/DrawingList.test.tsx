@@ -260,7 +260,6 @@ describe('DrawingList', () => {
     // 最初のfetch（初期ロード）で1ページ目のデータ
     mockFetch.mockImplementationOnce((url) => {
       const urlObj = new URL(url)
-      const page = parseInt(urlObj.searchParams.get('page') || '1', 10)
       const perPage = parseInt(urlObj.searchParams.get('per_page') || '10', 10)
 
       const allDrawings = Array.from({ length: 25 }, (_, i) => ({
@@ -285,7 +284,6 @@ describe('DrawingList', () => {
     // 「2」ボタンクリック後のfetchで2ページ目のデータ
     .mockImplementationOnce((url) => {
       const urlObj = new URL(url)
-      const page = parseInt(urlObj.searchParams.get('page') || '1', 10)
       const perPage = parseInt(urlObj.searchParams.get('per_page') || '10', 10)
 
       const allDrawings = Array.from({ length: 25 }, (_, i) => ({
@@ -310,7 +308,6 @@ describe('DrawingList', () => {
     // 「3」ボタンクリック後のfetchで3ページ目のデータ
     .mockImplementationOnce((url) => {
       const urlObj = new URL(url)
-      const page = parseInt(urlObj.searchParams.get('page') || '1', 10)
       const perPage = parseInt(urlObj.searchParams.get('per_page') || '10', 10)
 
       const allDrawings = Array.from({ length: 25 }, (_, i) => ({

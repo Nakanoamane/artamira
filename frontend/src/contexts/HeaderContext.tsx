@@ -4,6 +4,8 @@ import React, { createContext, useState, useContext, ReactNode } from 'react';
 interface HeaderContextType {
   isCompactHeader: boolean;
   setCompactHeader: (isCompact: boolean) => void;
+  showHeader: boolean;
+  setShowHeader: (show: boolean) => void;
 }
 
 // コンテキストの作成
@@ -25,13 +27,14 @@ interface HeaderProviderProps {
 
 export const HeaderProvider: React.FC<HeaderProviderProps> = ({ children }) => {
   const [isCompactHeader, setIsCompactHeader] = useState(false);
+  const [showHeader, setShowHeader] = useState(true);
 
   const setCompactHeader = (isCompact: boolean) => {
     setIsCompactHeader(isCompact);
   };
 
   return (
-    <HeaderContext.Provider value={{ isCompactHeader, setCompactHeader }}>
+    <HeaderContext.Provider value={{ isCompactHeader, setCompactHeader, showHeader, setShowHeader }}>
       {children}
     </HeaderContext.Provider>
   );

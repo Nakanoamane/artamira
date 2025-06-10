@@ -5,7 +5,6 @@ import RegisterPage from './pages/Auth/RegisterPage'
 import { useAuth } from './contexts/AuthContext'
 import React, { ReactNode } from 'react'
 import Header from './components/Header'
-import CompactHeader from './components/CompactHeader'
 import DrawingList from './pages/DrawingList'
 import CreateDrawingForm from './pages/CreateDrawingForm'
 import { HeaderProvider, useHeader } from './contexts/HeaderContext'
@@ -35,16 +34,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 };
 
 const AppContent: React.FC = () => {
-  const { isCompactHeader } = useHeader();
   const { loading } = useAuth();
-  const location = useLocation();
-
-  // DrawingBoard ページでは通常のHeaderを表示しない
-  const shouldShowHeader = !location.pathname.startsWith('/drawings/');
+  const { showHeader } = useHeader();
 
   return (
     <div className="min-h-screen bg-clay-white text-charcoal-black">
-      {!loading && shouldShowHeader && <Header />}
+      {!loading && showHeader && <Header />}
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />

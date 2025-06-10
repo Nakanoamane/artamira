@@ -8,6 +8,7 @@ import { useDrawingChannel } from "../hooks/useDrawingChannel";
 import { useParams } from "react-router";
 import CompactHeader from "../components/CompactHeader";
 import DrawingHeader from "../components/DrawingHeader";
+import { useHeader } from "../contexts/HeaderContext";
 import {
   ArrowPathIcon,
   ExclamationCircleIcon,
@@ -21,6 +22,7 @@ interface Drawing {
 
 const DrawingBoard = () => {
   const navigate = useNavigate();
+  const { setShowHeader } = useHeader();
   const [activeTool, setActiveTool] = useState("pen");
   const [activeColor, setActiveColor] = useState("#000000");
   const [activeBrushSize, setActiveBrushSize] = useState(2);
@@ -162,6 +164,14 @@ const DrawingBoard = () => {
   );
 
   usePageTitle(drawing ? drawing.title : "描画ボード");
+
+  useEffect(() => {
+    setShowHeader(false);
+
+    return () => {
+      setShowHeader(true);
+    };
+  }, [setShowHeader]);
 
   useEffect(() => {
     const fetchDrawingData = async () => {
@@ -450,7 +460,6 @@ const DrawingBoard = () => {
               isDrawing={isDrawing}
               setIsDrawing={setIsDrawing}
               onDrawComplete={handleDrawComplete}
-              status={status}
             />
           </div>
 

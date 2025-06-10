@@ -43,14 +43,13 @@ export interface CanvasProps {
   isDrawing: boolean;
   setIsDrawing: (isDrawing: boolean) => void;
   onDrawComplete: (drawingElement: DrawingElementType) => void;
-  status: { isConnected: boolean; error: string | null; };
 }
 
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 800;
 
 const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
-  ({ activeTool, activeColor, activeBrushSize, isDrawing, setIsDrawing, onDrawComplete, canvasRef, drawingElements, setDrawingElements }, forwardedRef) => {
+  ({ activeTool, activeColor, activeBrushSize, isDrawing, setIsDrawing, onDrawComplete, canvasRef, drawingElements }) => {
     const localCanvasRef = canvasRef; // Propとして渡されたrefを使用
     const prevPointRef = useRef<Point | null>(null);
     const animationFrameId = useRef<number | null>(null); // requestAnimationFrame のIDを保持
