@@ -18,56 +18,62 @@ export const useDrawingElements = (
   setIsDirty: (dirty: boolean) => void,
   onNewElementCreated?: (newElement: DrawingElementType) => void
 ): UseDrawingElementsResult => {
-  const [drawingElements, setDrawingElements] = useState<DrawingElementType[]>(
-    []
-  );
+  const [drawingElements, setDrawingElements] = useState<DrawingElementType[]>([]);
   const [undoStack, setUndoStack] = useState<DrawingElementType[][]>([]);
   const [redoStack, setRedoStack] = useState<DrawingElementType[][]>([]);
 
   const handleUndo = useCallback(() => {
-    setUndoStack((prev) => {
-      const newUndoStack = [...prev];
+    setUndoStack((prevUndoStack) => {
+      const newUndoStack = [...prevUndoStack];
       const lastState = newUndoStack.pop();
 
       if (lastState) {
-        setRedoStack((redoPrev) => [...redoPrev, drawingElements]);
-        setDrawingElements(lastState);
-        setIsDirty(true);
+        setDrawingElements((currentDrawingElements) => {
+          setRedoStack((prevRedoStack) => [...prevRedoStack, currentDrawingElements]);
+          setIsDirty(true);
+          return lastState;
+        });
       }
       return newUndoStack;
     });
-  }, [drawingElements, setIsDirty]);
+  }, [setIsDirty]);
 
   const handleRedo = useCallback(() => {
-    setRedoStack((prev) => {
-      const newRedoStack = [...prev];
+    setRedoStack((prevRedoStack) => {
+      const newRedoStack = [...prevRedoStack];
       const nextState = newRedoStack.pop();
 
       if (nextState) {
-        setUndoStack((undoPrev) => [...undoPrev, drawingElements]);
-        setDrawingElements(nextState);
-        setIsDirty(true);
+        setDrawingElements((currentDrawingElements) => {
+          setUndoStack((prevUndoStack) => [...prevUndoStack, currentDrawingElements]);
+          setIsDirty(true);
+          return nextState;
+        });
       }
       return newRedoStack;
     });
-  }, [drawingElements, setIsDirty]);
+  }, [setIsDirty]);
 
   const handleDrawComplete = useCallback((newElement: DrawingElementType) => {
-    setUndoStack((prev) => [...prev, drawingElements]);
-    setRedoStack([]);
-    setDrawingElements((prev) => [...prev, newElement]);
-    setIsDirty(true);
-    if (onNewElementCreated) {
-      onNewElementCreated(newElement);
-    }
-  }, [drawingElements, setIsDirty, onNewElementCreated]);
+    setDrawingElements((currentDrawingElements) => {
+      setUndoStack((prevUndoStack) => [...prevUndoStack, currentDrawingElements]);
+      setRedoStack([]);
+      setIsDirty(true);
+      if (onNewElementCreated) {
+        onNewElementCreated(newElement);
+      }
+      return [...currentDrawingElements, newElement];
+    });
+  }, [setIsDirty, onNewElementCreated]);
 
   const addDrawingElementFromExternalSource = useCallback((element: DrawingElementType) => {
-    setUndoStack((prev) => [...prev, drawingElements]);
-    setRedoStack([]);
-    setDrawingElements((prev) => [...prev, element]);
-    setIsDirty(true);
-  }, [drawingElements, setIsDirty]);
+    setDrawingElements((currentDrawingElements) => {
+      setUndoStack((prevUndoStack) => [...prevUndoStack, currentDrawingElements]);
+      setRedoStack([]);
+      setIsDirty(true);
+      return [...currentDrawingElements, element];
+    });
+  }, [setIsDirty]);
 
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;

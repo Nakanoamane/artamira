@@ -12,10 +12,12 @@ import {
   ArrowPathIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
-import { DrawingElementType, parseRawElements } from "../utils/drawingElementsParser";
+import { DrawingElementType } from "../utils/drawingElementsParser";
 import { useDrawingTools } from "../hooks/useDrawingTools";
 import { useDrawingElements } from "../hooks/useDrawingElements";
 import { useDrawingChannelIntegration } from "../hooks/useDrawingChannelIntegration";
+import { useDrawingPersistence } from "../hooks/useDrawingPersistence";
+import { useDrawingExport } from "../hooks/useDrawingExport";
 
 interface Drawing {
   id: number;
@@ -28,18 +30,14 @@ const DrawingBoard = () => {
   const { setShowHeader } = useHeader();
   const { activeTool, setActiveTool, activeColor, setActiveColor, activeBrushSize, setActiveBrushSize } = useDrawingTools();
   const [isDrawing, setIsDrawing] = useState(false);
-  const [drawing, setDrawing] = useState<Drawing | null>(null);
-  const [loadingDrawing, setLoadingDrawing] = useState(true);
-  const [errorDrawing, setErrorDrawing] = useState<string | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
 
   const { id } = useParams<{ id: string }>();
   const drawingId = id ? parseInt(id, 10) : undefined;
+
+  const { drawing, loadingDrawing, errorDrawing, isDirty, setIsDirty, lastSavedAt, setLastSavedAt, handleSave, initialDrawingElements, initialLastSavedAt } = useDrawingPersistence({
+    drawingId,
+  });
 
   const { drawingElements, setDrawingElements, handleUndo, handleRedo, handleDrawComplete, canUndo, canRedo, addDrawingElementFromExternalSource } = useDrawingElements(
     setIsDirty,
@@ -48,6 +46,15 @@ const DrawingBoard = () => {
       sendDrawingElement(newElement);
     }
   );
+
+  const { isExportModalOpen, setIsExportModalOpen, isExporting, exportError, handleExportClick, handleExport } = useDrawingExport();
+
+  useEffect(() => {
+    if (initialDrawingElements.length > 0 || initialLastSavedAt !== null) {
+      setDrawingElements(initialDrawingElements);
+      setLastSavedAt(initialLastSavedAt);
+    }
+  }, [initialDrawingElements, initialLastSavedAt, setDrawingElements, setLastSavedAt]);
 
   const { sendDrawingElement } = useDrawingChannelIntegration({
     drawingId: drawingId,
@@ -72,140 +79,8 @@ const DrawingBoard = () => {
   }, [setShowHeader]);
 
   useEffect(() => {
-    const fetchDrawingData = async () => {
-      if (!drawingId) {
-        setErrorDrawing("描画ボードIDが指定されていません。");
-        setLoadingDrawing(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}`,
-          {
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        setDrawing({ id: drawingId, title: data.title || "無題のボード" });
-
-        let initialElements: DrawingElementType[] = [];
-        if (data.canvas_data) {
-          try {
-            initialElements = JSON.parse(data.canvas_data);
-          } catch (parseError) {
-            console.error("Failed to parse canvas_data:", parseError);
-            // パースエラーが発生した場合は、canvas_dataは無視してdrawing_elements_after_saveのみ使用する
-          }
-        }
-
-        // canvas_dataの要素に、drawing_elements_after_saveの要素を追加する
-        if (data.drawing_elements_after_save && Array.isArray(data.drawing_elements_after_save)) {
-          const parsedNewElements: DrawingElementType[] = parseRawElements(data.drawing_elements_after_save);
-          initialElements = [...initialElements, ...parsedNewElements];
-        }
-
-        setDrawingElements(initialElements);
-        setLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
-        setIsDirty(false);
-
-      } catch (e: any) {
-        setErrorDrawing(e.message);
-      } finally {
-        setLoadingDrawing(false);
-      }
-    };
-
-    fetchDrawingData();
-  }, [drawingId, setDrawingElements, setLastSavedAt, setIsDirty]);
-
-  useEffect(() => {
     // TODO: 認証チェック
   }, [navigate]);
-
-  const handleSave = async () => {
-    if (!drawingId || !isDirty) return;
-
-    try {
-      const canvasDataString = JSON.stringify(drawingElements);
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}/save`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ canvas_data: canvasDataString }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setIsDirty(false);
-      setLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
-    } catch (e: any) {
-      console.error("Failed to save drawing:", e);
-      // エラーメッセージをユーザーに表示するなどの処理
-    }
-  };
-
-  useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (isDirty) {
-        event.preventDefault();
-        event.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [isDirty]);
-
-  const handleExportClick = useCallback(() => {
-    setIsExportModalOpen(true);
-  }, []);
-
-  const handleExport = async (format: "png" | "jpeg") => {
-    if (!canvasRef.current) {
-      setExportError("Canvasが利用できません。");
-      return;
-    }
-
-    setIsExporting(true);
-    setExportError(null);
-
-    try {
-      const canvas = canvasRef.current;
-      const dataURL = canvas.toDataURL(`image/${format}`);
-
-      const link = document.createElement("a");
-      link.href = dataURL;
-      link.download = `drawing.${format}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      setIsExportModalOpen(false);
-    } catch (e: any) {
-      console.error("Export failed:", e);
-      setExportError(`エクスポートに失敗しました: ${e.message}`);
-    } finally {
-      setIsExporting(false);
-    }
-  };
 
   if (loadingDrawing) {
     return (
@@ -254,7 +129,7 @@ const DrawingBoard = () => {
               setActiveColor={setActiveColor}
               activeBrushSize={activeBrushSize}
               setActiveBrushSize={setActiveBrushSize}
-              onSave={handleSave}
+              onSave={() => handleSave(drawingElements)}
               onExportClick={handleExportClick}
               onUndo={handleUndo}
               onRedo={handleRedo}
@@ -281,7 +156,7 @@ const DrawingBoard = () => {
               onClose={() => {
                 setIsExportModalOpen(false);
               }}
-              onExport={handleExport}
+              onExport={(format) => handleExport(format, canvasRef)}
               isExporting={isExporting}
               exportError={exportError}
             />

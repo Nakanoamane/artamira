@@ -31,10 +31,6 @@ export const useDrawingChannelIntegration = (
       ) {
         const receivedElementId = receivedActionCableData.drawing_element.id;
 
-        // Note: drawingElements.some((el) => el.id === receivedElementId) のチェックは
-        // DrawingBoard.tsx から useDrawingElements に移動したため、ここでは不要。
-        // useDrawingElements 内で重複追加防止のロジックを適切に管理する必要がある。
-
         const receivedElement = parseDrawingElement(receivedActionCableData.drawing_element);
 
         if (receivedElement) {
