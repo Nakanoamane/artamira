@@ -111,7 +111,7 @@ const DrawingBoard = () => {
           isDirty={isDirty}
         />
         <Canvas
-          canvasRef={canvasRef}
+          ref={canvasRef}
           drawingElements={drawingElements}
           setDrawingElements={setDrawingElements}
           activeTool={activeTool}

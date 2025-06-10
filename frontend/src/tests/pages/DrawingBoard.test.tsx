@@ -61,7 +61,7 @@ vi.mock('../../components/Canvas', () => {
   const mockToDataURL = vi.fn(() => 'data:image/png;base64,mockpngdata');
 
   const _mockRenderFn = vi.fn(
-    ({ onDrawComplete, canvasRef, drawingElements, setDrawingElements }, ref) => {
+    ({ onDrawComplete, drawingElements, setDrawingElements, activeTool, activeColor, activeBrushSize }, ref) => {
       const mockCanvasElement = {
         toDataURL: mockToDataURL,
         getContext: vi.fn(() => ({
@@ -90,9 +90,6 @@ vi.mock('../../components/Canvas', () => {
         } else {
           (ref as React.MutableRefObject<HTMLCanvasElement | null>).current = mockCanvasElement as unknown as HTMLCanvasElement;
         }
-      }
-      if (canvasRef && 'current' in canvasRef) {
-        (canvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = mockCanvasElement as unknown as HTMLCanvasElement;
       }
 
       return (
@@ -353,20 +350,11 @@ describe('DrawingBoard', () => {
           activeTool: 'pen',
           activeColor: '#000000',
           activeBrushSize: 2,
-          canvasRef: {
-            current: {
-              clientHeight: 600,
-              clientWidth: 800,
-              getContext: expect.any(Function),
-              setAttribute: expect.any(Function),
-              toDataURL: expect.any(Function),
-            },
-          },
           drawingElements: [],
-          onDrawComplete: expect.any(Function),
           setDrawingElements: expect.any(Function),
+          onDrawComplete: expect.any(Function),
         },
-        null
+        expect.anything()
       );
     });
 
@@ -377,20 +365,11 @@ describe('DrawingBoard', () => {
           activeTool: 'pen',
           activeColor: '#000000',
           activeBrushSize: 2,
-          canvasRef: {
-            current: {
-              clientHeight: 600,
-              clientWidth: 800,
-              getContext: expect.any(Function),
-              setAttribute: expect.any(Function),
-              toDataURL: expect.any(Function),
-            },
-          },
           drawingElements: expectedCombinedElements,
-          onDrawComplete: expect.any(Function),
           setDrawingElements: expect.any(Function),
+          onDrawComplete: expect.any(Function),
         },
-        null
+        expect.anything()
       );
     });
   });
@@ -443,20 +422,11 @@ describe('DrawingBoard', () => {
           activeTool: 'pen',
           activeColor: '#000000',
           activeBrushSize: 2,
-          canvasRef: {
-            current: {
-              clientHeight: 600,
-              clientWidth: 800,
-              getContext: expect.any(Function),
-              setAttribute: expect.any(Function),
-              toDataURL: expect.any(Function),
-            },
-          },
           drawingElements: [],
-          onDrawComplete: expect.any(Function),
           setDrawingElements: expect.any(Function),
+          onDrawComplete: expect.any(Function),
         },
-        null
+        expect.anything()
       );
     });
 
@@ -466,20 +436,11 @@ describe('DrawingBoard', () => {
           activeTool: 'pen',
           activeColor: '#000000',
           activeBrushSize: 2,
-          canvasRef: {
-            current: {
-              clientHeight: 600,
-              clientWidth: 800,
-              getContext: expect.any(Function),
-              setAttribute: expect.any(Function),
-              toDataURL: expect.any(Function),
-            },
-          },
           drawingElements: expectedElementsOnly,
-          onDrawComplete: expect.any(Function),
           setDrawingElements: expect.any(Function),
+          onDrawComplete: expect.any(Function),
         },
-        null
+        expect.anything()
       );
     });
   });
@@ -567,20 +528,11 @@ describe('DrawingBoard', () => {
           activeTool: 'pen',
           activeColor: '#000000',
           activeBrushSize: 2,
-          canvasRef: {
-            current: {
-              clientHeight: 600,
-              clientWidth: 800,
-              getContext: expect.any(Function),
-              setAttribute: expect.any(Function),
-              toDataURL: expect.any(Function),
-            },
-          },
           drawingElements: [],
-          onDrawComplete: expect.any(Function),
           setDrawingElements: expect.any(Function),
+          onDrawComplete: expect.any(Function),
         },
-        null
+        expect.anything()
       );
     });
   });
