@@ -6,6 +6,8 @@
 
 # Artamira - リアルタイム共同お絵かきボード
 
+<img src="./frontend/public/images/logo-icon.svg" alt="Artamira Logo" width="100" height="90">
+
 Artamiraは、複数のユーザーが同時に同じキャンバスに絵を描き、その描画がリアルタイムで共有されるウェブアプリケーションです。
 
 ## 技術スタック
