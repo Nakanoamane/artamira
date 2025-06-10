@@ -1,5 +1,4 @@
-import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { vi, beforeEach, afterEach, describe, it, expect, Mock, MockedFunction, MockInstance } from 'vitest'
 import React, { useEffect } from 'react'
 import DrawingBoard from '../../pages/DrawingBoard'
@@ -148,8 +147,6 @@ describe('DrawingBoard', () => {
   const mockUseParams = useParams as Mock;
   const mockFetch = vi.fn();
 
-  let mockedUseDrawingChannelHook: MockedFunction<typeof useDrawingChannel>;
-
   let originalCreateElement: typeof document.createElement;
 
   let addEventListenerSpy: MockInstance;
@@ -219,12 +216,6 @@ describe('DrawingBoard', () => {
 
     addEventListenerSpy = vi.spyOn(window, 'addEventListener');
     removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
-
-    mockedUseDrawingChannelHook = vi.mocked(useDrawingChannel);
-
-    mockedChannelInstance.perform.mockClear();
-    mockedChannelInstance.on.mockClear();
-    mockedChannelInstance.unsubscribe.mockClear();
 
     mockedCanvasRenderFn = (CanvasModule as any)._mockRenderFn;
     mockedCanvasRenderFn.mockClear();
@@ -303,30 +294,24 @@ describe('DrawingBoard', () => {
     // 描画要素がCanvasに正しく渡されていることを確認
     await waitFor(() => {
       expect(mockedCanvasRenderFn).toHaveBeenCalledWith(
-        { // Start with a literal object for the top-level CanvasProps
+        {
           activeTool: 'pen',
           activeColor: '#000000',
           activeBrushSize: 2,
-          canvasRef: { // Use literal object for canvasRef
-            current: { // Use literal object for current
-              toDataURL: expect.any(Function), // These are mock functions, so expect.any(Function) is fine
+          canvasRef: {
+            current: {
+              toDataURL: expect.any(Function),
               getContext: expect.any(Function),
-              clientWidth: 800, // Explicitly match the mocked value
-              clientHeight: 600, // Explicitly match the mocked value
+              clientWidth: 800,
+              clientHeight: 600,
               setAttribute: expect.any(Function),
             },
           },
-          isDrawing: false, // Explicitly false as received
-          onDrawComplete: expect.any(Function), // These are dynamic functions
+          isDrawing: false,
+          onDrawComplete: expect.any(Function),
           setDrawingElements: expect.any(Function),
           setIsDrawing: expect.any(Function),
-          status: { // Use literal object for status
-            isConnected: true,
-            isConnecting: false,
-            isDisconnected: false,
-            error: null,
-          },
-          drawingElements: [ // Use literal array for drawingElements and explicit objects
+          drawingElements: [
             {
               id: 'canvas_element_1',
               type: 'line',
@@ -340,7 +325,7 @@ describe('DrawingBoard', () => {
               start: { x: 10, y: 10 },
               end: { x: 20, y: 20 },
               color: '#FF0000',
-              brushSize: 3, // lineWidth from backend maps to brushSize
+              brushSize: 3,
             },
             {
               id: 'new_element_2',
@@ -415,12 +400,6 @@ describe('DrawingBoard', () => {
           onDrawComplete: expect.any(Function),
           setDrawingElements: expect.any(Function),
           setIsDrawing: expect.any(Function),
-          status: {
-            isConnected: true,
-            isConnecting: false,
-            isDisconnected: false,
-            error: null,
-          },
           drawingElements: [
             {
               id: 'new_element_1',
@@ -525,12 +504,6 @@ describe('DrawingBoard', () => {
           onDrawComplete: expect.any(Function),
           setDrawingElements: expect.any(Function),
           setIsDrawing: expect.any(Function),
-          status: {
-            isConnected: true,
-            isConnecting: false,
-            isDisconnected: false,
-            error: null,
-          },
           drawingElements: [
             {
               id: 'new_element_1',
@@ -653,12 +626,6 @@ describe('DrawingBoard', () => {
           onDrawComplete: expect.any(Function),
           setDrawingElements: expect.any(Function),
           setIsDrawing: expect.any(Function),
-          status: {
-            isConnected: true,
-            isConnecting: false,
-            isDisconnected: false,
-            error: null,
-          },
           drawingElements: [],
         },
         null
@@ -666,13 +633,3 @@ describe('DrawingBoard', () => {
     });
   });
 });
-
-const triggerReceivedData = (channelName: string, drawingId: number, data: any) => {
-  const key = `${channelName}-${drawingId}`;
-  const callback = receivedCallbacksMap.get(key);
-  if (callback) {
-    callback(data);
-  } else {
-    console.warn(`No received callback found for channel ${key}`);
-  }
-};
