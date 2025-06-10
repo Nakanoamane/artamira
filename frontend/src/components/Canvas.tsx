@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useCallback, useState } from 'react'
 import { Point, LineElement, RectangleElement as RectElement, CircleElement, DrawingElementType } from "../utils/drawingElementsParser";
+import { drawElement, drawAllElements } from '../utils/canvasDrawing';
 
 // interface Point {
 //   x: number
@@ -35,7 +36,6 @@ import { Point, LineElement, RectangleElement as RectElement, CircleElement, Dra
 // export type DrawingElementType = LineElement | RectElement | CircleElement
 
 export interface CanvasProps {
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
   drawingElements: DrawingElementType[];
   setDrawingElements: React.Dispatch<React.SetStateAction<DrawingElementType[]>>;
   activeTool: string;
@@ -48,15 +48,17 @@ const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 800;
 
 const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
-  ({ activeTool, activeColor, activeBrushSize, onDrawComplete, canvasRef, drawingElements }) => {
+  ({ activeTool, activeColor, activeBrushSize, onDrawComplete, drawingElements }, ref) => {
+    // ref が React.RefObject<HTMLCanvasElement> であることをアサート
+    const canvasRefObject = ref as React.RefObject<HTMLCanvasElement>;
+
     const [isDrawing, setIsDrawing] = useState(false); // isDrawingステートをCanvas内部に移動
-    const localCanvasRef = canvasRef; // Propとして渡されたrefを使用
     const prevPointRef = useRef<Point | null>(null);
     const animationFrameId = useRef<number | null>(null); // requestAnimationFrame のIDを保持
     const [tempDrawingElement, setTempDrawingElement] = useState<DrawingElementType | null>(null); // 仮描画要素の状態
 
     useEffect(() => {
-      const canvas = localCanvasRef.current;
+      const canvas = canvasRefObject.current; // canvasRefObject に変更
       if (!canvas) return;
 
       canvas.width = CANVAS_WIDTH;
@@ -67,81 +69,21 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
 
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
-    }, [localCanvasRef]);
+    }, [canvasRefObject]); // 依存配列を canvasRefObject に変更
 
     useEffect(() => {
-      const canvas = localCanvasRef.current;
+      const canvas = canvasRefObject.current; // canvasRefObject に変更
       if (!canvas) return;
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawingElements.forEach((element) => {
-        drawElement(ctx, element);
-      });
-
-      // 仮描画要素があれば描画
-      if (tempDrawingElement) {
-        drawElement(ctx, tempDrawingElement);
-      }
-    }, [drawingElements, tempDrawingElement, localCanvasRef]);
-
-    const drawElement = (
-      ctx: CanvasRenderingContext2D,
-      element: DrawingElementType
-    ) => {
-      try {
-        ctx.beginPath();
-        ctx.strokeStyle = element.color;
-        ctx.lineWidth = element.brushSize;
-
-        if (element.type === 'line' && element.color === '#FFFFFF') {
-          ctx.globalCompositeOperation = 'destination-out';
-        } else {
-          ctx.globalCompositeOperation = 'source-over';
-        }
-
-        if (element.type === 'line') {
-          if (element.points.length > 0) {
-            ctx.moveTo(element.points[0].x, element.points[0].y);
-            for (let i = 1; i < element.points.length; i++) {
-              ctx.lineTo(element.points[i].x, element.points[i].y);
-            }
-          }
-        } else if (element.type === 'rectangle') {
-          const width = element.end.x - element.start.x;
-          const height = element.end.y - element.start.y;
-          ctx.rect(element.start.x, element.start.y, width, height);
-        } else if (element.type === 'circle') {
-          ctx.arc(element.center.x, element.center.y, element.radius, 0, 2 * Math.PI);
-        }
-
-        ctx.stroke();
-        ctx.closePath();
-      } catch (error) {
-        console.error('描画中にエラーが発生しました:', error);
-      }
-    };
-
-    const drawElements = useCallback(() => {
-      const canvas = localCanvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawingElements.forEach(element => {
-        drawElement(ctx, element);
-      });
-      if (tempDrawingElement) {
-        drawElement(ctx, tempDrawingElement);
-      }
-    }, [localCanvasRef, drawingElements, tempDrawingElement]);
+      drawAllElements(ctx, canvas, drawingElements, tempDrawingElement);
+    }, [drawingElements, tempDrawingElement, canvasRefObject]); // 依存配列を canvasRefObject に変更
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
       setIsDrawing(true);
-      const canvas = localCanvasRef.current;
+      const canvas = canvasRefObject.current; // canvasRefObject に変更
       if (!canvas) return;
 
       const rect = canvas.getBoundingClientRect();
@@ -166,7 +108,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
     const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (!isDrawing) return;
 
-      const canvas = localCanvasRef.current;
+      const canvas = canvasRefObject.current; // canvasRefObject に変更
       if (!canvas) return;
 
       const rect = canvas.getBoundingClientRect();
@@ -201,7 +143,11 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           // requestAnimationFrameを介して描画をスケジュール
           if (animationFrameId.current === null) {
             animationFrameId.current = requestAnimationFrame(() => {
-              drawElements(); // 描画要素と仮描画要素を再描画
+              const canvas = canvasRefObject.current; // canvasRefObject に変更
+              if (!canvas) return;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) return;
+              drawAllElements(ctx, canvas, drawingElements, tempDrawingElement);
               animationFrameId.current = null; // リセット
             });
           }
@@ -243,7 +189,11 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           // 図形ツールの場合も、更新後にすぐに描画をトリガー
           if (animationFrameId.current === null) {
             animationFrameId.current = requestAnimationFrame(() => {
-              drawElements();
+              const canvas = canvasRefObject.current; // canvasRefObject に変更
+              if (!canvas) return;
+              const ctx = canvas.getContext('2d');
+              if (!ctx) return;
+              drawAllElements(ctx, canvas, drawingElements, tempDrawingElement);
               animationFrameId.current = null;
             });
           }
@@ -275,7 +225,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       <div className="relative bg-clay-white px-4" style={{ width: CANVAS_WIDTH + 32, height: CANVAS_HEIGHT }}>
         <div className="bg-white" style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
           <canvas
-            ref={localCanvasRef}
+            ref={canvasRefObject} // canvasRefObject に変更
             data-testid="drawing-canvas"
             className="border border-gray-300 shadow-lg"
             onMouseDown={handleMouseDown}

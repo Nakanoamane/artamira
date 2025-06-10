@@ -3,11 +3,20 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import Canvas from '../../components/Canvas';
 import { DrawingElementType } from '../../utils/drawingElementsParser';
 import { MockCanvasRenderingContext2D } from '../../setupTests';
-import { vi } from 'vitest';
+import { vi, Mock } from 'vitest';
+import React, { useRef } from 'react';
 
 describe('Canvas', () => {
-  const defaultProps = {
-    canvasRef: { current: null as HTMLCanvasElement | null },
+  const defaultProps: {
+    activeTool: string;
+    activeColor: string;
+    activeBrushSize: number;
+    onDrawComplete: Mock<(drawingElement: DrawingElementType) => void>;
+    drawingElements: DrawingElementType[];
+    setDrawingElements: React.Dispatch<React.SetStateAction<DrawingElementType[]>>;
+    status: { isConnected: boolean; error: null | string };
+  } = {
+    // canvasRef: { current: null as HTMLCanvasElement | null }, // 削除
     activeTool: 'pen',
     activeColor: '#000000',
     activeBrushSize: 5,
@@ -27,17 +36,17 @@ describe('Canvas', () => {
     });
   });
 
-  beforeEach(() => {
-    // `vi.clearAllMocks()` はすべてのモックの呼び出し履歴をクリアしますが、モック関数自体は再作成されません。
-    // defaultProps.setIsDrawing は describe スコープで一度だけ作成されているため、
-    // 各テストで新しいモック関数を割り当てる必要があります。
-    // defaultProps.setIsDrawing.mockClear(); // 削除
-    defaultProps.onDrawComplete.mockClear();
-    // 他のモック関数もあれば同様にクリア
-    vi.clearAllMocks(); // これも実行しておく
+  // テスト用のラッパーコンポーネント
+  const TestCanvasWrapper = ({ initialProps }: { initialProps: typeof defaultProps }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    return (
+      <Canvas {...initialProps} ref={canvasRef} />
+    );
+  };
 
-    // Reset canvasRef.current before each test
-    defaultProps.canvasRef.current = null;
+  beforeEach(() => {
+    defaultProps.onDrawComplete.mockClear();
+    vi.clearAllMocks();
   });
 
   afterAll(() => {
@@ -45,10 +54,8 @@ describe('Canvas', () => {
   });
 
   it('renders canvas element', () => {
-    render(<Canvas {...defaultProps} />);
+    render(<TestCanvasWrapper initialProps={defaultProps} />);
     expect(screen.getByTestId('drawing-canvas')).toBeInTheDocument();
-    // Mock the current ref to the actual canvas element for subsequent interactions
-    defaultProps.canvasRef.current = screen.getByTestId('drawing-canvas') as HTMLCanvasElement;
   });
 
   it('draws elements to render on canvas', async () => {
@@ -69,14 +76,12 @@ describe('Canvas', () => {
       },
     ];
 
-    render(<Canvas {...defaultProps} drawingElements={drawingElements} />); // Pass drawingElements
+    render(<TestCanvasWrapper initialProps={{ ...defaultProps, drawingElements }} />);
 
     const canvas = screen.getByTestId('drawing-canvas') as HTMLCanvasElement;
-    defaultProps.canvasRef.current = canvas as HTMLCanvasElement; // ref を設定
     const ctx = canvas.getContext('2d') as unknown as MockCanvasRenderingContext2D;
 
     // Canvasの初期化と描画要素の描画でclearRectが呼ばれることを期待
-    // drawingElementsToRender が初期プロップとして渡されるため、useEffectは一度だけトリガーされる
     expect(ctx.clearRect).toHaveBeenCalledTimes(1);
 
     // drawingElementsToRender の変更は初回レンダリング後に発生すると仮定
