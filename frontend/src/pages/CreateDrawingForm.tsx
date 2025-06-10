@@ -1,14 +1,9 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router'
-import { useAuth } from '../contexts/AuthContext'
 import { useCreateDrawing } from '../hooks/useCreateDrawing'
 
 const CreateDrawingForm = () => {
   const [title, setTitle] = useState('')
   const { handleCreateDrawing, loading, error } = useCreateDrawing()
-  const navigate = useNavigate()
-  const { user } = useAuth()
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     await handleCreateDrawing(title)
