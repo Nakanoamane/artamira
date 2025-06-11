@@ -1,5 +1,5 @@
 import ColorPicker from './ColorPicker'
-import { TOOLS, ToolName } from '../constants/tools'
+import { ToolName } from '../constants/tools'
 import ToolSelectionGroup from './toolbar/ToolSelectionGroup'
 import ActionButtons from './toolbar/ActionButtons'
 import HistoryButtons from './toolbar/HistoryButtons'

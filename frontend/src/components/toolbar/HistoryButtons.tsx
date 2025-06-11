@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface HistoryButtonsProps {
   onUndo: () => void;
   onRedo: () => void;
