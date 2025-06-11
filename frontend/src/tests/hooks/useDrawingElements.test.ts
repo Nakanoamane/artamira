@@ -32,7 +32,7 @@ describe('useDrawingElements', () => {
   it('should add a drawing element and manage stacks on handleDrawComplete', () => {
     const { result } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated));
 
-    dateNowSpy.mockReturnValueOnce(1000); // Mock for the first element's tempId
+    dateNowSpy.mockReturnValueOnce(1000); // Mock for the first element's temp_id
     const newElement: DrawingElementType = {
       id: '1',
       type: 'line',
@@ -45,7 +45,7 @@ describe('useDrawingElements', () => {
       result.current.handleDrawComplete(newElement);
     });
 
-    const expectedNewElement: DrawingElementType = { ...newElement, tempId: 'temp-1000' };
+    const expectedNewElement: DrawingElementType = { ...newElement, temp_id: 'temp-1000' };
 
     expect(result.current.drawingElements).toEqual([expectedNewElement]);
     expect(result.current.undoStack).toEqual([[]]);
@@ -56,7 +56,7 @@ describe('useDrawingElements', () => {
     expect(mockOnNewElementCreated).toHaveBeenCalledWith(expectedNewElement);
 
     // Add another element
-    dateNowSpy.mockReturnValueOnce(2000); // Mock for the second element's tempId
+    dateNowSpy.mockReturnValueOnce(2000); // Mock for the second element's temp_id
     const secondElement: DrawingElementType = {
       id: '2',
       type: 'rectangle',
@@ -70,7 +70,7 @@ describe('useDrawingElements', () => {
       result.current.handleDrawComplete(secondElement);
     });
 
-    const expectedSecondElement: DrawingElementType = { ...secondElement, tempId: 'temp-2000' };
+    const expectedSecondElement: DrawingElementType = { ...secondElement, temp_id: 'temp-2000' };
 
     expect(result.current.drawingElements).toEqual([expectedNewElement, expectedSecondElement]);
     expect(result.current.undoStack).toEqual([[], [expectedNewElement]]);
@@ -85,8 +85,8 @@ describe('useDrawingElements', () => {
     dateNowSpy.mockReturnValueOnce(2000);
     const element2: DrawingElementType = { id: '2', type: 'rectangle', start: { x: 20, y: 20 }, end: { x: 30, y: 30 }, color: '#FFF', brushSize: 10 };
 
-    const expectedElement1: DrawingElementType = { ...element1, tempId: 'temp-1000' };
-    const expectedElement2: DrawingElementType = { ...element2, tempId: 'temp-2000' };
+    const expectedElement1: DrawingElementType = { ...element1, temp_id: 'temp-1000' };
+    const expectedElement2: DrawingElementType = { ...element2, temp_id: 'temp-2000' };
 
     act(() => {
       result.current.handleDrawComplete(element1);
@@ -130,8 +130,8 @@ describe('useDrawingElements', () => {
     dateNowSpy.mockReturnValueOnce(2000);
     const element2: DrawingElementType = { id: '2', type: 'rectangle', start: { x: 20, y: 20 }, end: { x: 30, y: 30 }, color: '#FFF', brushSize: 10 };
 
-    const expectedElement1: DrawingElementType = { ...element1, tempId: 'temp-1000' };
-    const expectedElement2: DrawingElementType = { ...element2, tempId: 'temp-2000' };
+    const expectedElement1: DrawingElementType = { ...element1, temp_id: 'temp-1000' };
+    const expectedElement2: DrawingElementType = { ...element2, temp_id: 'temp-2000' };
 
     act(() => {
       result.current.handleDrawComplete(element1);
@@ -162,9 +162,9 @@ describe('useDrawingElements', () => {
 
     dateNowSpy.mockReturnValueOnce(1000);
     const element1: DrawingElementType = { id: '1', type: 'line', points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], color: '#000', brushSize: 5 };
-    const expectedElement1: DrawingElementType = { ...element1, tempId: 'temp-1000' };
+    const expectedElement1: DrawingElementType = { ...element1, temp_id: 'temp-1000' };
 
-    const externalElement: DrawingElementType = { id: 'external', tempId: 'temp-external', type: 'circle', center: { x: 50, y: 50 }, radius: 10, color: '#00F', brushSize: 3 };
+    const externalElement: DrawingElementType = { id: 'external', temp_id: 'temp-external', type: 'circle', center: { x: 50, y: 50 }, radius: 10, color: '#00F', brushSize: 3 };
 
     act(() => {
       result.current.handleDrawComplete(element1);
