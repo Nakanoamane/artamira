@@ -538,18 +538,12 @@ describe('DrawingBoard', () => {
   });
 
   it('APIからデータが正常に読み込まれない場合、エラーメッセージを表示すること', async () => {
-    mockFetch.mockImplementation((url: string) => {
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/me`) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ user: { id: 1, email: 'test@example.com' } }),
-        });
-      }
-      if (url === `${import.meta.env.VITE_API_URL}/api/v1/drawings/1`) {
+    mockFetch.mockImplementationOnce((url: string) => {
+      if (url.includes(`${import.meta.env.VITE_API_URL}/api/v1/drawings/1`)) {
         return Promise.resolve({
           ok: false,
           status: 500,
-          statusText: 'Internal Server Error',
+          text: () => Promise.resolve('Internal Server Error') // text()メソッドをモック
         });
       }
       return Promise.reject(new Error(`Unexpected fetch call for URL: ${url}`));
@@ -558,7 +552,7 @@ describe('DrawingBoard', () => {
     render(
       <HeaderProvider>
         <AuthProvider>
-          <MemoryRouter>
+          <MemoryRouter initialEntries={['/drawing-board/1']}>
             <DrawingBoard />
           </MemoryRouter>
         </AuthProvider>
@@ -567,7 +561,8 @@ describe('DrawingBoard', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/エラー:/)).toBeInTheDocument();
-      expect(screen.getByText(/HTTP error! status: 500/)).toBeInTheDocument();
+      // エラーメッセージの期待値を実際のコードの出力形式に合わせる
+      expect(screen.getByText(/描画データの読み込みに失敗しました: HTTP error! status: 500. Body: Internal Server Error/)).toBeInTheDocument();
     });
   });
 

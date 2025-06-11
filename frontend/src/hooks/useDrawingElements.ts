@@ -104,7 +104,7 @@ export const useDrawingElements = (
     });
   }, [drawingElements, setIsDirty, undoStack]); // Add undoStack to dependencies for logging
 
-  const canUndo = undoStack.length > 0;
+  const canUndo = undoStack.length > 1;
   const canRedo = redoStack.length > 0;
 
   return {

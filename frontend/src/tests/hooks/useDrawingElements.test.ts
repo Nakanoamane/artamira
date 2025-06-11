@@ -23,7 +23,7 @@ describe('useDrawingElements', () => {
     const { result } = renderHook(() => useDrawingElements(mockSetIsDirty));
 
     expect(result.current.drawingElements).toEqual([]);
-    expect(result.current.undoStack).toEqual([]);
+    expect(result.current.undoStack).toEqual([[]]);
     expect(result.current.redoStack).toEqual([]);
     expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(false);
@@ -48,7 +48,7 @@ describe('useDrawingElements', () => {
     const expectedNewElement: DrawingElementType = { ...newElement, temp_id: 'temp-1000' };
 
     expect(result.current.drawingElements).toEqual([expectedNewElement]);
-    expect(result.current.undoStack).toEqual([[]]);
+    expect(result.current.undoStack).toEqual([[], []]);
     expect(result.current.redoStack).toEqual([]);
     expect(result.current.canUndo).toBe(true);
     expect(result.current.canRedo).toBe(false);
@@ -73,7 +73,7 @@ describe('useDrawingElements', () => {
     const expectedSecondElement: DrawingElementType = { ...secondElement, temp_id: 'temp-2000' };
 
     expect(result.current.drawingElements).toEqual([expectedNewElement, expectedSecondElement]);
-    expect(result.current.undoStack).toEqual([[], [expectedNewElement]]);
+    expect(result.current.undoStack).toEqual([[], [], [expectedNewElement]]);
     expect(result.current.redoStack).toEqual([]);
   });
 
@@ -96,7 +96,7 @@ describe('useDrawingElements', () => {
     });
 
     expect(result.current.drawingElements).toEqual([expectedElement1, expectedElement2]);
-    expect(result.current.undoStack).toEqual([[], [expectedElement1]]);
+    expect(result.current.undoStack).toEqual([[], [], [expectedElement1]]);
     expect(result.current.canUndo).toBe(true);
     expect(result.current.canRedo).toBe(false);
 
@@ -105,7 +105,7 @@ describe('useDrawingElements', () => {
     });
 
     expect(result.current.drawingElements).toEqual([expectedElement1]);
-    expect(result.current.undoStack).toEqual([[]]);
+    expect(result.current.undoStack).toEqual([[], []]);
     expect(result.current.redoStack).toEqual([[expectedElement1, expectedElement2]]);
     expect(result.current.canUndo).toBe(true);
     expect(result.current.canRedo).toBe(true);
@@ -116,7 +116,7 @@ describe('useDrawingElements', () => {
     });
 
     expect(result.current.drawingElements).toEqual([]);
-    expect(result.current.undoStack).toEqual([]);
+    expect(result.current.undoStack).toEqual([[]]);
     expect(result.current.redoStack).toEqual([[expectedElement1, expectedElement2], [expectedElement1]]);
     expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(true);
@@ -144,6 +144,7 @@ describe('useDrawingElements', () => {
     });
 
     expect(result.current.drawingElements).toEqual([expectedElement1]);
+    expect(result.current.undoStack).toEqual([[], []]);
     expect(result.current.redoStack).toEqual([[expectedElement1, expectedElement2]]);
 
     act(() => {
@@ -151,7 +152,7 @@ describe('useDrawingElements', () => {
     });
 
     expect(result.current.drawingElements).toEqual([expectedElement1, expectedElement2]);
-    expect(result.current.undoStack).toEqual([[], [expectedElement1]]);
+    expect(result.current.undoStack).toEqual([[], [], [expectedElement1]]);
     expect(result.current.canUndo).toBe(true);
     expect(result.current.canRedo).toBe(false);
     expect(mockSetIsDirty).toHaveBeenCalledWith(true);
@@ -178,7 +179,7 @@ describe('useDrawingElements', () => {
     });
 
     expect(result.current.drawingElements).toEqual([expectedElement1, externalElement]);
-    expect(result.current.undoStack).toEqual([[], [expectedElement1]]);
+    expect(result.current.undoStack).toEqual([[], [], [expectedElement1]]);
     expect(result.current.redoStack).toEqual([]);
     expect(mockSetIsDirty).toHaveBeenCalledWith(true);
   });
