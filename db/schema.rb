@@ -18,6 +18,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_08_083915) do
     t.json "data"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "temp_id"
     t.index ["drawing_id"], name: "index_drawing_elements_on_drawing_id"
     t.index ["user_id"], name: "index_drawing_elements_on_user_id"
   end

@@ -24,12 +24,13 @@ class DrawingChannel < ApplicationCable::Channel
       drawing_element = @drawing.drawing_elements.create!(
         user_id: current_user&.id,
         element_type: data['element_type'],
-        data: data['element_data']
+        data: data['element_data'],
+        temp_id: data['tempId']
       )
 
       DrawingChannel.broadcast_to @drawing, {
         type: 'drawing_element_created',
-        drawing_element: drawing_element
+        drawing_element: drawing_element.as_json(methods: [:temp_id])
       }
     rescue ActiveRecord::RecordInvalid => e
       # デバッグログ追加: バリデーションエラーの確認

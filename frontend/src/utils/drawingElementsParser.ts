@@ -5,6 +5,7 @@ export interface Point {
 
 export interface LineElement {
   id: string;
+  tempId?: string;
   type: "line";
   points: Point[];
   color: string;
@@ -13,6 +14,7 @@ export interface LineElement {
 
 export interface RectangleElement {
   id: string;
+  tempId?: string;
   type: "rectangle";
   start: Point;
   end: Point;
@@ -22,6 +24,7 @@ export interface RectangleElement {
 
 export interface CircleElement {
   id: string;
+  tempId?: string;
   type: "circle";
   center: Point;
   radius: number;
