@@ -28,13 +28,29 @@ const DrawingBoard = () => {
     drawingId,
   });
 
+  const { sendDrawingElement } = useDrawingChannelIntegration({
+    drawingId: drawingId,
+    addDrawingElement: (element) => {
+      console.log("DrawingBoard: Received element from Action Cable:", element);
+      // 他のユーザーからの描画を受信した場合、useDrawingElementsの関数を介して描画要素を追加
+      addDrawingElementFromExternalSource(element);
+    },
+    onDrawingSaved: (savedAt) => {
+      setIsDirty(false);
+      setLastSavedAt(savedAt);
+    },
+  });
+
+  const onNewElementCreatedCallback = useCallback((newElement: DrawingElementType) => {
+    console.log("DrawingBoard: Sending new element via Action Cable:", newElement);
+    console.log("DrawingBoard: newElement from useDrawingElements for sending:", newElement);
+    // Action Cableで描画要素を送信
+    sendDrawingElement(newElement);
+  }, [sendDrawingElement]);
+
   const { drawingElements, setDrawingElements, handleUndo, handleRedo, handleDrawComplete, canUndo, canRedo, addDrawingElementFromExternalSource } = useDrawingElements(
     setIsDirty,
-    (newElement) => { // onNewElementCreatedコールバック
-      console.log("DrawingBoard: newElement from useDrawingElements for sending:", newElement);
-      // Action Cableで描画要素を送信
-      sendDrawingElement(newElement);
-    },
+    onNewElementCreatedCallback,
     initialDrawingElements
   );
 
@@ -50,18 +66,6 @@ const DrawingBoard = () => {
       setLastSavedAt(initialLastSavedAt);
     }
   }, [initialDrawingElements, initialLastSavedAt, setDrawingElements, setLastSavedAt]);
-
-  const { sendDrawingElement } = useDrawingChannelIntegration({
-    drawingId: drawingId,
-    addDrawingElement: (element) => {
-      // 他のユーザーからの描画を受信した場合、useDrawingElementsの関数を介して描画要素を追加
-      addDrawingElementFromExternalSource(element);
-    },
-    onDrawingSaved: (savedAt) => {
-      setIsDirty(false);
-      setLastSavedAt(savedAt);
-    },
-  });
 
   usePageTitle(drawing ? drawing.title : "描画ボード");
 

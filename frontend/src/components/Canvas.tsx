@@ -56,6 +56,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
     const prevPointRef = useRef<Point | null>(null);
     const animationFrameId = useRef<number | null>(null); // requestAnimationFrame のIDを保持
     const [tempDrawingElement, setTempDrawingElement] = useState<DrawingElementType | null>(null); // 仮描画要素の状態
+    const drawingCompletedRef = useRef(false); // 描画が完了したかどうかを追跡するref
 
     useEffect(() => {
       const canvas = canvasRefObject.current; // canvasRefObject に変更
@@ -83,6 +84,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
       setIsDrawing(true);
+      drawingCompletedRef.current = false; // 新しい描画の開始時にフラグをリセット
       const canvas = canvasRefObject.current; // canvasRefObject に変更
       if (!canvas) return;
 
@@ -207,17 +209,30 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         cancelAnimationFrame(animationFrameId.current);
         animationFrameId.current = null;
       }
-      if (tempDrawingElement) {
+      if (tempDrawingElement && !drawingCompletedRef.current) {
+        console.log("Canvas: Calling onDrawComplete from handleMouseUp.", tempDrawingElement);
         onDrawComplete(tempDrawingElement);
-        setTempDrawingElement(null);
+        drawingCompletedRef.current = true; // 描画完了フラグを設定
+        setTempDrawingElement(null); // 仮描画要素をクリア
       }
       prevPointRef.current = null;
     };
 
     const handleMouseLeave = () => {
       if (isDrawing) {
-        // ドラッグ中にキャンバスからマウスが離れた場合も、描画を完了させる
-        handleMouseUp();
+        // ドラッグ中にキャンバスからマウスが離れた場合、描画を完了させる
+        setIsDrawing(false);
+        if (animationFrameId.current) {
+          cancelAnimationFrame(animationFrameId.current);
+          animationFrameId.current = null;
+        }
+        if (tempDrawingElement && !drawingCompletedRef.current) {
+          console.log("Canvas: Calling onDrawComplete from handleMouseLeave.", tempDrawingElement);
+          onDrawComplete(tempDrawingElement);
+          drawingCompletedRef.current = true; // 描画完了フラグを設定
+          setTempDrawingElement(null);
+        }
+        prevPointRef.current = null;
       }
     };
 

@@ -20,20 +20,53 @@ export const useDrawingElements = (
   initialLoadedElements: DrawingElementType[] = []
 ): UseDrawingElementsResult => {
   const [drawingElements, setDrawingElements] = useState<DrawingElementType[]>(initialLoadedElements);
+
+  // Use a ref to store the initial loaded elements to ensure stability and for comparison.
+  const initialBaseElementsRef = useRef(initialLoadedElements);
+
   const [undoStack, setUndoStack] = useState<DrawingElementType[][]>(
     initialLoadedElements.length > 0 ? [initialLoadedElements] : [[]]
   );
   const [redoStack, setRedoStack] = useState<DrawingElementType[][]>([]);
 
+  // This effect ensures that if initialLoadedElements changes, the state is re-initialized.
+  // It also updates the initialBaseElementsRef to the new base.
+  // Deep comparison for array content to avoid unnecessary re-initialization.
+  useEffect(() => {
+    // Check if the content of initialLoadedElements has actually changed
+    const areArraysEqual = (arr1: DrawingElementType[], arr2: DrawingElementType[]) => {
+      if (arr1.length !== arr2.length) return false;
+      for (let i = 0; i < arr1.length; i++) {
+        // Simple stringify comparison for elements assuming no circular references and order doesn't matter for comparison.
+        // For more robust comparison, a proper deep equality check for DrawingElementType might be needed.
+        if (JSON.stringify(arr1[i]) !== JSON.stringify(arr2[i])) return false;
+      }
+      return true;
+    };
+
+    if (!areArraysEqual(initialLoadedElements, initialBaseElementsRef.current)) {
+      setDrawingElements(initialLoadedElements);
+      initialBaseElementsRef.current = initialLoadedElements;
+      setUndoStack(initialLoadedElements.length > 0 ? [initialLoadedElements] : [[]]);
+      setRedoStack([]);
+    }
+  }, [initialLoadedElements]); // Dependency array: re-run if initialLoadedElements reference changes.
+
+
   const handleUndo = useCallback(() => {
-
-    const stateToRedo = [...drawingElements];
-
     setUndoStack((prevUndoStack) => {
-      const newUndoStack = [...prevUndoStack];
-      const lastState = newUndoStack.pop();
+      // If there's only one state in the undoStack, it's the initial base state (initialLoadedElements or []).
+      // We should not undo past this base state. This prevents the "initial content disappearing" bug
+      // for both empty and non-empty initial loads, and ensures initial content is not undoable.
+      if (prevUndoStack.length <= 1) {
+        return prevUndoStack;
+      }
 
-      if (lastState) {
+      const newUndoStack = [...prevUndoStack];
+      const stateToRedo = drawingElements; // Current state before undoing
+      const lastState = newUndoStack.pop(); // The state to revert to
+
+      if (lastState !== undefined) {
         setDrawingElements(lastState);
         setRedoStack((prevRedoStack) => [
           ...prevRedoStack,
@@ -43,14 +76,19 @@ export const useDrawingElements = (
       }
       return newUndoStack;
     });
-  }, [setIsDirty, drawingElements, undoStack, redoStack]);
+  }, [setIsDirty, drawingElements]);
+
 
   const handleRedo = useCallback(() => {
     setRedoStack((prevRedoStack) => {
+      if (prevRedoStack.length === 0) {
+        return prevRedoStack;
+      }
+
       const newRedoStack = [...prevRedoStack];
       const nextState = newRedoStack.pop();
 
-      if (nextState) {
+      if (nextState !== undefined) {
         setUndoStack((prevUndoStack) => [
           ...prevUndoStack,
           drawingElements, // Push current state before redo
@@ -60,28 +98,44 @@ export const useDrawingElements = (
       }
       return newRedoStack;
     });
-  }, [setIsDirty, drawingElements, undoStack, redoStack]);
+  }, [setIsDirty, drawingElements]);
+
 
   const handleDrawComplete = useCallback((newElement: DrawingElementType) => {
+    console.log("handleDrawComplete called.");
+    console.log("handleDrawComplete: current drawingElements BEFORE update:", drawingElements);
+    console.log("handleDrawComplete: newElement:", newElement);
+
     const elementWithTempId = { ...newElement, temp_id: `temp-${Date.now()}` };
 
+    // Push the current state of drawingElements to undoStack *before* adding the new element.
     setUndoStack((prevUndoStack) => {
+      console.log("handleDrawComplete: undoStack BEFORE update:", prevUndoStack);
       const newStack = [...prevUndoStack, drawingElements];
+      console.log("handleDrawComplete: undoStack AFTER update:", newStack);
       return newStack;
     });
-    setRedoStack([]);
+    setRedoStack([]); // Clear redo stack on new drawing (limits redo to consecutive undos).
+
     setIsDirty(true);
 
     setDrawingElements((currentDrawingElements) => {
       const updatedElements = [...currentDrawingElements, elementWithTempId];
-      if (onNewElementCreated) {
-        onNewElementCreated(elementWithTempId);
-      }
+      console.log("handleDrawComplete: drawingElements AFTER update:", updatedElements);
       return updatedElements;
     });
-  }, [drawingElements, setIsDirty, onNewElementCreated, undoStack]); // Add undoStack to dependencies for logging
+
+    if (onNewElementCreated) {
+      onNewElementCreated(elementWithTempId);
+    }
+  }, [drawingElements, setIsDirty, onNewElementCreated]);
+
 
   const addDrawingElementFromExternalSource = useCallback((element: DrawingElementType) => {
+    console.log("addDrawingElementFromExternalSource called.");
+    console.log("addDrawingElementFromExternalSource: current drawingElements BEFORE update:", drawingElements);
+    console.log("addDrawingElementFromExternalSource: external element:", element);
+
     setRedoStack([]); // Clear Redo stack when a new element is added from external source
     setIsDirty(true); // Set dirty flag
 
@@ -92,18 +146,24 @@ export const useDrawingElements = (
         const updatedElements = currentDrawingElements.map(e =>
           e.temp_id === element.temp_id ? element : e
         );
+        console.log("addDrawingElementFromExternalSource: isSelfBroadcastedElement TRUE. drawingElements AFTER update:", updatedElements);
         return updatedElements;
       } else {
+        // Push current state to undo stack before adding external element, if it's not a self-broadcast.
         setUndoStack((prevUndoStack) => {
+          console.log("addDrawingElementFromExternalSource: undoStack BEFORE update:", prevUndoStack);
           const newStack = [...prevUndoStack, drawingElements];
+          console.log("addDrawingElementFromExternalSource: undoStack AFTER update:", newStack);
           return newStack;
         });
         const updatedElements = [...currentDrawingElements, element];
+        console.log("addDrawingElementFromExternalSource: isSelfBroadcastedElement FALSE. drawingElements AFTER update:", updatedElements);
         return updatedElements;
       }
     });
-  }, [drawingElements, setIsDirty, undoStack]); // Add undoStack to dependencies for logging
+  }, [drawingElements, setIsDirty]);
 
+  // canUndo is true if there's more than one state in the undoStack, meaning we can go back beyond the initial state.
   const canUndo = undoStack.length > 1;
   const canRedo = redoStack.length > 0;
 
