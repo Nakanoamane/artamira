@@ -33,7 +33,8 @@ const DrawingBoard = () => {
     (newElement) => { // onNewElementCreatedコールバック
       // Action Cableで描画要素を送信
       sendDrawingElement(newElement);
-    }
+    },
+    initialDrawingElements
   );
 
   const { isExportModalOpen, setIsExportModalOpen, isExporting, exportError, handleExportClick, handleExport } = useDrawingExport();

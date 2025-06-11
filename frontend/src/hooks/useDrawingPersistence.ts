@@ -4,7 +4,6 @@ import { DrawingElementType, parseRawElements } from "../utils/drawingElementsPa
 interface Drawing {
   id: number;
   title: string;
-  last_saved_at?: string;
 }
 
 interface UseDrawingPersistenceProps {
@@ -12,38 +11,35 @@ interface UseDrawingPersistenceProps {
 }
 
 interface UseDrawingPersistenceResult {
-  drawing: Drawing | null;
+  drawing: { id: number; title: string } | undefined;
   loadingDrawing: boolean;
   errorDrawing: string | null;
   isDirty: boolean;
   setIsDirty: (dirty: boolean) => void;
   lastSavedAt: Date | null;
   setLastSavedAt: (date: Date | null) => void;
-  handleSave: (currentDrawingElements: DrawingElementType[]) => Promise<void>;
+  handleSave: (elements: DrawingElementType[]) => Promise<void>;
   initialDrawingElements: DrawingElementType[];
   initialLastSavedAt: Date | null;
 }
 
-export const useDrawingPersistence = ({
-  drawingId,
-}: UseDrawingPersistenceProps): UseDrawingPersistenceResult => {
-  const [drawing, setDrawing] = useState<Drawing | null>(null);
-  const [loadingDrawing, setLoadingDrawing] = useState(true);
+export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps): UseDrawingPersistenceResult => {
+  const [drawing, setDrawing] = useState<{ id: number; title: string }>();
+  const [loadingDrawing, setLoadingDrawing] = useState<boolean>(true);
   const [errorDrawing, setErrorDrawing] = useState<string | null>(null);
-  const [isDirty, setIsDirty] = useState(false);
+  const [isDirty, setIsDirty] = useState<boolean>(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-
   const [initialDrawingElements, setInitialDrawingElements] = useState<DrawingElementType[]>([]);
   const [initialLastSavedAt, setInitialLastSavedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     const fetchDrawingData = async () => {
-      if (!drawingId) {
-        setErrorDrawing("描画ボードIDが指定されていません。");
+      if (drawingId === undefined) {
         setLoadingDrawing(false);
         return;
       }
-
+      setLoadingDrawing(true);
+      setErrorDrawing(null);
       try {
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}`,
@@ -54,7 +50,8 @@ export const useDrawingPersistence = ({
         );
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          throw new Error(`HTTP error! status: ${response.status}. Body: ${errorText}`);
         }
 
         const data = await response.json();
@@ -65,8 +62,12 @@ export const useDrawingPersistence = ({
         if (data.canvas_data) {
           try {
             const parsedCanvasData = JSON.parse(data.canvas_data);
-            if (parsedCanvasData && Array.isArray(parsedCanvasData.elements)) {
+            if (Array.isArray(parsedCanvasData) && parsedCanvasData.length > 0 && 'type' in parsedCanvasData[0]) {
+              elements = parsedCanvasData as DrawingElementType[];
+            } else if (Array.isArray(parsedCanvasData.elements) && parsedCanvasData.elements.length > 0) {
               elements = parseRawElements(parsedCanvasData.elements);
+            } else {
+              elements = [];
             }
           } catch (parseError) {
             setErrorDrawing((parseError as Error).message);
@@ -77,13 +78,12 @@ export const useDrawingPersistence = ({
           const parsedNewElements: DrawingElementType[] = parseRawElements(data.drawing_elements_after_save);
           elements = [...elements, ...parsedNewElements];
         }
-
         setInitialDrawingElements(elements);
         setInitialLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
         setIsDirty(false);
 
       } catch (e: any) {
-        setErrorDrawing(e.message);
+        setErrorDrawing(`描画データの読み込みに失敗しました: ${e.message}`);
       } finally {
         setLoadingDrawing(false);
       }
@@ -93,7 +93,12 @@ export const useDrawingPersistence = ({
   }, [drawingId]);
 
   const handleSave = useCallback(async (currentDrawingElements: DrawingElementType[]) => {
-    if (!drawingId || !isDirty) return;
+    if (drawingId === undefined) {
+      return;
+    }
+    if (!isDirty) {
+      return;
+    }
 
     try {
       const canvasDataString = JSON.stringify(currentDrawingElements);
@@ -111,14 +116,15 @@ export const useDrawingPersistence = ({
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}. Body: ${errorText}`);
       }
 
       const data = await response.json();
       setIsDirty(false);
       setLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
     } catch (e: any) {
-      // console.error("Failed to save drawing:", e);
+      setErrorDrawing(`描画の保存に失敗しました: ${e.message}`);
     }
   }, [drawingId, isDirty]);
 
