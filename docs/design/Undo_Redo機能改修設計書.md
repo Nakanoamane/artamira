@@ -16,35 +16,34 @@
 1.  **`undoStack` の肥大化**: **(解決済み)**
     *   ユーザーが1回の描画操作（例: 1本の線）を行った際に、`handleDrawComplete` が呼び出されるだけでなく、Action Cableを介した自己ブロードキャストにより `addDrawingElementFromExternalSource` が複数回呼び出され、そのたびに`undoStack`に状態が追加されていることが判明しました。これにより、`undoStack`が意図しない数の履歴で満たされていました。これに対するフロントエンドの修正により、問題は解決されました。
 
-2.  **バックエンドからの `tempId` の欠落**: **(解決済み)**
-    *   フロントエンドから描画要素に一時的なID (`tempId`) を付与して送信しているにもかかわらず、バックエンドがブロードキャストする際にこの `tempId` を含めて返していないことが確認されました。バックエンドの`temp_id`カラム追加とブロードキャスト修正により、この問題は解決されました。
+2.  **バックエンドからの `temp_id` の欠落とフロントエンドとの連携不整合**: **(解決済み)**
+    *   当初、フロントエンドから描画要素に一時的なID (`tempId`) を付与して送信しているにもかかわらず、バックエンドがブロードキャストする際にこの `tempId` を含めて返していないことが確認されました。バックエンドで`temp_id`カラム追加とブロードキャスト修正を行ったものの、その後、フロントエンドが送信するプロパティ名が`tempId`（キャメルケース）であるのに対し、バックエンドが期待するカラム名が`temp_id`（スネークケース）であるという命名規則の不一致、および`temp_id`が`element_data`内にネストされて送信されていた点が判明しました。これらの命名規則の統一と送信位置の修正により、`temp_id`は正しくデータベースに保存され、ブロードキャストされるようになりました。
 
 3.  **バックエンドが1つの論理的操作を複数要素としてブロードキャスト**: **(未解決 - 今後の検討事項)**
-    *   1回の描画操作（例: 1本の線）に対して、バックエンドが複数の異なる永続IDを持つ `DrawingElement` としてブロードキャストしていることがログから強く示唆されています。フロントエンド側で`tempId`を用いた置き換えロジックで対応していますが、バックエンド側でこれらの要素を論理的にグループ化してブロードキャストする根本的な解決策は未実装です。
+    *   1回の描画操作（例: 1本の線）に対して、バックエンドが複数の異なる永続IDを持つ `DrawingElement` としてブロードキャストしていることがログから強く示唆されています。フロントエンド側で`temp_id`を用いた置き換えロジックで対応していますが、バックエンド側での根本的な解決（論理的なグループ化）は未実装です。
 
 4.  **「描画すると、これまで描いた内容が消える」問題**: **(解決済み)**
-    *   上記の`tempId`の欠落と要素の重複が原因で、`drawingElements`の状態が不正になり、新規描画時に既存の描画が消えてしまうという深刻な副作用が発生していました。`frontend/src/hooks/useDrawingPersistence.ts`の`canvas_data`パースロジック修正により、この問題は解決されました。
+    *   上記の`temp_id`の欠落と要素の重複が原因で、`drawingElements`の状態が不正になり、新規描画時に既存の描画が消えてしまうという深刻な副作用が発生していました。`frontend/src/hooks/useDrawingPersistence.ts`の`canvas_data`パースロジック修正により、この問題は解決されました。
 
 5.  **Redoした内容をUndoするとき、2回Undoする必要がある問題**: **(解決済み)**
     *   Undo機能が1回で動作するようになった後、Redo機能の動作検証中に、Redoされた描画内容をUndoする際に、Undoボタンを2回押す必要があるという新たな不具合が確認されました。一連の修正の中で、この問題も解決されました。
 
 ## 現在修正した内容 (フロントエンド)
 
-1.  **`DrawingElementType` に `tempId` を追加**:
-    *   `frontend/src/utils/drawingElementsParser.ts` 内の `LineElement`, `RectangleElement`, `CircleElement` インターフェースに `tempId?: string;` プロパティを追加しました。
-2.  **`handleDrawComplete` で `tempId` を付与**:
-    *   `frontend/src/hooks/useDrawingElements.ts` 内の `handleDrawComplete` 関数を修正し、新しい描画要素に `tempId: \`temp-\${Date.now()}\`` を付与するようにしました。この `tempId` を含む要素は `onNewElementCreated` コールバックを通じて `DrawingBoard.tsx` に渡され、そこからバックエンドに送信されます。
-3.  **`addDrawingElementFromExternalSource` で要素を置き換え**:
-    *   `frontend/src/hooks/useDrawingElements.ts` 内の `addDrawingElementFromExternalSource` 関数を修正しました。
-    *   受信した要素が、自身が描画した一時要素の永続化されたバージョンである場合（`element.id` が数値で、`element.tempId` が既存の`drawingElements` 内の一時要素の `tempId` と一致する場合）、既存の一時要素を受信した永続要素で置き換えるようにしました。
-    *   この置き換え操作の際には、`undoStack` には新しい状態をプッシュしないように変更しました。
-    *   他のユーザーからの描画要素の場合は、これまで通り `undoStack` にプッシュし、`drawingElements` に追加します。
+1.  **`DrawingElementType` に `temp_id` を追加し、命名規則を統一**:
+    *   `frontend/src/utils/drawingElementsParser.ts` 内の `LineElement`, `RectangleElement`, `CircleElement` インターフェースで `tempId` プロパティを `temp_id` に修正しました。
+2.  **`handleDrawComplete` で `temp_id` を付与**:
+    *   `frontend/src/hooks/useDrawingElements.ts` 内の `handleDrawComplete` 関数を修正し、新しい描画要素に `temp_id: \`temp-\${Date.now()}\`` を付与するようにしました。
+3.  **`addDrawingElementFromExternalSource` で `temp_id` を参照し要素を置き換え**:
+    *   `frontend/src/hooks/useDrawingElements.ts` 内の `addDrawingElementFromExternalSource` 関数を修正し、受信した要素の`temp_id`を参照して自己ブロードキャストされた要素を識別し、置き換えるロジックを実装しました。
 4.  **`useDrawingElements` フックの初期化ロジックとタイミングの改善**:
     *   `frontend/src/hooks/useDrawingElements.ts`において、`drawingElements`および`undoStack`の初期化に`initialLoadedElements`を正確に利用し、コンポーネントのライフサイクルと非同期データロードとの同期を改善しました。
 5.  **`useDrawingPersistence`での`canvas_data`パースロジックの修正**:
     *   `frontend/src/hooks/useDrawingPersistence.ts`において、バックエンドから取得する`canvas_data`のJSONパース結果が直接`DrawingElementType[]`形式である場合、それを正しく認識して利用するよう修正しました。これにより、保存された描画要素が正しくロードされるようになりました。
 6.  **`DrawingBoard.tsx`における`useEffect`の再導入と調整**:
     *   `frontend/src/pages/DrawingBoard.tsx`において、`useDrawingPersistence`から取得した`initialDrawingElements`と`initialLastSavedAt`を用いて`drawingElements`と`lastSavedAt`を初期化する`useEffect`を再度導入し、非同期データロード後の状態更新を適切に行うようにしました。
+7.  **`temp_id`のAction Cableペイロードでの送信位置を修正**:
+    *   `frontend/src/hooks/useDrawingChannelIntegration.ts`の`sendDrawingElement`関数を修正し、`newElement.temp_id`を`element_data`内ではなく、トップレベルのデータとして送信するように変更しました。
 
 ## 現在修正した内容 (バックエンド)
 
@@ -54,21 +53,27 @@
     *   `app/controllers/api/v1/drawing_elements_controller.rb` の `drawing_element_params` に `:temp_id` を許可するように修正しました。
 3.  **Action Cable ブロードキャストの修正**:
     *   `app/channels/drawing_channel.rb` の `draw` メソッドが新しい `DrawingElement` をブロードキャストする際に、`temp_id` も含めてブロードキャストするように変更しました。
+4.  **`temp_id`のAction Cableペイロードでの受信位置を修正**:
+    *   `app/channels/drawing_channel.rb`の`draw`メソッドを修正し、`temp_id`をトップレベルの`data['temp_id']`から取得するように変更しました。
 
 ## 次にやるべきこと (今後の検討事項に更新)
 
 Undo/Redo機能の主要な不具合は解決されましたが、今後の品質向上と機能拡張のために、以下の点を検討します。
 
-### 1. バックエンドでの描画要素の粒度見直し
-*   **現状**: バックエンドが1つの論理的な描画操作（例: 1本の線）を複数の`DrawingElement`としてブロードキャストしている可能性があります。これに対し、フロントエンドは`tempId`を用いた置き換えロジックで対応していますが、バックエンド側でこれらの要素を論理的にグループ化してブロードキャストする根本的な解決策は未実装です。
+### 1. `temp_id` のユニーク性向上
+*   **現状**: `temp_id`は`Date.now()`を用いて生成されており、同時操作時に衝突する可能性があります。
+*   **検討内容**: `temp_id`の生成にUUID (Universally Unique Identifier) を使用することを検討します。`crypto.randomUUID()`などの標準的なUUID生成方法を導入することで、異なるクライアント間での`temp_id`の衝突リスクを実質的に排除し、システムの堅牢性を高めます。
+
+### 2. バックエンドでの描画要素の粒度見直し
+*   **現状**: バックエンドが1つの論理的な描画操作（例: 1本の線）を複数の`DrawingElement`としてブロードキャストしている可能性があります。これに対し、フロントエンドは`temp_id`を用いた置き換えロジックで対応していますが、バックエンド側でこれらの要素を論理的にグループ化してブロードキャストする根本的な解決策は未実装です。
 *   **検討内容**: バックエンド側で、ユーザーの描画操作をより大きな「トランザクション」として扱い、一連の関連する`DrawingElement`を単一の単位としてブロードキャストする仕組みを導入することを検討します。これにより、データ管理の簡素化や、将来的なUndo/Redo以外の機能（例: 描画履歴の表示）における表示ロジックの簡素化が期待できます。
 
-### 2. 初期ロードAPIの拡張
+### 3. 初期ロードAPIの拡張
 *   **現状**: 設計書「リアルタイム描画同期機能設計書」で言及されている「新規参加ユーザーがボードにアクセスした際に、保存された`canvas_data`と、それ以降の未保存の`DrawingElement`を`is_active`状態を考慮してまとめて取得できるようにする」というAPIの拡張は、今回のUndo/Redo機能改修の直接的なスコープ外であり、未実装です。
 *   **検討内容**: 描画ボードのパフォーマンスとユーザー体験を向上させるため、このAPI拡張を実装することを検討します。これにより、新規ユーザーがボードに参加した際の描画ロード時間を短縮し、よりスムーズなコラボレーション体験を提供できる可能性があります。
 
-### 3. バックエンドテストの拡充
-*   **現状**: 設計書で提案された`temp_id`に関するモデル、API、Action Cableチャネルのテストは、実装されたか確認されていません。今回の改修で機能は改善されましたが、テストカバレッジの不足はデグレのリスクを高めます。
+### 4. バックエンドテストの拡充
+*   **現状**: 設計書で提案された`temp_id`に関するモデル、API、Action Cableチャネルのテストは、実際に実装されたか確認されていません。今回の改修で機能は改善されましたが、テストカバレッジの不足はデグレのリスクを高めます。
 *   **検討内容**: `temp_id`の永続化、API応答、Action Cableブロードキャストが期待通りに行われていることを検証するバックエンドテストを実装します。これにより、将来の変更によるデグレを防止し、コードの品質と信頼性を維持します。
 
 ## 3. 設計 (セクション名を「詳細設計」に更新)
@@ -85,14 +90,14 @@ Undo/Redo機能の改善とリアルタイム同期の実現のため、バッ�
 
 #### 3.1.2. `DrawingElement` `create` アクションの修正
 
-*   **目的**: フロントエンドから送信される `tempId` をバックエンドで受け取り、`DrawingElement` レコードに保存します。
+*   **目的**: フロントエンドから送信される `temp_id` をバックエンドで受け取り、`DrawingElement` レコードに保存します。
 *   **修正内容**: `app/controllers/api/v1/drawing_elements_controller.rb` の `drawing_element_params` に `:temp_id` を許可するように修正しました。
 *   **実装ファイル**: `app/controllers/api/v1/drawing_elements_controller.rb`
 
 #### 3.1.3. Action Cable ブロードキャストの修正
 
 *   **目的**: 新しい `DrawingElement` が作成された際に、`temp_id` を含めて全ての接続クライアントにブロードキャストすることで、フロントエンドが自己ブロードキャストされた要素を正しく識別し、重複を避けることを可能にします。
-*   **修正内容**: `app/channels/drawing_channel.rb` の `draw` メソッド内で、`DrawingElement.create!` 時に `tempId` を保存し、`ActionCable.server.broadcast` する際に `drawing_element.as_json(methods: [:temp_id])` を使用して `temp_id` をJSONレスポンスに含めました。
+*   **修正内容**: `app/channels/drawing_channel.rb` の `draw` メソッド内で、`DrawingElement.create!` 時に `temp_id` を保存し、`ActionCable.server.broadcast` する際に `drawing_element.as_json(methods: [:temp_id])` を使用して `temp_id` をJSONレスポンスに含めました。
 *   **実装ファイル**: `app/channels/drawing_channel.rb`
 
 #### 3.1.4. 初期ロードAPIの拡張（参考）
@@ -110,7 +115,7 @@ Undo/Redo機能の改善とリアルタイム同期の実現のため、バッ�
 *   **APIテスト**: `drawing_elements#create` エンドポイントが `temp_id` を受け入れ、保存すること。また、描画要素取得時に `temp_id` が含まれていること。
 *   **Action Cableチャネルテスト**: `draw` メソッドが `temp_id` を含む描画要素をブロードキャストすること。
 
-**現状**: これらのテストが実際に実装されたかどうかは確認されていません。
+**現状**: これらのテストが実際に実装されたか確認されていません。
 **今後の検討事項**: 既存の機能の品質を保証するため、これらのテストケースを実装し、テストカバレッジを向上させることを強く推奨します。
 
 テストの実行方法は、`README.md` を参照してください。

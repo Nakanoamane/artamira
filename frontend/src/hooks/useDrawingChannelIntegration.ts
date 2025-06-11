@@ -88,6 +88,7 @@ export const useDrawingChannelIntegration = (
         channel.perform("draw", {
           element_type: newElement.type,
           element_data: elementDataToSend,
+          temp_id: newElement.temp_id,
         });
         setActionCableError(null);
       } else {

@@ -20,12 +20,14 @@ class DrawingChannel < ApplicationCable::Channel
   def draw(data)
     return unless @drawing
 
+    Rails.logger.info "data: #{data}"
+
     begin
       drawing_element = @drawing.drawing_elements.create!(
         user_id: current_user&.id,
         element_type: data['element_type'],
         data: data['element_data'],
-        temp_id: data['tempId']
+        temp_id: data['temp_id']
       )
 
       DrawingChannel.broadcast_to @drawing, {

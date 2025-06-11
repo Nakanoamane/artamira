@@ -31,6 +31,7 @@ const DrawingBoard = () => {
   const { drawingElements, setDrawingElements, handleUndo, handleRedo, handleDrawComplete, canUndo, canRedo, addDrawingElementFromExternalSource } = useDrawingElements(
     setIsDirty,
     (newElement) => { // onNewElementCreatedコールバック
+      console.log("DrawingBoard: newElement from useDrawingElements for sending:", newElement);
       // Action Cableで描画要素を送信
       sendDrawingElement(newElement);
     },
@@ -38,6 +39,10 @@ const DrawingBoard = () => {
   );
 
   const { isExportModalOpen, setIsExportModalOpen, isExporting, exportError, handleExportClick, handleExport } = useDrawingExport();
+
+  const handleSaveBoard = useCallback(async () => {
+    // ... existing code ...
+  }, [drawingElements, drawingId, handleSave]);
 
   useEffect(() => {
     if (initialDrawingElements.length > 0 || initialLastSavedAt !== null) {

@@ -63,7 +63,7 @@ export const useDrawingElements = (
   }, [setIsDirty, drawingElements, undoStack, redoStack]);
 
   const handleDrawComplete = useCallback((newElement: DrawingElementType) => {
-    const elementWithTempId = { ...newElement, tempId: `temp-${Date.now()}` };
+    const elementWithTempId = { ...newElement, temp_id: `temp-${Date.now()}` };
 
     setUndoStack((prevUndoStack) => {
       const newStack = [...prevUndoStack, drawingElements];
@@ -86,11 +86,11 @@ export const useDrawingElements = (
     setIsDirty(true); // Set dirty flag
 
     setDrawingElements((currentDrawingElements) => {
-      const isSelfBroadcastedElement = element.id && element.id.toString().match(/^\d+$/) && currentDrawingElements.some(e => e.tempId === element.tempId);
+      const isSelfBroadcastedElement = element.id && element.id.toString().match(/^\d+$/) && currentDrawingElements.some(e => e.temp_id === element.temp_id);
 
       if (isSelfBroadcastedElement) {
         const updatedElements = currentDrawingElements.map(e =>
-          e.tempId === element.tempId ? element : e
+          e.temp_id === element.temp_id ? element : e
         );
         return updatedElements;
       } else {
