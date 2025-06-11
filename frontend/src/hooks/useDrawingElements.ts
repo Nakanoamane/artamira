@@ -102,17 +102,11 @@ export const useDrawingElements = (
 
 
   const handleDrawComplete = useCallback((newElement: DrawingElementType) => {
-    console.log("handleDrawComplete called.");
-    console.log("handleDrawComplete: current drawingElements BEFORE update:", drawingElements);
-    console.log("handleDrawComplete: newElement:", newElement);
-
     const elementWithTempId = { ...newElement, temp_id: `temp-${Date.now()}` };
 
     // Push the current state of drawingElements to undoStack *before* adding the new element.
     setUndoStack((prevUndoStack) => {
-      console.log("handleDrawComplete: undoStack BEFORE update:", prevUndoStack);
       const newStack = [...prevUndoStack, drawingElements];
-      console.log("handleDrawComplete: undoStack AFTER update:", newStack);
       return newStack;
     });
     setRedoStack([]); // Clear redo stack on new drawing (limits redo to consecutive undos).
@@ -121,7 +115,6 @@ export const useDrawingElements = (
 
     setDrawingElements((currentDrawingElements) => {
       const updatedElements = [...currentDrawingElements, elementWithTempId];
-      console.log("handleDrawComplete: drawingElements AFTER update:", updatedElements);
       return updatedElements;
     });
 
@@ -132,10 +125,6 @@ export const useDrawingElements = (
 
 
   const addDrawingElementFromExternalSource = useCallback((element: DrawingElementType) => {
-    console.log("addDrawingElementFromExternalSource called.");
-    console.log("addDrawingElementFromExternalSource: current drawingElements BEFORE update:", drawingElements);
-    console.log("addDrawingElementFromExternalSource: external element:", element);
-
     setRedoStack([]); // Clear Redo stack when a new element is added from external source
     setIsDirty(true); // Set dirty flag
 
@@ -146,18 +135,14 @@ export const useDrawingElements = (
         const updatedElements = currentDrawingElements.map(e =>
           e.temp_id === element.temp_id ? element : e
         );
-        console.log("addDrawingElementFromExternalSource: isSelfBroadcastedElement TRUE. drawingElements AFTER update:", updatedElements);
         return updatedElements;
       } else {
         // Push current state to undo stack before adding external element, if it's not a self-broadcast.
         setUndoStack((prevUndoStack) => {
-          console.log("addDrawingElementFromExternalSource: undoStack BEFORE update:", prevUndoStack);
           const newStack = [...prevUndoStack, drawingElements];
-          console.log("addDrawingElementFromExternalSource: undoStack AFTER update:", newStack);
           return newStack;
         });
         const updatedElements = [...currentDrawingElements, element];
-        console.log("addDrawingElementFromExternalSource: isSelfBroadcastedElement FALSE. drawingElements AFTER update:", updatedElements);
         return updatedElements;
       }
     });

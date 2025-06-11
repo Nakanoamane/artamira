@@ -210,7 +210,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         animationFrameId.current = null;
       }
       if (tempDrawingElement && !drawingCompletedRef.current) {
-        console.log("Canvas: Calling onDrawComplete from handleMouseUp.", tempDrawingElement);
         onDrawComplete(tempDrawingElement);
         drawingCompletedRef.current = true; // 描画完了フラグを設定
         setTempDrawingElement(null); // 仮描画要素をクリア
@@ -227,7 +226,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           animationFrameId.current = null;
         }
         if (tempDrawingElement && !drawingCompletedRef.current) {
-          console.log("Canvas: Calling onDrawComplete from handleMouseLeave.", tempDrawingElement);
           onDrawComplete(tempDrawingElement);
           drawingCompletedRef.current = true; // 描画完了フラグを設定
           setTempDrawingElement(null);

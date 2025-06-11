@@ -25,7 +25,6 @@ export const useDrawingChannelIntegration = (
 
   const handleReceivedData = useCallback(
     (receivedActionCableData: any) => {
-      console.log("useDrawingChannelIntegration: Received data from Action Cable:", receivedActionCableData);
       if (
         receivedActionCableData.type === "drawing_element_created" &&
         receivedActionCableData.drawing_element
@@ -59,7 +58,6 @@ export const useDrawingChannelIntegration = (
 
   const sendDrawingElement = useCallback(
     (newElement: DrawingElementType) => {
-      console.log("useDrawingChannelIntegration: Sending element:", newElement);
       if (channel && status.isConnected) {
         let elementDataToSend: any;
         if (newElement.type === "line") {

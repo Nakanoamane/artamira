@@ -31,7 +31,6 @@ const DrawingBoard = () => {
   const { sendDrawingElement } = useDrawingChannelIntegration({
     drawingId: drawingId,
     addDrawingElement: (element) => {
-      console.log("DrawingBoard: Received element from Action Cable:", element);
       // 他のユーザーからの描画を受信した場合、useDrawingElementsの関数を介して描画要素を追加
       addDrawingElementFromExternalSource(element);
     },
@@ -42,8 +41,6 @@ const DrawingBoard = () => {
   });
 
   const onNewElementCreatedCallback = useCallback((newElement: DrawingElementType) => {
-    console.log("DrawingBoard: Sending new element via Action Cable:", newElement);
-    console.log("DrawingBoard: newElement from useDrawingElements for sending:", newElement);
     // Action Cableで描画要素を送信
     sendDrawingElement(newElement);
   }, [sendDrawingElement]);
