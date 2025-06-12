@@ -79,17 +79,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      console.log("[Canvas - useEffect] Drawing all elements. drawingElements length:", drawingElements.length, "tempDrawingElement:", tempDrawingElement ? "exists" : "null");
-
-      // Log each element in drawingElements to inspect its content
-      drawingElements.forEach((element, index) => {
-        console.log(`[Canvas - useEffect] drawingElements[${index}]:`, element);
-      });
-
-      if (tempDrawingElement) {
-        console.log("[Canvas - useEffect] tempDrawingElement content:", tempDrawingElement);
-      }
-
       drawAllElements(ctx, canvas, drawingElements, tempDrawingElement);
     }, [drawingElements, tempDrawingElement, canvasRefObject]); // 依存配列を canvasRefObject に変更
 

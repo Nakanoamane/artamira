@@ -9,7 +9,6 @@ export const drawElement = (
   ctx: CanvasRenderingContext2D,
   element: DrawingElementType
 ) => {
-  console.log("[drawElement] Attempting to draw element:", element);
   try {
     ctx.beginPath();
     ctx.strokeStyle = element.color;
@@ -66,7 +65,6 @@ export const drawAllElements = (
   drawingElements: DrawingElementType[],
   tempDrawingElement: DrawingElementType | null
 ) => {
-  console.log("[drawAllElements] Clearing canvas and drawing elements.");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawingElements.forEach(element => {
     drawElement(ctx, element);
