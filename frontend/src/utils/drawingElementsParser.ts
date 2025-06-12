@@ -4,7 +4,7 @@ export interface Point {
 }
 
 export interface LineElement {
-  id: string;
+  id?: number;
   temp_id?: string;
   type: "line";
   points: Point[];
@@ -13,7 +13,7 @@ export interface LineElement {
 }
 
 export interface RectangleElement {
-  id: string;
+  id?: number;
   temp_id?: string;
   type: "rectangle";
   start: Point;
@@ -23,7 +23,7 @@ export interface RectangleElement {
 }
 
 export interface CircleElement {
-  id: string;
+  id?: number;
   temp_id?: string;
   type: "circle";
   center: Point;
@@ -35,7 +35,7 @@ export interface CircleElement {
 export type DrawingElementType = LineElement | RectangleElement | CircleElement;
 
 export interface RawDrawingElement {
-  id: string;
+  id: number | string;
   element_type: "line" | "rectangle" | "circle";
   data: any; // 具体的な構造はelement_typeに依存
   created_at?: string; // オプション
@@ -46,12 +46,16 @@ export const parseDrawingElement = (
 ): DrawingElementType | null => {
   let parsedElement: DrawingElementType | null = null;
 
+  const elementId = rawElement.id !== undefined && rawElement.id !== null
+    ? (typeof rawElement.id === 'string' && rawElement.id.startsWith('temp-') ? undefined : Number(rawElement.id))
+    : undefined;
+
   if (rawElement.element_type === "line") {
     if (!rawElement.data || !Array.isArray(rawElement.data.path)) {
       return null;
     }
     parsedElement = {
-      id: rawElement.id,
+      id: elementId,
       type: "line",
       points: rawElement.data.path.map((p: [number, number]) => ({
         x: p[0],
@@ -65,7 +69,7 @@ export const parseDrawingElement = (
       return null;
     }
     parsedElement = {
-      id: rawElement.id,
+      id: elementId,
       type: "rectangle",
       start: { x: rawElement.data.start.x, y: rawElement.data.start.y },
       end: { x: rawElement.data.end.x, y: rawElement.data.end.y },
@@ -77,7 +81,7 @@ export const parseDrawingElement = (
       return null;
     }
     parsedElement = {
-      id: rawElement.id,
+      id: elementId,
       type: "circle",
       center: { x: rawElement.data.center.x, y: rawElement.data.center.y },
       radius: rawElement.data.radius,

@@ -19,7 +19,10 @@ export const useDrawingElements = (
   onNewElementCreated?: (newElement: DrawingElementType) => void,
   initialLoadedElements: DrawingElementType[] = []
 ): UseDrawingElementsResult => {
-  const [drawingElements, setDrawingElements] = useState<DrawingElementType[]>(initialLoadedElements);
+  const [drawingElements, setDrawingElements] = useState<DrawingElementType[]>(() => {
+    console.log("[useDrawingElements - useState init] Initializing drawingElements with:", initialLoadedElements.length, "elements.");
+    return initialLoadedElements;
+  });
 
   // Use a ref to store the initial loaded elements to ensure stability and for comparison.
   const initialBaseElementsRef = useRef(initialLoadedElements);
@@ -45,6 +48,9 @@ export const useDrawingElements = (
     };
 
     if (!areArraysEqual(initialLoadedElements, initialBaseElementsRef.current)) {
+      console.log("[useDrawingElements - useEffect] Initial loaded elements changed. Re-initializing state.");
+      console.log("  New initialLoadedElements length:", initialLoadedElements.length);
+      console.log("  Old initialBaseElementsRef length:", initialBaseElementsRef.current.length);
       setDrawingElements(initialLoadedElements);
       initialBaseElementsRef.current = initialLoadedElements;
       setUndoStack(initialLoadedElements.length > 0 ? [initialLoadedElements] : [[]]);
@@ -59,6 +65,7 @@ export const useDrawingElements = (
       // We should not undo past this base state. This prevents the "initial content disappearing" bug
       // for both empty and non-empty initial loads, and ensures initial content is not undoable.
       if (prevUndoStack.length <= 1) {
+        console.log("[useDrawingElements - handleUndo] Cannot undo, already at base state. undoStack length:", prevUndoStack.length);
         return prevUndoStack;
       }
 
@@ -67,6 +74,7 @@ export const useDrawingElements = (
       const lastState = newUndoStack.pop(); // The state to revert to
 
       if (lastState !== undefined) {
+        console.log("[useDrawingElements - handleUndo] Undoing. Current drawingElements length:", drawingElements.length, "-> Reverting to lastState length:", lastState.length);
         setDrawingElements(lastState);
         setRedoStack((prevRedoStack) => [
           ...prevRedoStack,
@@ -74,14 +82,16 @@ export const useDrawingElements = (
         ]);
         setIsDirty(true);
       }
+      console.log("[useDrawingElements - handleUndo] New undoStack length:", newUndoStack.length, "New redoStack length:", redoStack.length + 1);
       return newUndoStack;
     });
-  }, [setIsDirty, drawingElements]);
+  }, [setIsDirty, drawingElements, redoStack.length]);
 
 
   const handleRedo = useCallback(() => {
     setRedoStack((prevRedoStack) => {
       if (prevRedoStack.length === 0) {
+        console.log("[useDrawingElements - handleRedo] Cannot redo, redoStack is empty.");
         return prevRedoStack;
       }
 
@@ -89,60 +99,86 @@ export const useDrawingElements = (
       const nextState = newRedoStack.pop();
 
       if (nextState !== undefined) {
-        setUndoStack((prevUndoStack) => [
-          ...prevUndoStack,
-          drawingElements, // Push current state before redo
-        ]);
+        console.log("[useDrawingElements - handleRedo] Redoing. Current drawingElements length:", drawingElements.length, "-> Reverting to nextState length:", nextState.length);
+        setUndoStack((prevUndoStack) => {
+          const newStack = [...prevUndoStack, drawingElements]; // Push current state before redo
+          console.log("  Pushing current state to undo stack. New undoStack length:", newStack.length);
+          return newStack;
+        });
         setDrawingElements(nextState);
         setIsDirty(true);
       }
+      console.log("[useDrawingElements - handleRedo] New redoStack length:", newRedoStack.length);
       return newRedoStack;
     });
   }, [setIsDirty, drawingElements]);
 
 
   const handleDrawComplete = useCallback((newElement: DrawingElementType) => {
-    const elementWithTempId = { ...newElement, temp_id: `temp-${Date.now()}` };
+    // newElementはCanvasから渡される。ここではidを付けず、temp_idのみを付与する。
+    // 永続化されるIDはバックエンドで生成されるべき。
+    const elementToCreate = { ...newElement, id: undefined, temp_id: `temp-${Date.now()}` };
 
     // Push the current state of drawingElements to undoStack *before* adding the new element.
     setUndoStack((prevUndoStack) => {
       const newStack = [...prevUndoStack, drawingElements];
+      console.log("[useDrawingElements - handleDrawComplete] Pushing current state to undoStack. New undoStack length:", newStack.length);
       return newStack;
     });
     setRedoStack([]); // Clear redo stack on new drawing (limits redo to consecutive undos).
+    console.log("[useDrawingElements - handleDrawComplete] Redo stack cleared.");
 
     setIsDirty(true);
 
     setDrawingElements((currentDrawingElements) => {
-      const updatedElements = [...currentDrawingElements, elementWithTempId];
+      const updatedElements = [...currentDrawingElements, elementToCreate];
+      console.log("[useDrawingElements - handleDrawComplete] Drawing completed. Adding new element. Current length:", currentDrawingElements.length, "-> New length:", updatedElements.length);
       return updatedElements;
     });
 
     if (onNewElementCreated) {
-      onNewElementCreated(elementWithTempId);
+      onNewElementCreated(elementToCreate);
     }
   }, [drawingElements, setIsDirty, onNewElementCreated]);
 
 
   const addDrawingElementFromExternalSource = useCallback((element: DrawingElementType) => {
+    console.log("[useDrawingElements - addDrawingElementFromExternalSource] Received element:", element);
     setRedoStack([]); // Clear Redo stack when a new element is added from external source
+    console.log("[useDrawingElements - addDrawingElementFromExternalSource] Redo stack cleared due to external element.");
     setIsDirty(true); // Set dirty flag
 
     setDrawingElements((currentDrawingElements) => {
-      const isSelfBroadcastedElement = element.id && element.id.toString().match(/^\d+$/) && currentDrawingElements.some(e => e.temp_id === element.temp_id);
+      // element.id が数値であり、かつ element.temp_id が存在する場合に自己ブロードキャストとみなす
+      const isSelfBroadcastedElement = typeof element.id === 'number' && element.temp_id && currentDrawingElements.some(e => e.temp_id === element.temp_id);
+
+      console.log("[useDrawingElements - addDrawingElementFromExternalSource] Element received. isSelfBroadcastedElement:", isSelfBroadcastedElement, "Current drawingElements length:", currentDrawingElements.length);
 
       if (isSelfBroadcastedElement) {
-        const updatedElements = currentDrawingElements.map(e =>
-          e.temp_id === element.temp_id ? element : e
-        );
+        // 既存のtemp_idを持つ要素を、idを持つ要素で更新する
+        // この際、temp_idは不要なので削除する
+        const updatedElements = currentDrawingElements.map(e => {
+          if (e.temp_id === element.temp_id) {
+            // element.temp_id が undefined になる可能性があるので、それを考慮
+            const { temp_id, ...rest } = element;
+            // ここでidは数値としてelementに入っているはず
+            return { ...rest, id: element.id };
+          }
+          return e;
+        });
+        console.log("[useDrawingElements - addDrawingElementFromExternalSource] Updated self-broadcasted element. New length:", updatedElements.length);
         return updatedElements;
       } else {
-        // Push current state to undo stack before adding external element, if it's not a self-broadcast.
+        // 新しい外部要素を追加する場合（または自己ブロードキャストだがtemp_idを持たない場合）
         setUndoStack((prevUndoStack) => {
           const newStack = [...prevUndoStack, drawingElements];
+          console.log("[useDrawingElements - addDrawingElementFromExternalSource] Pushing current state to undo stack. New undoStack length:", newStack.length);
           return newStack;
         });
+
+        // バックエンドから来た要素は、既にtemp_idが削除されているはずなので、そのまま追加
         const updatedElements = [...currentDrawingElements, element];
+        console.log("[useDrawingElements - addDrawingElementFromExternalSource] Adding external element. New length:", updatedElements.length);
         return updatedElements;
       }
     });

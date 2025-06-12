@@ -9,6 +9,7 @@ export const drawElement = (
   ctx: CanvasRenderingContext2D,
   element: DrawingElementType
 ) => {
+  console.log("[drawElement] Attempting to draw element:", element);
   try {
     ctx.beginPath();
     ctx.strokeStyle = element.color;
@@ -26,12 +27,22 @@ export const drawElement = (
         for (let i = 1; i < element.points.length; i++) {
           ctx.lineTo(element.points[i].x, element.points[i].y);
         }
+      } else {
+        console.warn("[drawElement] Line element has no points:", element);
       }
     } else if (element.type === 'rectangle') {
       const width = element.end.x - element.start.x;
       const height = element.end.y - element.start.y;
+      // Check for zero width/height rectangles that might not be visible
+      if (width === 0 || height === 0) {
+        console.warn("[drawElement] Rectangle has zero width or height:", element);
+      }
       ctx.rect(element.start.x, element.start.y, width, height);
     } else if (element.type === 'circle') {
+      // Check for zero radius circles
+      if (element.radius === 0) {
+        console.warn("[drawElement] Circle has zero radius:", element);
+      }
       ctx.arc(element.center.x, element.center.y, element.radius, 0, 2 * Math.PI);
     }
 
@@ -55,6 +66,7 @@ export const drawAllElements = (
   drawingElements: DrawingElementType[],
   tempDrawingElement: DrawingElementType | null
 ) => {
+  console.log("[drawAllElements] Clearing canvas and drawing elements.");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawingElements.forEach(element => {
     drawElement(ctx, element);

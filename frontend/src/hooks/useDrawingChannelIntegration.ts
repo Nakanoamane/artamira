@@ -60,16 +60,20 @@ export const useDrawingChannelIntegration = (
     (newElement: DrawingElementType) => {
       if (channel && status.isConnected) {
         let elementDataToSend: any;
+
+        const elementId = newElement.id;
+        const tempIdToSend = newElement.temp_id;
+
         if (newElement.type === "line") {
           elementDataToSend = {
-            id: newElement.id,
+            id: elementId,
             path: newElement.points.map((p) => [p.x, p.y]),
             color: newElement.color,
             lineWidth: newElement.brushSize,
           };
         } else if (newElement.type === "rectangle") {
           elementDataToSend = {
-            id: newElement.id,
+            id: elementId,
             start: newElement.start,
             end: newElement.end,
             color: newElement.color,
@@ -77,7 +81,7 @@ export const useDrawingChannelIntegration = (
           };
         } else if (newElement.type === "circle") {
           elementDataToSend = {
-            id: newElement.id,
+            id: elementId,
             center: newElement.center,
             radius: newElement.radius,
             color: newElement.color,
@@ -88,7 +92,7 @@ export const useDrawingChannelIntegration = (
         channel.perform("draw", {
           element_type: newElement.type,
           element_data: elementDataToSend,
-          temp_id: newElement.temp_id,
+          temp_id: tempIdToSend,
         });
         setActionCableError(null);
       } else {

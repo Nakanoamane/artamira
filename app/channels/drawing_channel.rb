@@ -21,13 +21,15 @@ class DrawingChannel < ApplicationCable::Channel
     return unless @drawing
 
     begin
-      drawing_element = @drawing.drawing_elements.create!(
+      drawing_element = @drawing.drawing_elements.new(
         user_id: current_user&.id,
         element_type: data['element_type'],
-        data: data['element_data'],
-        temp_id: data['temp_id']
+        data: data['element_data']
       )
+      drawing_element.temp_id = data['temp_id']
+      drawing_element.save!
 
+      Rails.logger.info "DEBUG: Broadcasting drawing_element: #{drawing_element.as_json(methods: [:temp_id]).inspect}"
       DrawingChannel.broadcast_to @drawing, {
         type: 'drawing_element_created',
         drawing_element: drawing_element.as_json(methods: [:temp_id])

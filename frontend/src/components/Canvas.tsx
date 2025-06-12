@@ -79,6 +79,17 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+      console.log("[Canvas - useEffect] Drawing all elements. drawingElements length:", drawingElements.length, "tempDrawingElement:", tempDrawingElement ? "exists" : "null");
+
+      // Log each element in drawingElements to inspect its content
+      drawingElements.forEach((element, index) => {
+        console.log(`[Canvas - useEffect] drawingElements[${index}]:`, element);
+      });
+
+      if (tempDrawingElement) {
+        console.log("[Canvas - useEffect] tempDrawingElement content:", tempDrawingElement);
+      }
+
       drawAllElements(ctx, canvas, drawingElements, tempDrawingElement);
     }, [drawingElements, tempDrawingElement, canvasRefObject]); // 依存配列を canvasRefObject に変更
 
@@ -99,7 +110,8 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       if (activeTool === 'pen' || activeTool === 'eraser') {
         setTempDrawingElement({
           type: 'line',
-          id: `temp-${Date.now()}`,
+          id: undefined,
+          temp_id: `temp-${Date.now()}`,
           points: [point],
           color: activeTool === 'eraser' ? '#FFFFFF' : activeColor,
           brushSize: activeBrushSize,
@@ -134,7 +146,8 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
             // handleMouseDownで初期化されているはずなので、このパスは通常通らない
             return {
               type: 'line',
-              id: `temp-${Date.now()}`,
+              id: undefined,
+              temp_id: `temp-${Date.now()}`,
               points: [prevPointRef.current!, currentPoint],
               color: activeTool === 'eraser' ? '#FFFFFF' : activeColor,
               brushSize: activeBrushSize,
@@ -159,7 +172,8 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           if (activeTool === 'line') {
             newTempElement = {
               type: 'line',
-              id: `temp-${Date.now()}`,
+              id: undefined,
+              temp_id: `temp-${Date.now()}`,
               points: [prevPointRef.current!, currentPoint],
               color: activeColor,
               brushSize: activeBrushSize,
@@ -167,7 +181,8 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           } else if (activeTool === 'rectangle') {
             newTempElement = {
               type: 'rectangle',
-              id: `temp-${Date.now()}`,
+              id: undefined,
+              temp_id: `temp-${Date.now()}`,
               start: prevPointRef.current!,
               end: currentPoint,
               color: activeColor,
@@ -180,7 +195,8 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
             );
             newTempElement = {
               type: 'circle',
-              id: `temp-${Date.now()}`,
+              id: undefined,
+              temp_id: `temp-${Date.now()}`,
               center: prevPointRef.current!,
               radius,
               color: activeColor,

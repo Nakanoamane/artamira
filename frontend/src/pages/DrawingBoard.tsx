@@ -28,6 +28,21 @@ const DrawingBoard = () => {
     drawingId,
   });
 
+  console.log("[DrawingBoard Render] initialDrawingElements (from persistence) ref:", initialDrawingElements, "length:", initialDrawingElements.length, "lastSavedAt:", initialLastSavedAt);
+
+  const { drawingElements, setDrawingElements, handleDrawComplete, handleUndo, handleRedo, canUndo, canRedo, addDrawingElementFromExternalSource } = useDrawingElements(
+    setIsDirty,
+    (newElement) => {
+      console.log("[DrawingBoard - onNewElementCreatedCallback] Sending new element to channel:", newElement);
+      sendDrawingElement(newElement);
+    },
+    initialDrawingElements
+  );
+
+  console.log("[DrawingBoard Render] drawingElements (from useDrawingElements) ref:", drawingElements, "length:", drawingElements.length, "isDirty:", isDirty);
+
+  const { isExportModalOpen, setIsExportModalOpen, isExporting, exportError, handleExportClick, handleExport } = useDrawingExport();
+
   const { sendDrawingElement } = useDrawingChannelIntegration({
     drawingId: drawingId,
     addDrawingElement: (element) => {
@@ -40,29 +55,9 @@ const DrawingBoard = () => {
     },
   });
 
-  const onNewElementCreatedCallback = useCallback((newElement: DrawingElementType) => {
-    // Action Cableで描画要素を送信
-    sendDrawingElement(newElement);
-  }, [sendDrawingElement]);
-
-  const { drawingElements, setDrawingElements, handleUndo, handleRedo, handleDrawComplete, canUndo, canRedo, addDrawingElementFromExternalSource } = useDrawingElements(
-    setIsDirty,
-    onNewElementCreatedCallback,
-    initialDrawingElements
-  );
-
-  const { isExportModalOpen, setIsExportModalOpen, isExporting, exportError, handleExportClick, handleExport } = useDrawingExport();
-
   const handleSaveBoard = useCallback(async () => {
     // ... existing code ...
   }, [drawingElements, drawingId, handleSave]);
-
-  useEffect(() => {
-    if (initialDrawingElements.length > 0 || initialLastSavedAt !== null) {
-      setDrawingElements(initialDrawingElements);
-      setLastSavedAt(initialLastSavedAt);
-    }
-  }, [initialDrawingElements, initialLastSavedAt, setDrawingElements, setLastSavedAt]);
 
   usePageTitle(drawing ? drawing.title : "描画ボード");
 
