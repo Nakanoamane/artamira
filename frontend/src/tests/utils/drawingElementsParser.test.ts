@@ -5,7 +5,7 @@ describe('drawingElementsParser', () => {
   describe('parseDrawingElement', () => {
     it('should correctly parse a raw line element', () => {
       const rawLine: RawDrawingElement = {
-        id: 'line-1',
+        id: 1,
         element_type: 'line',
         data: {
           path: [[10, 20], [30, 40]],
@@ -16,7 +16,7 @@ describe('drawingElementsParser', () => {
 
       const parsed = parseDrawingElement(rawLine);
       expect(parsed).toEqual({
-        id: 'line-1',
+        id: 1,
         type: 'line',
         points: [{ x: 10, y: 20 }, { x: 30, y: 40 }],
         color: '#FF0000',
@@ -26,7 +26,7 @@ describe('drawingElementsParser', () => {
 
     it('should correctly parse a raw rectangle element', () => {
       const rawRectangle: RawDrawingElement = {
-        id: 'rect-1',
+        id: 2,
         element_type: 'rectangle',
         data: {
           start: { x: 50, y: 60 },
@@ -38,7 +38,7 @@ describe('drawingElementsParser', () => {
 
       const parsed = parseDrawingElement(rawRectangle);
       expect(parsed).toEqual({
-        id: 'rect-1',
+        id: 2,
         type: 'rectangle',
         start: { x: 50, y: 60 },
         end: { x: 70, y: 80 },
@@ -49,7 +49,7 @@ describe('drawingElementsParser', () => {
 
     it('should correctly parse a raw circle element', () => {
       const rawCircle: RawDrawingElement = {
-        id: 'circle-1',
+        id: 3,
         element_type: 'circle',
         data: {
           center: { x: 100, y: 110 },
@@ -61,7 +61,7 @@ describe('drawingElementsParser', () => {
 
       const parsed = parseDrawingElement(rawCircle);
       expect(parsed).toEqual({
-        id: 'circle-1',
+        id: 3,
         type: 'circle',
         center: { x: 100, y: 110 },
         radius: 25,
@@ -101,12 +101,12 @@ describe('drawingElementsParser', () => {
     it('should correctly parse an array of raw elements', () => {
       const rawElements: RawDrawingElement[] = [
         {
-          id: 'line-1',
+          id: 1,
           element_type: 'line',
           data: { path: [[0, 0], [1, 1]], color: '#000000', lineWidth: 1 },
         },
         {
-          id: 'rect-1',
+          id: 2,
           element_type: 'rectangle',
           data: { start: { x: 10, y: 10 }, end: { x: 20, y: 20 }, color: '#FF0000', lineWidth: 2 },
         },
@@ -121,7 +121,7 @@ describe('drawingElementsParser', () => {
     it('should filter out unparseable elements', () => {
       const rawElements: RawDrawingElement[] = [
         {
-          id: 'line-1',
+          id: 1,
           element_type: 'line',
           data: { path: [[0, 0], [1, 1]], color: '#000000', lineWidth: 1 },
         },
