@@ -63,7 +63,7 @@ module Api
       end
 
       def drawing_element_params
-        params.require(:drawing_element).permit(:element_type, :temp_id, data: {})
+        params.require(:drawing_element).permit(:element_type, data: {})
       end
     end
   end
