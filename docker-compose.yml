@@ -3,14 +3,14 @@ version: '3.8'
 services:
   api:
     build:
-      context: .
+      context: ./api
       dockerfile: Dockerfile
       args:
         RAILS_ENV: development
         BUNDLE_DEPLOYMENT: 0
     env_file: ./.env
     volumes:
-      - .:/rails
+      - ./api:/rails
       - /rails/tmp
     ports:
       - "3000:3000"

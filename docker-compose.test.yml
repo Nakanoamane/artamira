@@ -5,7 +5,7 @@ services:
     image: artamira-api # Use the image built by the main docker-compose.yml
     env_file: ./.env
     volumes:
-      - .:/rails
+      - ./api:/rails
       - /rails/tmp
       - test_rails_storage:/rails/storage # テスト専用のストレージボリューム
     ports:
