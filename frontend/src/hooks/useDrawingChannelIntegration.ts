@@ -94,21 +94,14 @@ export const useDrawingChannelIntegration = (
           element_data: elementDataToSend,
           temp_id: tempIdToSend,
         });
-        setActionCableError(null);
       } else {
-        console.warn(
-          "WebSocket接続が確立されていないため、描画データを送信できません。"
-        );
-        setActionCableError(
-          "描画データを送信できません。WebSocket接続が確立されていません。"
-        );
+        // WebSocket接続が確立されていない場合の処理をここに記述（必要であれば）
       }
     },
     [channel, status.isConnected]
   );
 
   useEffect(() => {
-    // ActionCableのエラーはここで処理される
     if (status.error) {
       setActionCableError(status.error);
     }

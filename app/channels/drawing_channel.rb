@@ -29,7 +29,6 @@ class DrawingChannel < ApplicationCable::Channel
       drawing_element.temp_id = data['temp_id']
       drawing_element.save!
 
-      Rails.logger.info "DEBUG: Broadcasting drawing_element: #{drawing_element.as_json(methods: [:temp_id]).inspect}"
       DrawingChannel.broadcast_to @drawing, {
         type: 'drawing_element_created',
         drawing_element: drawing_element.as_json(methods: [:temp_id])

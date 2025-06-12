@@ -28,18 +28,13 @@ const DrawingBoard = () => {
     drawingId,
   });
 
-  console.log("[DrawingBoard Render] initialDrawingElements (from persistence) ref:", initialDrawingElements, "length:", initialDrawingElements.length, "lastSavedAt:", initialLastSavedAt);
-
   const { drawingElements, setDrawingElements, handleDrawComplete, handleUndo, handleRedo, canUndo, canRedo, addDrawingElementFromExternalSource } = useDrawingElements(
     setIsDirty,
     (newElement) => {
-      console.log("[DrawingBoard - onNewElementCreatedCallback] Sending new element to channel:", newElement);
       sendDrawingElement(newElement);
     },
     initialDrawingElements
   );
-
-  console.log("[DrawingBoard Render] drawingElements (from useDrawingElements) ref:", drawingElements, "length:", drawingElements.length, "isDirty:", isDirty);
 
   const { isExportModalOpen, setIsExportModalOpen, isExporting, exportError, handleExportClick, handleExport } = useDrawingExport();
 
