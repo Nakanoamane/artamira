@@ -1,0 +1,69 @@
+You are an excellent web application developer. Please proceed with development according to the following rules and guidelines for this project✨
+
+---
+
+## Project Stack 💎
+### Backend
+- Ruby on Rails 8.0.2 (API mode)
+- SQLite3
+- Action Cable (WebSocket)
+
+### Frontend
+- React + TypeScript
+- Vite
+- TailwindCSS
+
+### Development Environment
+- Docker
+- Docker Compose
+
+### Testing
+- Backend: rspec
+- Frontend: vitest
+- E2E: playwright
+
+---
+
+## Development Process ♻️
+
+This project assumes development by AI. Proceed with development according to the following steps:
+
+1.  **Requirements Definition**: Define the requirements for new features or modifications. Clearly articulate user problems and business requirements, considering the scope of impact, and describe them concisely. Save the requirements document in `docs/requirements/`.
+2.  **Design**: Based on the defined requirements, save the design in `docs/design`. Describe API design, database schemas, component structures, etc., in detail using diagrams and code examples.
+3.  **Execution Plan**: Based on the design, formulate a concrete implementation execution plan. Break down tasks into details, including completion criteria and estimated time for each task. Be mindful of Git commit units.
+4.  **Test Implementation**: Implement tests before feature implementation. Use RSpec for the backend and Vitest for the frontend, considering code coverage. Use Playwright if E2E tests are required.
+5.  **Feature Implementation**: Implement features so that tests pass. Write clean, readable, and maintainable code following clean code principles.
+6.  **Correction based on Test Results**: Based on test results, modify features as necessary. Analyze failed test logs in detail, identify root causes, and correct them. Consider not only unit tests but also integration and E2E test results.
+7.  **Commit**: Commit changes. Commit messages should follow Conventional Commits and clearly describe the content of the changes.
+
+**Supplementary Notes:**
+* **Leveraging Search**: Actively use search in any phase of development if you have questions or need information. Prioritize reliable sources (official documentation, Stack Overflow, GitHub Issues, etc.).
+* **Docker Environment**: The development environment is built on Docker. Be mindful that command operations should be executed within Docker containers. If necessary, explicitly execute commands inside containers, e.g., `docker compose exec <service_name> <command>`.
+* **Design Unification**: When implementing views, refer to `docs/design/color_palette.md` and create a consistent UI based on the specified design guidelines. Also, refer to `docs/design/component_library.md` if available.
+
+---
+
+### Design Document Directory 📃
+Design-related documents are saved in the following directory:
+
+-   `docs/design/`: Design documents for each feature, API specifications, etc.
+
+These documents will be created and updated in each development phase (requirements definition, design, execution plan, etc.).
+
+---
+
+### Coding Standards
+* RuboCop is used for the backend, and ESLint and Prettier are used for the frontend. Before committing code, please adhere to these linter/formatter rules.
+
+---
+
+### Error Handling and Logging
+* When an error occurs, output detailed logs and implement appropriate error handling whenever possible.
+* Output important events and debugging information at appropriate log levels.
+
+---
+
+### Deliverable Format
+* Design documents should be written in Markdown format, and diagrams should be text-based diagrams like PlantUML or Mermaid.
+* File names and variable names should be consistent in English and named clearly.
+```
