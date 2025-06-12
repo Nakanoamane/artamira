@@ -88,7 +88,7 @@ describe('useDrawingChannelIntegration', () => {
 
     // This is the expected DrawingElementType after parsing
     const expectedParsedElement: DrawingElementType = {
-      id: 'remote-1',
+      id: 1,
       type: 'line',
       points: [{ x: 100, y: 100 }, { x: 110, y: 110 }],
       color: '#FF0000',
@@ -97,7 +97,7 @@ describe('useDrawingChannelIntegration', () => {
 
     // This simulates the RawDrawingElement coming from the channel
     const rawReceivedElement: RawDrawingElement = {
-      id: 'remote-1',
+      id: 1,
       element_type: 'line',
       data: {
         path: expectedParsedElement.points.map(p => [p.x, p.y]), // Convert Point[] to [number, number][]
@@ -149,12 +149,13 @@ describe('useDrawingChannelIntegration', () => {
     }));
 
     const elementToSend: DrawingElementType = {
-      id: 'local-1',
+      id: undefined,
       type: 'circle',
       center: { x: 50, y: 50 },
       radius: 20,
       color: '#0000FF',
       brushSize: 3,
+      temp_id: 'temp-12345', // 仮のtemp_idを追加
     };
 
     act(() => {
@@ -163,7 +164,17 @@ describe('useDrawingChannelIntegration', () => {
 
     expect(mockChannelInstance.perform).toHaveBeenCalledWith(
       'draw',
-      expect.objectContaining({ element_type: elementToSend.type })
+      expect.objectContaining({
+        element_type: elementToSend.type,
+        element_data: expect.objectContaining({
+          id: undefined,
+          center: { x: 50, y: 50 },
+          radius: 20,
+          color: '#0000FF',
+          brushSize: 3,
+        }),
+        temp_id: expect.any(String),
+      })
     );
   });
 
