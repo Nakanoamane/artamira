@@ -88,7 +88,9 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
         }
         console.log("[useDrawingPersistence - fetchDrawingData] Final initialDrawingElements length after combining:", elements.length);
         setInitialDrawingElements(elements);
-        setInitialLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
+        const fetchedLastSavedAt = data.last_saved_at ? new Date(data.last_saved_at) : null;
+        setInitialLastSavedAt(fetchedLastSavedAt);
+        setLastSavedAt(fetchedLastSavedAt);
         setIsDirty(false);
 
       } catch (e: any) {
