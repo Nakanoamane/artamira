@@ -12,8 +12,8 @@ interface DrawingListItemProps {
 
 const DrawingListItem: React.FC<DrawingListItemProps> = ({ drawing }) => {
   return (
-    <li key={drawing.id} className="bg-clay-white shadow-md rounded-lg p-6 hover:bg-light-cave-ochre cursor-pointer group transition-colors duration-300">
-      <Link to={`/drawings/${drawing.id}`} className="block w-full h-full">
+    <li key={drawing.id} className="bg-clay-white shadow-md rounded-lg hover:bg-light-cave-ochre cursor-pointer group transition-colors duration-300">
+      <Link to={`/drawings/${drawing.id}`} className="block w-full h-full p-6">
         <span className="text-xl font-semibold text-cave-ochre group-hover:text-clay-white">
           {drawing.title || `無題の描画ボード (${drawing.id})`}
         </span>
