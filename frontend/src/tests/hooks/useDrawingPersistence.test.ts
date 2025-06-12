@@ -9,7 +9,7 @@ describe('useDrawingPersistence', () => {
   const mockDrawingId = 123;
   const mockDrawingElements: DrawingElementType[] = [
     {
-      id: 'line-1',
+      id: 1,
       type: 'line',
       points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
       color: '#000000',
@@ -331,7 +331,7 @@ describe('useDrawingPersistence', () => {
 
     await waitFor(() => expect(result.current.loadingDrawing).toBe(false));
 
-    expect(result.current.errorDrawing).toBe('Failed to parse canvas_data: invalid json');
+    expect(result.current.errorDrawing).toBe('canvas_dataのパースに失敗しました: Failed to parse canvas_data: invalid json');
     expect(result.current.drawing).toEqual({ id: mockDrawingId, title: 'Test Drawing' });
     expect(result.current.initialDrawingElements).toEqual(mockDrawingElements);
     expect(result.current.initialLastSavedAt).toBeNull();
