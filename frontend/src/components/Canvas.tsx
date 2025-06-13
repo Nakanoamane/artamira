@@ -1,39 +1,6 @@
-import { forwardRef, useEffect, useRef, useCallback, useState } from 'react'
-import { Point, LineElement, RectangleElement as RectElement, CircleElement, DrawingElementType } from "../utils/drawingElementsParser";
-import { drawElement, drawAllElements } from '../utils/canvasDrawing';
-
-// interface Point {
-//   x: number
-//   y: number
-// }
-
-// export interface LineElement {
-//   id?: string
-//   type: 'line'
-//   points: Point[] // [start, end]
-//   color: string
-//   brushSize: number
-// }
-
-// export interface RectElement {
-//   id?: string
-//   type: 'rectangle'
-//   start: Point
-//   end: Point
-//   color: string
-//   brushSize: number
-// }
-
-// export interface CircleElement {
-//   id?: string
-//   type: 'circle'
-//   center: Point
-//   radius: number
-//   color: string
-//   brushSize: number
-// }
-
-// export type DrawingElementType = LineElement | RectElement | CircleElement
+import { forwardRef, useEffect, useRef, useState } from 'react'
+import { Point, DrawingElementType } from "../utils/drawingElementsParser";
+import { drawAllElements } from '../utils/canvasDrawing';
 
 export interface CanvasProps {
   drawingElements: DrawingElementType[];

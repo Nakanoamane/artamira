@@ -1,4 +1,4 @@
-import { DrawingElementType, Point } from './drawingElementsParser';
+import { DrawingElementType } from './drawingElementsParser';
 
 /**
  * 単一の描画要素をキャンバスに描画します。

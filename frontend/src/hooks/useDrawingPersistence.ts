@@ -1,11 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { DrawingElementType, parseRawElements } from "../utils/drawingElementsParser";
 
-interface Drawing {
-  id: number;
-  title: string;
-}
-
 interface UseDrawingPersistenceProps {
   drawingId: number | undefined;
 }
