@@ -4,4 +4,12 @@
 
 - 初回の描画処理が重複している（Strict modeとは関係がない）
 - Undo/Redoが2回送信・または受信している
-- 保存ボタンを押して保存した内容が、リロードすると消えてしまう（描画されない）。逆に、保存ボタンを押さずにリロードすると、描画した内容は表示される。
+- authService.ts:89 Error fetching current user: TypeError: Failed to fetch
+    at getCurrentUser (authService.ts:72:28)
+    at checkAuth (AuthContext.tsx:26:33)
+    at AuthContext.tsx:30:5
+
+authService.ts:89 Error fetching current user: TypeError: Failed to fetch
+    at getCurrentUser (authService.ts:72:28)
+    at checkAuth (AuthContext.tsx:26:33)
+    at AuthContext.tsx:30:5
