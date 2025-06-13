@@ -54,32 +54,35 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
         setDrawing({ id: drawingId, title: data.title || "無題のボード" });
 
         let elements: DrawingElementType[] = [];
+        let fetchedLastSavedAt: Date | null = null;
 
         if (data.canvas_data) {
           try {
-            const parsedCanvasData = JSON.parse(data.canvas_data);
+            const rawDataFromCanvasData = JSON.parse(data.canvas_data);
 
-            // canvas_dataが DrawingElementType[] のJSON文字列として保存されている場合
-            if (Array.isArray(parsedCanvasData) && parsedCanvasData.length > 0 && ('type' in parsedCanvasData[0] || 'element_type' in parsedCanvasData[0])) {
-              // そのままparseRawElementsに渡す（RawDrawingElement[] も処理できるように）
-              elements = parseRawElements(parsedCanvasData);
-            } else if (parsedCanvasData && Array.isArray(parsedCanvasData.elements) && parsedCanvasData.elements.length > 0) {
-              // elementsプロパティを持つオブジェクトの場合
-              elements = parseRawElements(parsedCanvasData.elements);
+            // canvas_dataはRawDrawingElement[]の形式で保存されているため、
+            // 常にparseRawElementsでDrawingElementType[]に変換する
+            if (Array.isArray(rawDataFromCanvasData)) {
+              elements = parseRawElements(rawDataFromCanvasData);
+            } else if (typeof rawDataFromCanvasData === 'object' && rawDataFromCanvasData !== null && 'elements' in rawDataFromCanvasData && Array.isArray(rawDataFromCanvasData.elements)) {
+              // 以前の形式（{ elements: RawDrawingElement[] }）も考慮する場合
+              elements = parseRawElements(rawDataFromCanvasData.elements);
             } else {
-              elements = [];
+              setErrorDrawing("Failed to parse canvas data: Unexpected top-level format for parsing.");
             }
-          } catch (parseError) {
-            setErrorDrawing(`canvas_dataのパースに失敗しました: ${(parseError as Error).message}`);
+          } catch (e: any) {
+            setErrorDrawing("Failed to parse canvas data: " + e.message);
           }
         }
 
+        // Drawing elements after save (常にRawDrawingElement[]として処理されることを想定)
         if (data.drawing_elements_after_save && Array.isArray(data.drawing_elements_after_save)) {
-          const parsedNewElements: DrawingElementType[] = parseRawElements(data.drawing_elements_after_save);
-          elements = [...elements, ...parsedNewElements];
+          const newElements = parseRawElements(data.drawing_elements_after_save);
+          elements = [...elements, ...newElements]; // elements (canvas_dataからの要素)とnewElementsを結合
         }
+
         setInitialDrawingElements(elements);
-        const fetchedLastSavedAt = data.last_saved_at ? new Date(data.last_saved_at) : null;
+        fetchedLastSavedAt = data.last_saved_at ? new Date(data.last_saved_at) : null;
         setInitialLastSavedAt(fetchedLastSavedAt);
         setLastSavedAt(fetchedLastSavedAt);
         setIsDirty(false);
@@ -103,15 +106,50 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
     }
 
     try {
-      // 保存する前にtemp_idを削除した新しい配列を作成
       const elementsToSave = currentDrawingElements.map(element => {
         const newElement = { ...element };
-        // temp_idがあれば削除する
         if (newElement.temp_id !== undefined) {
           delete newElement.temp_id;
         }
         return newElement;
       });
+
+      // データ形式の変換
+      const rawElements = elementsToSave.map(element => {
+        if (element.type === 'line') {
+          return {
+            element_type: 'line',
+            data: {
+              path: element.points.map(p => [p.x, p.y]),
+              color: element.color,
+              lineWidth: element.brushSize
+            }
+          };
+        } else if (element.type === 'rectangle') {
+          return {
+            element_type: 'rectangle',
+            data: {
+              start: element.start,
+              end: element.end,
+              color: element.color,
+              lineWidth: element.brushSize
+            }
+          };
+        } else if (element.type === 'circle') {
+          return {
+            element_type: 'circle',
+            data: {
+              center: element.center,
+              radius: element.radius,
+              color: element.color,
+              brushSize: element.brushSize
+            }
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      const saveData = { canvas_data: JSON.stringify(rawElements) };
 
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/v1/drawings/${drawingId}/save`,
@@ -121,7 +159,7 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
             "Content-Type": "application/json",
           },
           credentials: "include",
-          body: JSON.stringify({ canvas_data: JSON.stringify(elementsToSave) }),
+          body: JSON.stringify(saveData),
         }
       );
 
@@ -134,22 +172,23 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
       setIsDirty(false);
       setLastSavedAt(data.last_saved_at ? new Date(data.last_saved_at) : null);
     } catch (e: any) {
-      setErrorDrawing(`描画の保存に失敗しました: ${e.message}`);
+      setErrorDrawing(`描画データの保存に失敗しました: ${e.message}`);
     }
   }, [drawingId, isDirty]);
 
-  useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (isDirty) {
-        event.preventDefault();
-        event.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
+  const handleBeforeUnload = useCallback((event: BeforeUnloadEvent) => {
+    if (isDirty) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
   }, [isDirty]);
+
+  useEffect(() => {
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [handleBeforeUnload]);
 
   return {
     drawing,
