@@ -118,6 +118,7 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
       const rawElements = elementsToSave.map(element => {
         if (element.type === 'line') {
           return {
+            id: element.id,
             element_type: 'line',
             data: {
               path: element.points.map(p => [p.x, p.y]),
@@ -127,6 +128,7 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
           };
         } else if (element.type === 'rectangle') {
           return {
+            id: element.id,
             element_type: 'rectangle',
             data: {
               start: element.start,
@@ -137,6 +139,7 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
           };
         } else if (element.type === 'circle') {
           return {
+            id: element.id,
             element_type: 'circle',
             data: {
               center: element.center,

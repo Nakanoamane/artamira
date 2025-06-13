@@ -67,7 +67,7 @@ describe('useDrawingPersistence', () => {
       json: () => Promise.resolve({
         id: mockDrawingId,
         title: 'Test Drawing',
-        canvas_data: JSON.stringify({ elements: convertToRawDrawingElements(mockDrawingElements) }),
+        canvas_data: JSON.stringify(convertToRawDrawingElements(mockDrawingElements)),
         last_saved_at: mockLastSavedAt.toISOString(),
         drawing_elements_after_save: [],
       }),
@@ -171,7 +171,7 @@ describe('useDrawingPersistence', () => {
         json: () => Promise.resolve({
           id: mockDrawingId,
           title: 'Test Drawing',
-          canvas_data: JSON.stringify({ elements: convertToRawDrawingElements(mockDrawingElements) }),
+          canvas_data: JSON.stringify(convertToRawDrawingElements(mockDrawingElements)),
           last_saved_at: mockLastSavedAt.toISOString(), // Initial data for this test
           drawing_elements_after_save: [],
         }),
@@ -196,6 +196,9 @@ describe('useDrawingPersistence', () => {
       result.current.handleSave(mockDrawingElements);
     });
 
+    console.log("DEBUG: convertToRawDrawingElements output for expect:", convertToRawDrawingElements(mockDrawingElements));
+    console.log("DEBUG: Expected body content:", JSON.stringify({ canvas_data: JSON.stringify(convertToRawDrawingElements(mockDrawingElements)) }));
+
     await waitFor(() => {
       expect(result.current.isDirty).toBe(false);
       expect(result.current.lastSavedAt).toEqual(mockSaveResponse);
@@ -205,7 +208,7 @@ describe('useDrawingPersistence', () => {
       `${import.meta.env.VITE_API_URL}/api/v1/drawings/${mockDrawingId}/save`,
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ canvas_data: JSON.stringify(mockDrawingElements) }),
+        body: JSON.stringify({ canvas_data: JSON.stringify(convertToRawDrawingElements(mockDrawingElements)) }),
       }),
     );
   });
@@ -317,23 +320,32 @@ describe('useDrawingPersistence', () => {
   });
 
   it('should handle canvas_data parse error and still show drawing_elements_after_save', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        id: mockDrawingId,
-        title: 'Test Drawing',
-        canvas_data: 'invalid json',
-        drawing_elements_after_save: convertToRawDrawingElements(mockDrawingElements),
-      }),
-    } as Response);
+    // Mock a fetch operation that returns invalid canvas_data
+    mockFetch.mockImplementationOnce((url) => {
+      if (url.includes(`${import.meta.env.VITE_API_URL}/api/v1/drawings/${mockDrawingId}`)) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              id: mockDrawingId,
+              title: 'Test Drawing',
+              canvas_data: 'invalid json', // Invalid JSON string
+              drawing_elements_after_save: convertToRawDrawingElements(mockDrawingElements), // Some valid drawing elements
+              last_saved_at: mockLastSavedAt.toISOString(),
+            }),
+        });
+      }
+      return Promise.reject(new Error(`Unexpected fetch call for URL: ${url}`));
+    });
 
     const { result } = renderHook(() => useDrawingPersistence({ drawingId: mockDrawingId }));
 
     await waitFor(() => expect(result.current.loadingDrawing).toBe(false));
 
-    expect(result.current.errorDrawing).toBe('canvas_dataのパースに失敗しました: Failed to parse canvas_data: invalid json');
+    // エラーメッセージの期待値を英語に修正
+    expect(result.current.errorDrawing).toBe('Failed to parse canvas data: Failed to parse canvas_data: invalid json');
     expect(result.current.drawing).toEqual({ id: mockDrawingId, title: 'Test Drawing' });
     expect(result.current.initialDrawingElements).toEqual(mockDrawingElements);
-    expect(result.current.initialLastSavedAt).toBeNull();
+    expect(result.current.initialLastSavedAt).toEqual(mockLastSavedAt);
   });
 });
