@@ -44,6 +44,10 @@ RUN bundle install && \
 # Copy application code
 COPY . .
 
+# Ensure log and tmp directories exist and have correct permissions
+RUN mkdir -p log && \
+    mkdir -p tmp
+
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
