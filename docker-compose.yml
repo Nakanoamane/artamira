@@ -11,10 +11,9 @@ services:
     env_file: ./.env
     volumes:
       - ./api:/rails
-      - /rails/tmp
     ports:
       - "3000:3000"
-    command: /rails/bin/docker-entrypoint rails server -b '0.0.0.0'
+    command: rm -f /rails/tmp/pids/server.pid && /rails/bin/docker-entrypoint rails server -b '0.0.0.0'
 
   frontend:
     build:
