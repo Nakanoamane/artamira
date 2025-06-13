@@ -6,6 +6,7 @@ interface UseDrawingChannelIntegrationProps {
   drawingId: number | undefined;
   addDrawingElement: (element: DrawingElementType) => void;
   onDrawingSaved: (lastSavedAt: Date | null) => void;
+  pendingElementTempId: React.MutableRefObject<string | null>;
 }
 
 interface UseDrawingChannelIntegrationResult {
@@ -19,17 +20,26 @@ interface UseDrawingChannelIntegrationResult {
 }
 
 export const useDrawingChannelIntegration = (
-  { drawingId, addDrawingElement, onDrawingSaved }: UseDrawingChannelIntegrationProps
+  { drawingId, addDrawingElement, onDrawingSaved, pendingElementTempId }: UseDrawingChannelIntegrationProps
 ): UseDrawingChannelIntegrationResult => {
   const [actionCableError, setActionCableError] = useState<string | null>(null);
 
   const handleReceivedData = useCallback(
     (receivedActionCableData: any) => {
+      console.log("[useDrawingChannelIntegration] handleReceivedData received:", receivedActionCableData);
+
       if (
         receivedActionCableData.type === "drawing_element_created" &&
         receivedActionCableData.drawing_element
       ) {
         const receivedElementId = receivedActionCableData.drawing_element.id;
+        const receivedElementTempId = receivedActionCableData.drawing_element.temp_id;
+
+        if (receivedElementTempId && receivedElementTempId === pendingElementTempId.current) {
+          console.log("[useDrawingChannelIntegration] Self-broadcasted element received, skipping addDrawingElement:", receivedElementTempId);
+          pendingElementTempId.current = null;
+          return;
+        }
 
         const receivedElement = parseDrawingElement(receivedActionCableData.drawing_element);
 
@@ -47,7 +57,7 @@ export const useDrawingChannelIntegration = (
         );
       }
     },
-    [drawingId, addDrawingElement, onDrawingSaved]
+    [drawingId, addDrawingElement, onDrawingSaved, pendingElementTempId]
   );
 
   const { channel, status } = useDrawingChannel(

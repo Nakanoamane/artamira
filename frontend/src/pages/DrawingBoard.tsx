@@ -28,7 +28,7 @@ const DrawingBoard = () => {
     drawingId,
   });
 
-  const { drawingElements, setDrawingElements, handleDrawComplete, handleUndo, handleRedo, canUndo, canRedo, addDrawingElementFromExternalSource } = useDrawingElements(
+  const { drawingElements, setDrawingElements, handleDrawComplete, handleUndo, handleRedo, canUndo, canRedo, addDrawingElementFromExternalSource, pendingElementTempId } = useDrawingElements(
     setIsDirty,
     (newElement) => {
       sendDrawingElement(newElement);
@@ -48,6 +48,7 @@ const DrawingBoard = () => {
       setIsDirty(false);
       setLastSavedAt(savedAt);
     },
+    pendingElementTempId: pendingElementTempId,
   });
 
   const handleSaveBoard = useCallback(async () => {
