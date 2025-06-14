@@ -24,7 +24,7 @@ You are an excellent web application developer. Please proceed with development 
 ### Testing
 - Backend: rspec (`$ docker compose exec api bundle exec rspec spec/`)
 - Frontend: vitest (`$ docker compose exec frontend npm test src/tests/`)
-- E2E: playwright (`$ npm test:e2e`)
+- E2E: playwright (`$ npm run test:e2e`)
 
 ---
 
