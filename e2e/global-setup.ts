@@ -12,7 +12,7 @@ async function globalSetup(config: FullConfig) {
   const browser = await chromium.launch()
   const page = await browser.newPage()
 
-  await page.goto(`${baseURL}/login`)
+  await page.goto(`${baseURL}/login`, { waitUntil: 'load' })
 
   await page.fill('input[name="email"]', process.env.TEST_USER_EMAIL)
   await page.fill('input[name="password"]', process.env.TEST_USER_PASSWORD)
