@@ -147,5 +147,23 @@ RSpec.describe DrawingChannel, type: :channel do
           expect(data['client_id']).to eq(client_id)
         end
     end
+
+    context "when drawing_id in subscription becomes invalid (e.g., drawing deleted)" do
+      before do
+        subscribe(drawing_id: drawing.id) # Initial successful subscription
+        allow(Drawing).to receive(:find_by).and_return(nil) # Simulate drawing being deleted
+      end
+
+      it "does not broadcast any undo/redo message" do
+        action_type = "undo"
+        data = { action_type: action_type, elements: elements, client_id: client_id }
+
+        # チャンネルインスタンスの@drawingをnilに設定して、存在しない状態をシミュレート
+        subscription.instance_variable_set(:@drawing, nil)
+
+        expect { perform :undo_redo, data }
+          .not_to have_broadcasted_to(drawing)
+      end
+    end
   end
 end
