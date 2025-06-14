@@ -95,13 +95,9 @@ const DrawingBoard = () => {
   }, [setShowHeader]);
 
   useEffect(() => {
-    console.log("[DrawingBoard] Component mounted.");
     return () => {
-      console.log("[DrawingBoard] Component unmounted.");
     };
   }, []);
-
-  console.log("[DrawingBoard] Render Cycle - initialDrawingElements:", initialDrawingElements, ", loadingDrawing:", loadingDrawing, ", drawingElements (from hook):", drawingElements);
 
   if (loadingDrawing) {
     return (
@@ -118,8 +114,6 @@ const DrawingBoard = () => {
       </div>
     );
   }
-
-  console.log(`[DrawingBoard] Toolbar props - canUndo: ${canUndo}, canRedo: ${canRedo}`);
 
   return (
     <div className="flex flex-col min-h-screen">

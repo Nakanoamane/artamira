@@ -49,8 +49,6 @@ class DrawingChannel < ApplicationCable::Channel
     drawing_id = data['drawing_id'] # フロントエンドから渡されるdrawing_id
     client_id = data['client_id'] # フロントエンドから渡されるclient_id
 
-    Rails.logger.info "Received undo_redo action: type=#{action_type}, elements_count=#{elements.length}, drawing_id=#{drawing_id}, client_id=#{client_id}"
-
     # 他のクライアントにUndo/Redoアクションと更新された要素をブロードキャスト
     DrawingChannel.broadcast_to @drawing, {
       type: 'undo_redo_action',
@@ -60,6 +58,5 @@ class DrawingChannel < ApplicationCable::Channel
       user_id: current_user&.id,
       client_id: client_id # 送信者のclient_idを追加
     }
-    Rails.logger.info "Broadcasted undo_redo_action to drawing_#{drawing_id} with client_id=#{client_id}"
   end
 end
