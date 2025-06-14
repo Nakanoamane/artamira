@@ -18,11 +18,13 @@ You are an excellent web application developer. Please proceed with development 
 ### Development Environment
 - Docker
 - Docker Compose
+  - api: backend service.
+  - frontend: frontend service.
 
 ### Testing
-- Backend: rspec
-- Frontend: vitest
-- E2E: playwright
+- Backend: rspec (`$ docker compose exec api bundle exec rspec spec/`)
+- Frontend: vitest (`$ docker compose exec frontend npm test src/tests/`)
+- E2E: playwright (`$ npm test:e2e`)
 
 ---
 
