@@ -215,7 +215,7 @@ test.describe('DrawingBoard', () => {
   });
 
   test('should load drawing from canvas_data when available', async ({ page }) => {
-    const API_URL = 'http://localhost:3000';
+    const API_URL = 'http://localhost:3001';
 
     // APIレスポンスをモックしてcanvas_dataを返す
     await page.route(`${API_URL}/api/v1/drawings/${drawingId}`, async (route) => {
@@ -258,7 +258,7 @@ test.describe('DrawingBoard', () => {
   });
 
   test('should fallback to drawing_elements when canvas_data is not available', async ({ page }) => {
-    const API_URL = 'http://localhost:3000';
+    const API_URL = 'http://localhost:3001';
 
     // /api/v1/drawings/:id のAPIレスポンスをモックしてcanvas_dataを返さない
     await page.route(`${API_URL}/api/v1/drawings/${drawingId}`, async (route) => {
