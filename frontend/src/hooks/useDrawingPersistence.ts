@@ -50,7 +50,6 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
         }
 
         const data = await response.json();
-        console.log("[useDrawingPersistence] Fetched raw drawing data:", data);
 
         setDrawing({ id: drawingId, title: data.title || "無題のボード" });
 
@@ -60,7 +59,6 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
         if (data.canvas_data) {
           try {
             const rawDataFromCanvasData = JSON.parse(data.canvas_data);
-            console.log("[useDrawingPersistence] Parsed rawDataFromCanvasData:", rawDataFromCanvasData);
 
             // canvas_dataはRawDrawingElement[]の形式で保存されているため、
             // 常にparseRawElementsでDrawingElementType[]に変換する
@@ -84,7 +82,6 @@ export const useDrawingPersistence = ({ drawingId }: UseDrawingPersistenceProps)
         }
 
         setInitialDrawingElements(elements);
-        console.log("[useDrawingPersistence] setInitialDrawingElements called with:", elements);
         fetchedLastSavedAt = data.last_saved_at ? new Date(data.last_saved_at) : null;
         setInitialLastSavedAt(fetchedLastSavedAt);
         setLastSavedAt(fetchedLastSavedAt);

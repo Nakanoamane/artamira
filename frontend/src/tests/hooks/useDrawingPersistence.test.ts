@@ -196,9 +196,6 @@ describe('useDrawingPersistence', () => {
       result.current.handleSave(mockDrawingElements);
     });
 
-    console.log("DEBUG: convertToRawDrawingElements output for expect:", convertToRawDrawingElements(mockDrawingElements));
-    console.log("DEBUG: Expected body content:", JSON.stringify({ canvas_data: JSON.stringify(convertToRawDrawingElements(mockDrawingElements)) }));
-
     await waitFor(() => {
       expect(result.current.isDirty).toBe(false);
       expect(result.current.lastSavedAt).toEqual(mockSaveResponse);

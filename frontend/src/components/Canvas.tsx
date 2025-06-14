@@ -40,7 +40,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
 
     // 描画要素の更新時の描画
     useEffect(() => {
-      console.log("[Canvas] drawingElements prop updated:", drawingElements);
       const canvas = canvasRefObject.current;
       if (!canvas) return;
 

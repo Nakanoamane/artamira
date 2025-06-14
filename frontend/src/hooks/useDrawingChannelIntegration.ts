@@ -31,7 +31,6 @@ export const useDrawingChannelIntegration = (
 
   const handleReceivedData = useCallback(
     (receivedActionCableData: any) => {
-      // console.log("[useDrawingChannelIntegration] handleReceivedData received:", receivedActionCableData);
 
       if (
         receivedActionCableData.type === "drawing_element_created" &&
@@ -41,7 +40,6 @@ export const useDrawingChannelIntegration = (
         const receivedElementTempId = receivedActionCableData.drawing_element.temp_id;
 
         if (receivedElementTempId && receivedElementTempId === pendingElementTempId.current) {
-          // console.log("[useDrawingChannelIntegration] Self-broadcasted element received, skipping addDrawingElement:", receivedElementTempId);
           pendingElementTempId.current = null;
           return;
         }
@@ -64,11 +62,8 @@ export const useDrawingChannelIntegration = (
         receivedActionCableData.type === "undo_redo_action" &&
         receivedActionCableData.drawing_id === drawingId
       ) {
-        // console.log(`[useDrawingChannelIntegration] Received undo_redo_action: ${receivedActionCableData.action_type}. Elements count: ${receivedActionCableData.elements.length}. User ID: ${receivedActionCableData.user_id}. Received Client ID: ${receivedActionCableData.client_id}. Current Client ID: ${clientId}`);
-
         // 送信元と同じクライアントからのブロードキャストの場合はスキップ
         if (receivedActionCableData.client_id === clientId) {
-          // console.log(`[useDrawingChannelIntegration] Self-broadcasted undo_redo_action received, skipping for client ID: ${clientId}`);
           return;
         }
 
@@ -76,10 +71,8 @@ export const useDrawingChannelIntegration = (
 
         if (receivedActionCableData.action_type === "undo") {
           applyRemoteUndo(elementsToUpdate);
-          // console.log("[useDrawingChannelIntegration] Applied remote UNDO action.");
         } else if (receivedActionCableData.action_type === "redo") {
           applyRemoteRedo(elementsToUpdate);
-          // console.log("[useDrawingChannelIntegration] Applied remote REDO action.");
         }
       }
     },
@@ -130,9 +123,6 @@ export const useDrawingChannelIntegration = (
           element_data: elementDataToSend,
           temp_id: tempIdToSend,
         });
-        // console.log(`[useDrawingChannelIntegration] Sent drawing_element: type=${newElement.type}, temp_id=${tempIdToSend}`);
-      } else {
-        // console.log("[useDrawingChannelIntegration] Failed to send drawing_element: Channel not connected.");
       }
     },
     [channel, status.isConnected]
@@ -141,15 +131,12 @@ export const useDrawingChannelIntegration = (
   const sendUndoRedoAction = useCallback(
     (actionType: "undo" | "redo", elements: DrawingElementType[]) => {
       if (channel && status.isConnected) {
-        // console.log(`[useDrawingChannelIntegration] Sending undo_redo_action: ${actionType}. Elements count: ${elements.length}. Client ID being sent: ${clientId}`);
         channel.perform("undo_redo", {
           action_type: actionType,
           elements: elements,
           drawing_id: drawingId,
           client_id: clientId,
         });
-      } else {
-        // console.log("[useDrawingChannelIntegration] Failed to send undo_redo_action: Channel not connected.");
       }
     },
     [channel, status.isConnected, drawingId, clientId]
