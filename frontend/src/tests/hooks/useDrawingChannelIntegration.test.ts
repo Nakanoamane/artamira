@@ -25,11 +25,9 @@ const mockChannelStatus = {
   error: null,
 };
 
-let onReceivedDataCallbackGlobal: ((data: any) => void) | undefined; // グローバルでコールバックを保持する変数
-
+// グローバル変数ではなく、テストごとにモックの呼び出しから直接コールバックを取得するように変更
 vi.mock('../../hooks/useDrawingChannel', () => ({
   useDrawingChannel: vi.fn((_channelName, _drawingId, onReceivedData) => {
-    onReceivedDataCallbackGlobal = onReceivedData; // useDrawingChannel が呼び出されたときにこの変数を更新
     return {
       channel: mockChannelInstance,
       status: mockChannelStatus,
@@ -49,7 +47,6 @@ describe('useDrawingChannelIntegration', () => {
     mockChannelInstance.perform.mockClear();
     mockChannelInstance.unsubscribe.mockClear();
     mockChannelInstance.send.mockClear();
-    onReceivedDataCallbackGlobal = undefined; // リセット
   });
 
   it('should create a consumer and subscribe to the drawing channel', () => {
@@ -101,6 +98,9 @@ describe('useDrawingChannelIntegration', () => {
       clientId: 'mock-client-id',
     }));
 
+    // Get the onReceivedData callback from the mock
+    const onReceivedData = (useDrawingChannel as Mock).mock.calls[0][2];
+
     // This is the expected DrawingElementType after parsing
     const expectedParsedElement: DrawingElementType = {
       id: 1,
@@ -123,12 +123,10 @@ describe('useDrawingChannelIntegration', () => {
 
     // Simulate receiving data from the channel
     act(() => {
-      if (onReceivedDataCallbackGlobal) { // グローバル変数を使用
-        onReceivedDataCallbackGlobal({
-          type: 'drawing_element_created',
-          drawing_element: rawReceivedElement // Pass the raw data
-        });
-      }
+      onReceivedData({
+        type: 'drawing_element_created',
+        drawing_element: rawReceivedElement // Pass the raw data
+      });
     });
 
     expect(mockAddDrawingElement).toHaveBeenCalledWith(expectedParsedElement);
@@ -146,16 +144,17 @@ describe('useDrawingChannelIntegration', () => {
       clientId: 'mock-client-id',
     }));
 
+    // Get the onReceivedData callback from the mock
+    const onReceivedData = (useDrawingChannel as Mock).mock.calls[0][2];
+
     const savedAt = '2023-01-01T12:00:00Z';
 
     act(() => {
-      if (onReceivedDataCallbackGlobal) { // グローバル変数を使用
-        onReceivedDataCallbackGlobal({
-          type: 'drawing_saved',
-          drawing_id: mockDrawingId,
-          last_saved_at: savedAt
-        });
-      }
+      onReceivedData({
+        type: 'drawing_saved',
+        drawing_id: mockDrawingId,
+        last_saved_at: savedAt
+      });
     });
 
     expect(mockOnDrawingSaved).toHaveBeenCalledWith(new Date(savedAt));
@@ -215,10 +214,11 @@ describe('useDrawingChannelIntegration', () => {
       clientId: 'mock-client-id',
     }));
 
+    // Get the onReceivedData callback from the mock
+    const onReceivedData = (useDrawingChannel as Mock).mock.calls[0][2];
+
     act(() => {
-      if (onReceivedDataCallbackGlobal) { // グローバル変数を使用
-        onReceivedDataCallbackGlobal({ action: 'unknown_action', data: 'some data' });
-      }
+      onReceivedData({ action: 'unknown_action', data: 'some data' });
     });
 
     expect(mockAddDrawingElement).not.toHaveBeenCalled();
@@ -252,12 +252,123 @@ describe('useDrawingChannelIntegration', () => {
 
     expect(mockChannelInstance.perform).toHaveBeenCalledWith(
       'undo_redo',
-      {
+      expect.objectContaining({
         action_type: 'undo',
         elements: mockElements,
         drawing_id: mockDrawingId,
         client_id: mockClientId,
-      }
+      })
     );
+  });
+
+  it('should call applyRemoteUndo or applyRemoteRedo when undo_redo_action is received from a different client', () => {
+    const mockApplyRemoteUndo = vi.fn();
+    const mockApplyRemoteRedo = vi.fn();
+    const mockCurrentUserId = 1;
+    const mockClientId = 'client-abc';
+    const remoteClientId = 'client-xyz'; // 異なるクライアントID
+
+    renderHook(() => useDrawingChannelIntegration({
+      drawingId: mockDrawingId,
+      addDrawingElement: mockAddDrawingElement,
+      onDrawingSaved: mockOnDrawingSaved,
+      pendingElementTempId: { current: null },
+      applyRemoteUndo: mockApplyRemoteUndo,
+      applyRemoteRedo: mockApplyRemoteRedo,
+      currentUserId: mockCurrentUserId,
+      clientId: mockClientId,
+    }));
+
+    // Get the onReceivedData callback from the mock
+    const onReceivedData = (useDrawingChannel as Mock).mock.calls[0][2];
+
+    const remoteElements: RawDrawingElement[] = [
+      { id: 1, element_type: 'line', data: { path: [[0, 0], [10, 10]], color: '#000', lineWidth: 5 } },
+    ];
+
+    const expectedParsedElements: DrawingElementType[] = [
+      { id: 1, type: 'line', points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], color: '#000', brushSize: 5 },
+    ];
+
+    // リモートからのUNDOアクションをシミュレート
+    act(() => {
+      onReceivedData({
+        type: 'undo_redo_action',
+        action_type: 'undo',
+        elements: remoteElements,
+        client_id: remoteClientId,
+        user_id: mockCurrentUserId + 1, // 異なるユーザーID
+        drawing_id: mockDrawingId, // 追加
+      });
+    });
+    expect(mockApplyRemoteUndo).toHaveBeenCalledWith(expectedParsedElements);
+    expect(mockApplyRemoteRedo).not.toHaveBeenCalled();
+
+    // リモートからのREDOアクションをシミュレート
+    act(() => {
+      onReceivedData({
+        type: 'undo_redo_action',
+        action_type: 'redo',
+        elements: remoteElements,
+        client_id: remoteClientId,
+        user_id: mockCurrentUserId + 1, // 異なるユーザーID
+        drawing_id: mockDrawingId, // 追加
+      });
+    });
+    expect(mockApplyRemoteRedo).toHaveBeenCalledWith(expectedParsedElements);
+    expect(mockApplyRemoteUndo).toHaveBeenCalledTimes(1); // 最初の呼び出しのまま
+  });
+
+  it('should skip applyRemoteUndo or applyRemoteRedo when undo_redo_action is received from the same client (self-broadcast)', () => {
+    const mockApplyRemoteUndo = vi.fn();
+    const mockApplyRemoteRedo = vi.fn();
+    const mockCurrentUserId = 1;
+    const mockClientId = 'client-abc'; // ローカルクライアントID
+
+    renderHook(() => useDrawingChannelIntegration({
+      drawingId: mockDrawingId,
+      addDrawingElement: mockAddDrawingElement,
+      onDrawingSaved: mockOnDrawingSaved,
+      pendingElementTempId: { current: null },
+      applyRemoteUndo: mockApplyRemoteUndo,
+      applyRemoteRedo: mockApplyRemoteRedo,
+      currentUserId: mockCurrentUserId,
+      clientId: mockClientId,
+    }));
+
+    // Get the onReceivedData callback from the mock
+    const onReceivedData = (useDrawingChannel as Mock).mock.calls[0][2];
+
+    const selfElements: RawDrawingElement[] = [
+      { id: 1, element_type: 'line', data: { path: [[0, 0], [10, 10]], color: '#000', lineWidth: 5 } },
+    ];
+
+    // 同じクライアントからのUNDOアクションをシミュレート
+    act(() => {
+      onReceivedData({
+        type: 'undo_redo_action',
+        action_type: 'undo',
+        elements: selfElements,
+        client_id: mockClientId, // 同じクライアントID
+        user_id: mockCurrentUserId, // 同じユーザーID
+        drawing_id: mockDrawingId, // 追加
+      });
+    });
+    expect(mockApplyRemoteUndo).not.toHaveBeenCalled();
+    expect(mockApplyRemoteRedo).not.toHaveBeenCalled();
+
+    // 同じクライアントからのREDOアクションをシミュレート
+    act(() => {
+      onReceivedData({
+        type: 'undo_redo_action',
+        action_type: 'redo',
+        elements: selfElements,
+        client_id: mockClientId, // 同じクライアントID
+        user_id: mockCurrentUserId, // 同じユーザーID
+        drawing_id: mockDrawingId, // 追加
+      });
+    });
+    expect(mockApplyRemoteUndo).not.toHaveBeenCalled();
+    expect(mockApplyRemoteRedo).not.toHaveBeenCalled();
   });
 });
