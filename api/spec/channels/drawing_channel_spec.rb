@@ -116,4 +116,36 @@ RSpec.describe DrawingChannel, type: :channel do
       end
     end
   end
+
+  describe "#undo_redo" do
+    let(:elements) do
+      [
+        {
+          'id' => 1,
+          'type' => 'line',
+          'points' => [[0, 0], [10, 10]],
+          'color' => '#000000',
+          'brushSize' => 5
+        }
+      ]
+    end
+    let(:client_id) { 'test_client_id' }
+
+    before { subscribe(drawing_id: drawing.id) }
+
+    it "broadcasts the undo/redo action with correct data" do
+      action_type = "undo"
+
+      expect { perform :undo_redo, action_type: action_type, elements: elements, client_id: client_id }
+        .to have_broadcasted_to(drawing)
+        .with do |data|
+          expect(data['type']).to eq('undo_redo_action')
+          expect(data['action_type']).to eq(action_type)
+          expect(data['elements']).to eq(elements)
+          expect(data['drawing_id']).to eq(drawing.id)
+          expect(data['user_id']).to eq(user.id)
+          expect(data['client_id']).to eq(client_id)
+        end
+    end
+  end
 end
