@@ -185,4 +185,80 @@ describe('useDrawingElements', () => {
     expect(result.current.redoStack).toEqual([]);
     expect(mockSetIsDirty).toHaveBeenCalledWith(true);
   });
+
+  it('should apply remote undo action and manage stacks', () => {
+    const { result, rerender } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
+
+    // 複数の要素を追加してundoStackとredoStackに状態を作る
+    act(() => {
+      result.current.handleDrawComplete({ id: 1, type: 'line', points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], color: '#000', brushSize: 5 });
+    });
+    act(() => {
+      result.current.handleDrawComplete({ id: 2, type: 'rectangle', start: { x: 20, y: 20 }, end: { x: 30, y: 30 }, color: '#FFF', brushSize: 10 });
+    });
+    // 一度UndoしてredoStackも満たす
+    act(() => {
+      result.current.handleUndo();
+    });
+
+    const initialElements = result.current.drawingElements;
+    const initialUndoStack = result.current.undoStack;
+    const initialRedoStack = result.current.redoStack;
+
+    // リモートからUndoされた状態（要素が1つ減った状態）をシミュレート
+    const remoteUndoneElements = initialElements.slice(0, -1); // 最後の要素がUndoされたと仮定
+
+    act(() => {
+      result.current.applyRemoteUndo(remoteUndoneElements);
+    });
+
+    // drawingElementsがリモートのUndo状態になることを確認
+    expect(result.current.drawingElements).toEqual(remoteUndoneElements);
+    // 元のdrawingElementsがredoStackに積まれることを確認 (APPLY_REMOTE_UNDOのロジックによる)
+    expect(result.current.redoStack[result.current.redoStack.length - 1]).toEqual(initialElements);
+    // undoStackは変更されないことを確認（ローカルの履歴は保持）
+    expect(result.current.undoStack).toEqual(initialUndoStack);
+    expect(result.current.canUndo).toBe(true);
+    expect(result.current.canRedo).toBe(true); // リモートからのUndoによりRedo可能になる
+  });
+
+  it('should apply remote redo action and manage stacks', () => {
+    const { result, rerender } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
+
+    // 複数の要素を追加し、undoしてredoStackに状態を作る
+    act(() => {
+      result.current.handleDrawComplete({ id: 1, type: 'line', points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], color: '#000', brushSize: 5 });
+    });
+    act(() => {
+      result.current.handleDrawComplete({ id: 2, type: 'rectangle', start: { x: 20, y: 20 }, end: { x: 30, y: 30 }, color: '#FFF', brushSize: 10 });
+    });
+    act(() => {
+      result.current.handleUndo(); // 最初のUndo
+    });
+    act(() => {
+      result.current.handleUndo(); // 2回目のUndo (Redo可能な状態を作るため)
+    });
+
+    const initialElements = result.current.drawingElements;
+    const initialUndoStack = result.current.undoStack;
+    const initialRedoStack = result.current.redoStack;
+
+    // リモートからRedoされた状態（要素が1つ増えた状態）をシミュレート
+    const remoteRedoneElements = initialElements.concat([
+      { id: 1, type: 'line', points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], color: '#000', brushSize: 5, temp_id: 'temp-1000' },
+    ]); // 例として1つRedoされた要素を追加
+
+    act(() => {
+      result.current.applyRemoteRedo(remoteRedoneElements);
+    });
+
+    // drawingElementsがリモートのRedo状態になることを確認
+    expect(result.current.drawingElements).toEqual(remoteRedoneElements);
+    // 元のdrawingElementsがundoStackに積まれることを確認 (APPLY_REMOTE_REDOのロジックによる)
+    expect(result.current.undoStack[result.current.undoStack.length - 1]).toEqual(initialElements);
+    // redoStackはクリアされることを確認
+    expect(result.current.redoStack).toEqual([]);
+    expect(result.current.canUndo).toBe(true);
+    expect(result.current.canRedo).toBe(false);
+  });
 });

@@ -102,7 +102,7 @@ const drawingReducer = (state: DrawingState, action: Action): DrawingState => {
       const newRedoStack = [...state.redoStack, state.elements];
       return {
         elements: action.payload,
-        undoStack: [action.payload],
+        undoStack: state.undoStack,
         redoStack: newRedoStack,
       };
     }
