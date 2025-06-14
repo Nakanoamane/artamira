@@ -163,7 +163,7 @@ export const useDrawingElements = (
 
   const handleDrawComplete = useCallback(
     (element: DrawingElementType) => {
-      const elementWithTempId = { ...element, temp_id: `temp-${Date.now()}` };
+      const elementWithTempId = { ...element, id: undefined, temp_id: `temp-${Date.now()}` };
       pendingElementTempId.current = elementWithTempId.temp_id;
 
       dispatch({ type: "ADD_ELEMENT", payload: elementWithTempId });

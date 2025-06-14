@@ -6,12 +6,14 @@ import { DrawingElementType } from '../../utils/drawingElementsParser';
 describe('useDrawingElements', () => {
   const mockSetIsDirty = vi.fn();
   const mockOnNewElementCreated = vi.fn();
+  const mockOnUndoRedoAction = vi.fn();
 
   let dateNowSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     mockSetIsDirty.mockClear();
     mockOnNewElementCreated.mockClear();
+    mockOnUndoRedoAction.mockClear();
     dateNowSpy = vi.spyOn(Date, 'now');
   });
 
@@ -20,7 +22,7 @@ describe('useDrawingElements', () => {
   });
 
   it('should return initial states', () => {
-    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty));
+    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
 
     expect(result.current.drawingElements).toEqual([]);
     expect(result.current.undoStack).toEqual([[]]);
@@ -30,7 +32,7 @@ describe('useDrawingElements', () => {
   });
 
   it('should add a drawing element and manage stacks on handleDrawComplete', () => {
-    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated));
+    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
 
     dateNowSpy.mockReturnValueOnce(1000); // Mock for the first element's temp_id
     const newElement: DrawingElementType = {
@@ -78,7 +80,7 @@ describe('useDrawingElements', () => {
   });
 
   it('should undo the last drawing element', () => {
-    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty));
+    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
 
     dateNowSpy.mockReturnValueOnce(1000);
     const element1: DrawingElementType = { id: 1, type: 'line', points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], color: '#000', brushSize: 5 };
@@ -123,7 +125,7 @@ describe('useDrawingElements', () => {
   });
 
   it('should redo the last undone drawing element', () => {
-    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty));
+    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
 
     dateNowSpy.mockReturnValueOnce(1000);
     const element1: DrawingElementType = { id: 1, type: 'line', points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], color: '#000', brushSize: 5 };
@@ -159,7 +161,7 @@ describe('useDrawingElements', () => {
   });
 
   it('should add drawing element from external source', () => {
-    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty));
+    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
 
     dateNowSpy.mockReturnValueOnce(1000);
     const element1: DrawingElementType = { id: 1, type: 'line', points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], color: '#000', brushSize: 5 };

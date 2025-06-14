@@ -107,4 +107,47 @@ Undo/Redo機能は以下のように動作するべきです。
         3.  **`handleUndo`/`handleRedo` が送信する要素の精査**: `useDrawingElements.ts` の `handleUndo` および `handleRedo` 関数内で `onUndoRedoAction` に渡される `elements` の値が、Reducerの`dispatch`による状態更新が完了した後の正確な状態のスナップショットになるように調整されました。
     *   **修正完了**: これらの修正により、タブAでUndoを実行するとタブAとタブBの両方でRedoボタンが正しく活性化されるようになり、Undo/Redo機能が期待通りに動作することが確認されました。
 
+## 5. テストシナリオ
+
+今回実装されたUndo/Redo機能について、以下のテストシナリオを追加します。
+
+### 5.1. バックエンドユニットテスト (RSpec)
+
+*   **DrawingChannelの`undo_redo`アクション**:
+    *   `DrawingChannel`が`undo_redo`アクションを正しく受信し、指定された`action_type`、`elements`、`drawing_id`、`user_id`、`client_id`をブロードキャストすることを確認する。
+    *   `drawing_id`が存在しない場合、ブロードキャストが行われないことを確認する。
+
+### 5.2. フロントエンドユニットテスト (Vitest)
+
+*   **`useDrawingElements.ts`**:
+    *   **要素の追加**: `ADD_ELEMENT`アクションにより、新しい要素が`elements`に追加され、現在の`elements`のスナップショットが`undoStack`に積まれ、`redoStack`がクリアされること。
+    *   **Undo操作**: `UNDO`アクションにより、`elements`が`undoStack`の前の状態に戻り、`redoStack`に現在の`elements`のスナップショットが積まれること。
+    *   **Redo操作**: `REDO`アクションにより、`elements`が`redoStack`の次の状態に進み、`undoStack`に現在の`elements`のスナップショットが積まれ、`redoStack`がクリアされること。
+    *   **`canUndo`/`canRedo`の状態**: `undoStack`と`redoStack`の長さに基づいて`canUndo`と`canRedo`が正しく`true`/`false`になること。
+    *   **リモートUndoの適用**: `APPLY_REMOTE_UNDO`アクションにより、指定された`elements`が現在の状態になり、その直前の状態が`redoStack`に積まれること。
+    *   **リモートRedoの適用**: `APPLY_REMOTE_REDO`アクションにより、指定された`elements`が現在の状態になり、その直前の状態が`undoStack`に積まれ、`redoStack`がクリアされること。
+
+*   **`useDrawingChannelIntegration.ts`**:
+    *   **`sendUndoRedoAction`の送信**: `sendUndoRedoAction`が、正しい`action_type`、`elements`、`drawing_id`、`client_id`を含むペイロードでAction Cableにメッセージを送信すること。
+    *   **`handleReceivedData`によるUndo/Redoアクションの処理**: `handleReceivedData`が`undo_redo_action`を受信した際に、送信元`client_id`と現在の`client_id`が異なる場合にのみ`applyRemoteUndo`または`applyRemoteRedo`が呼び出されること。
+    *   **自己ブロードキャストのスキップ**: `handleReceivedData`が`undo_redo_action`を受信した際に、送信元`client_id`と現在の`client_id`が同じ場合に`applyRemoteUndo`または`applyRemoteRedo`が呼び出されず、処理がスキップされること。
+
+### 5.3. E2Eテスト (Playwright)
+
+*   **単一タブでのUndo/Redo**: 描画ボードで線を描画し、Undoを実行すると線が消え、Redoを実行すると線が再描画され、それぞれボタンの活性状態が正しく反映されること。
+*   **複数タブ（同一ユーザー）でのUndo/Redo連携**:
+    1.  タブAで描画し、タブBでそれが表示されることを確認する。
+    2.  タブAでUndoを実行すると、タブBの表示もUndoされることを確認する。
+    3.  タブAでRedoを実行すると、タブBの表示もRedoされることを確認する。
+    4.  タブAでUndoした後、タブBでRedoが活性化され、それをクリックするとタブAでUndoされた内容がタブBでRedoされることを確認する。
+    5.  タブAでRedoした後、タブBでUndoが活性化され、それをクリックするとタブAでRedoされた内容がタブBでUndoされることを確認する。
+*   **複数タブ（異なるユーザー）でのUndo/Redo連携**:
+    1.  ユーザーAでタブA、ユーザーBでタブBを開く。
+    2.  タブA（ユーザーA）で描画し、タブB（ユーザーB）でそれが表示されることを確認する。
+    3.  タブA（ユーザーA）でUndoを実行すると、タブB（ユーザーB）の表示もUndoされることを確認する。
+    4.  タブB（ユーザーB）で、タブAのUndoをRedoできることを確認する。
+    5.  タブB（ユーザーB）で描画し、タブA（ユーザーA）でそれが表示されることを確認する。
+    6.  タブB（ユーザーB）でUndoを実行すると、タブA（ユーザーA）の表示もUndoされることを確認する。
+    7.  タブA（ユーザーA）で、タブBのUndoをRedoできることを確認する。
+
 ---

@@ -61,7 +61,7 @@ vi.mock('../../components/Canvas', () => {
   const mockToDataURL = vi.fn(() => 'data:image/png;base64,mockpngdata');
 
   const _mockRenderFn = vi.fn(
-    ({ onDrawComplete, drawingElements, setDrawingElements, activeTool, activeColor, activeBrushSize }, ref) => {
+    ({ onDrawComplete, drawingElements, activeTool, activeColor, activeBrushSize }, ref) => {
       const mockCanvasElement = {
         toDataURL: mockToDataURL,
         getContext: vi.fn(() => ({
@@ -99,7 +99,7 @@ vi.mock('../../components/Canvas', () => {
             Draw Complete
           </button>
           {drawingElements.length > 0 && <span data-testid="canvas-elements-count">{drawingElements.length}</span>}
-          <button onClick={() => setDrawingElements([])} data-testid="clear-elements-button">Clear Elements</button>
+          <button data-testid="clear-elements-button">Clear Elements</button>
         </div>
       );
     }
@@ -356,7 +356,6 @@ describe('DrawingBoard', () => {
           activeColor: '#000000',
           activeBrushSize: 2,
           drawingElements: [],
-          setDrawingElements: expect.any(Function),
           onDrawComplete: expect.any(Function),
         },
         expect.anything()
@@ -371,7 +370,6 @@ describe('DrawingBoard', () => {
           activeColor: '#000000',
           activeBrushSize: 2,
           drawingElements: expectedCombinedElements,
-          setDrawingElements: expect.any(Function),
           onDrawComplete: expect.any(Function),
         },
         expect.anything()
@@ -428,7 +426,6 @@ describe('DrawingBoard', () => {
           activeColor: '#000000',
           activeBrushSize: 2,
           drawingElements: [],
-          setDrawingElements: expect.any(Function),
           onDrawComplete: expect.any(Function),
         },
         expect.anything()
@@ -442,7 +439,6 @@ describe('DrawingBoard', () => {
           activeColor: '#000000',
           activeBrushSize: 2,
           drawingElements: expectedElementsOnly,
-          setDrawingElements: expect.any(Function),
           onDrawComplete: expect.any(Function),
         },
         expect.anything()
@@ -534,7 +530,6 @@ describe('DrawingBoard', () => {
           activeColor: '#000000',
           activeBrushSize: 2,
           drawingElements: [],
-          setDrawingElements: expect.any(Function),
           onDrawComplete: expect.any(Function),
         },
         expect.anything()
