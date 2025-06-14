@@ -330,6 +330,53 @@ test.describe('DrawingBoard', () => {
     await expect(page).toHaveURL(initialUrl);
   });
 
+  test('should perform undo and redo actions correctly on a single tab', async ({ page }) => {
+    const canvas = page.locator('canvas');
+    await expect(canvas).toBeVisible();
+
+    // 初期状態でUndo/Redoボタンが非活性であることを確認
+    const undoButton = page.getByRole('button', { name: 'Undo' });
+    const redoButton = page.getByRole('button', { name: 'Redo' });
+    await expect(undoButton).toBeDisabled();
+    await expect(redoButton).toBeDisabled();
+
+    // 四角形を描画し、保存ボタンが活性化されることを確認
+    await drawRectangle(page);
+    await expect(page.getByRole('button', { name: '保存 *' })).toBeVisible();
+
+    // 描画後、Undoボタンが活性化されることを確認
+    await expect(undoButton).not.toBeDisabled();
+
+    // 描画後のキャンバスの状態をスナップショットで保存
+    await expect(canvas).toHaveScreenshot('drawn_rectangle_initial.png', {
+      maxDiffPixels: 100,
+    });
+
+    // Undoを実行
+    await undoButton.click();
+
+    // Undo後のキャンバスの状態をスナップショットで検証（描画が消えていることを期待）
+    await expect(canvas).toHaveScreenshot('drawn_rectangle_after_undo.png', {
+      maxDiffPixels: 100,
+    });
+
+    // Undo後、Undoボタンが非活性、Redoボタンが活性化されることを確認
+    await expect(undoButton).toBeDisabled();
+    await expect(redoButton).not.toBeDisabled();
+
+    // Redoを実行
+    await redoButton.click();
+
+    // Redo後のキャンバスの状態をスナップショットで検証（描画が再表示されていることを期待）
+    await expect(canvas).toHaveScreenshot('drawn_rectangle_after_redo.png', {
+      maxDiffPixels: 100,
+    });
+
+    // Redo後、Undoボタンが活性化、Redoボタンが非活性化されることを確認
+    await expect(undoButton).not.toBeDisabled();
+    await expect(redoButton).toBeDisabled();
+  });
+
   // TODO: 描画テストの追加
   // Canvas上での描画操作（マウスイベント）のシミュレーションと、描画が正しく行われたかの検証
   // リアルタイム反映のテストは、モック化したAction Cableまたは複数ブラウザインスタンスでのテストが必要

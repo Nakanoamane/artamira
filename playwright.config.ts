@@ -81,5 +81,6 @@ export default defineConfig({
     command: 'docker compose -f docker-compose.yml -f docker-compose.test.yml up -d',
     url: 'http://localhost:5174',
     reuseExistingServer: !process.env.CI,
+    timeout: 60000,
   },
 });

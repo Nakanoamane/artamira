@@ -57,6 +57,11 @@ describe('useDrawingChannelIntegration', () => {
       drawingId: mockDrawingId,
       addDrawingElement: mockAddDrawingElement,
       onDrawingSaved: mockOnDrawingSaved,
+      pendingElementTempId: { current: null },
+      applyRemoteUndo: vi.fn(),
+      applyRemoteRedo: vi.fn(),
+      currentUserId: 1,
+      clientId: 'mock-client-id',
     }));
 
     expect(useDrawingChannel).toHaveBeenCalledOnce();
@@ -72,6 +77,11 @@ describe('useDrawingChannelIntegration', () => {
       drawingId: mockDrawingId,
       addDrawingElement: mockAddDrawingElement,
       onDrawingSaved: mockOnDrawingSaved,
+      pendingElementTempId: { current: null },
+      applyRemoteUndo: vi.fn(),
+      applyRemoteRedo: vi.fn(),
+      currentUserId: 1,
+      clientId: 'mock-client-id',
     }));
 
     unmount();
@@ -84,6 +94,11 @@ describe('useDrawingChannelIntegration', () => {
       drawingId: mockDrawingId,
       addDrawingElement: mockAddDrawingElement,
       onDrawingSaved: mockOnDrawingSaved,
+      pendingElementTempId: { current: null },
+      applyRemoteUndo: vi.fn(),
+      applyRemoteRedo: vi.fn(),
+      currentUserId: 1,
+      clientId: 'mock-client-id',
     }));
 
     // This is the expected DrawingElementType after parsing
@@ -124,6 +139,11 @@ describe('useDrawingChannelIntegration', () => {
       drawingId: mockDrawingId,
       addDrawingElement: mockAddDrawingElement,
       onDrawingSaved: mockOnDrawingSaved,
+      pendingElementTempId: { current: null },
+      applyRemoteUndo: vi.fn(),
+      applyRemoteRedo: vi.fn(),
+      currentUserId: 1,
+      clientId: 'mock-client-id',
     }));
 
     const savedAt = '2023-01-01T12:00:00Z';
@@ -146,6 +166,11 @@ describe('useDrawingChannelIntegration', () => {
       drawingId: mockDrawingId,
       addDrawingElement: mockAddDrawingElement,
       onDrawingSaved: mockOnDrawingSaved,
+      pendingElementTempId: { current: null },
+      applyRemoteUndo: vi.fn(),
+      applyRemoteRedo: vi.fn(),
+      currentUserId: 1,
+      clientId: 'mock-client-id',
     }));
 
     const elementToSend: DrawingElementType = {
@@ -183,6 +208,11 @@ describe('useDrawingChannelIntegration', () => {
       drawingId: mockDrawingId,
       addDrawingElement: mockAddDrawingElement,
       onDrawingSaved: mockOnDrawingSaved,
+      pendingElementTempId: { current: null },
+      applyRemoteUndo: vi.fn(),
+      applyRemoteRedo: vi.fn(),
+      currentUserId: 1,
+      clientId: 'mock-client-id',
     }));
 
     act(() => {
@@ -193,5 +223,41 @@ describe('useDrawingChannelIntegration', () => {
 
     expect(mockAddDrawingElement).not.toHaveBeenCalled();
     expect(mockOnDrawingSaved).not.toHaveBeenCalled();
+  });
+
+  it('should call sendUndoRedoAction to perform an undo/redo action on the channel', () => {
+    const mockApplyRemoteUndo = vi.fn();
+    const mockApplyRemoteRedo = vi.fn();
+    const mockCurrentUserId = 123;
+    const mockClientId = 'client-abc';
+
+    const { result } = renderHook(() => useDrawingChannelIntegration({
+      drawingId: mockDrawingId,
+      addDrawingElement: mockAddDrawingElement,
+      onDrawingSaved: mockOnDrawingSaved,
+      pendingElementTempId: { current: null },
+      applyRemoteUndo: mockApplyRemoteUndo,
+      applyRemoteRedo: mockApplyRemoteRedo,
+      currentUserId: mockCurrentUserId,
+      clientId: mockClientId,
+    }));
+
+    const mockElements: DrawingElementType[] = [
+      { id: 1, type: 'line', points: [{ x: 0, y: 0 }, { x: 10, y: 10 }], color: '#000', brushSize: 5 },
+    ];
+
+    act(() => {
+      result.current.sendUndoRedoAction('undo', mockElements);
+    });
+
+    expect(mockChannelInstance.perform).toHaveBeenCalledWith(
+      'undo_redo',
+      {
+        action_type: 'undo',
+        elements: mockElements,
+        drawing_id: mockDrawingId,
+        client_id: mockClientId,
+      }
+    );
   });
 });
