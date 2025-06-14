@@ -58,6 +58,7 @@ Thumbs.db
 e2e/storageState.json
 e2e/test-results/results.json
 e2e/screenshots/
+test-results/
 
 # other
 log/*
