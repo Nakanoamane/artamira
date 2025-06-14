@@ -14,6 +14,7 @@ import { useDrawingElements } from "../hooks/useDrawingElements";
 import { useDrawingChannelIntegration } from "../hooks/useDrawingChannelIntegration";
 import { useDrawingPersistence } from "../hooks/useDrawingPersistence";
 import { useDrawingExport } from "../hooks/useDrawingExport";
+import { useAuth } from "../contexts/AuthContext";
 
 const DrawingBoard = () => {
   const navigate = useNavigate();
@@ -28,28 +29,56 @@ const DrawingBoard = () => {
     drawingId,
   });
 
-  const { drawingElements, setDrawingElements, handleDrawComplete, handleUndo, handleRedo, canUndo, canRedo, addDrawingElementFromExternalSource, pendingElementTempId } = useDrawingElements(
-    setIsDirty,
-    (newElement) => {
-      sendDrawingElement(newElement);
-    },
-    initialDrawingElements
-  );
+  const { user } = useAuth();
 
-  const { isExportModalOpen, setIsExportModalOpen, isExporting, exportError, handleExportClick, handleExport } = useDrawingExport();
+  // Generate a unique client ID for this tab session
+  const clientId = useRef(Date.now().toString() + Math.random().toString(36).substring(2, 15)).current;
 
-  const { sendDrawingElement } = useDrawingChannelIntegration({
+  // Refs for functions/values from useDrawingElements that useDrawingChannelIntegration needs
+  const addDrawingElementFromExternalSourceRef = useRef((element: DrawingElementType) => {});
+  const pendingElementTempIdRef = useRef<React.MutableRefObject<string | null>>({ current: null });
+  const applyRemoteUndoRef = useRef((elements: DrawingElementType[]) => {});
+  const applyRemoteRedoRef = useRef((elements: DrawingElementType[]) => {});
+
+  const { sendDrawingElement, sendUndoRedoAction } = useDrawingChannelIntegration({
     drawingId: drawingId,
-    addDrawingElement: (element) => {
-      // 他のユーザーからの描画を受信した場合、useDrawingElementsの関数を介して描画要素を追加
-      addDrawingElementFromExternalSource(element);
-    },
+    addDrawingElement: (element) => addDrawingElementFromExternalSourceRef.current(element),
     onDrawingSaved: (savedAt) => {
       setIsDirty(false);
       setLastSavedAt(savedAt);
     },
-    pendingElementTempId: pendingElementTempId,
+    pendingElementTempId: pendingElementTempIdRef.current,
+    applyRemoteUndo: (elements) => applyRemoteUndoRef.current(elements),
+    applyRemoteRedo: (elements) => applyRemoteRedoRef.current(elements),
+    currentUserId: user?.id,
+    clientId: clientId,
   });
+
+  // Callbacks that depend on sendDrawingElement and sendUndoRedoAction
+  const handleNewElementCreated = useCallback((newElement: DrawingElementType) => {
+    sendDrawingElement(newElement);
+  }, [sendDrawingElement]);
+
+  const handleUndoRedoAction = useCallback((actionType: "undo" | "redo", elements: DrawingElementType[]) => {
+    sendUndoRedoAction(actionType, elements);
+  }, [sendUndoRedoAction]);
+
+  const { drawingElements, handleDrawComplete, handleUndo, handleRedo, canUndo, canRedo, addDrawingElementFromExternalSource, pendingElementTempId, setDrawingElements, applyRemoteUndo, applyRemoteRedo } = useDrawingElements(
+    setIsDirty,
+    handleNewElementCreated,
+    initialDrawingElements,
+    handleUndoRedoAction
+  );
+
+  // Assign actual functions to refs after useDrawingElements is called
+  useEffect(() => {
+    addDrawingElementFromExternalSourceRef.current = addDrawingElementFromExternalSource;
+    pendingElementTempIdRef.current = pendingElementTempId; // Assign the whole ref object
+    applyRemoteUndoRef.current = applyRemoteUndo;
+    applyRemoteRedoRef.current = applyRemoteRedo;
+  }, [addDrawingElementFromExternalSource, pendingElementTempId, applyRemoteUndo, applyRemoteRedo]);
+
+  const { isExportModalOpen, setIsExportModalOpen, isExporting, exportError, handleExportClick, handleExport } = useDrawingExport();
 
   const handleSaveBoard = useCallback(async () => {
     // ... existing code ...
@@ -64,6 +93,15 @@ const DrawingBoard = () => {
       setShowHeader(true);
     };
   }, [setShowHeader]);
+
+  useEffect(() => {
+    console.log("[DrawingBoard] Component mounted.");
+    return () => {
+      console.log("[DrawingBoard] Component unmounted.");
+    };
+  }, []);
+
+  console.log("[DrawingBoard] Render Cycle - initialDrawingElements:", initialDrawingElements, ", loadingDrawing:", loadingDrawing, ", drawingElements (from hook):", drawingElements);
 
   if (loadingDrawing) {
     return (
@@ -80,6 +118,8 @@ const DrawingBoard = () => {
       </div>
     );
   }
+
+  console.log(`[DrawingBoard] Toolbar props - canUndo: ${canUndo}, canRedo: ${canRedo}`);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -111,7 +151,6 @@ const DrawingBoard = () => {
         <Canvas
           ref={canvasRef}
           drawingElements={drawingElements}
-          setDrawingElements={setDrawingElements}
           activeTool={activeTool}
           activeColor={activeColor}
           activeBrushSize={activeBrushSize}
