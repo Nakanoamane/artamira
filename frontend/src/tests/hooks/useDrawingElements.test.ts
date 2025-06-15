@@ -187,7 +187,7 @@ describe('useDrawingElements', () => {
   });
 
   it('should apply remote undo action and manage stacks', () => {
-    const { result, rerender } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
+    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
 
     // 複数の要素を追加してundoStackとredoStackに状態を作る
     act(() => {
@@ -202,8 +202,6 @@ describe('useDrawingElements', () => {
     });
 
     const initialElements = result.current.drawingElements;
-    const initialUndoStack = result.current.undoStack;
-    const initialRedoStack = result.current.redoStack;
 
     // リモートからUndoされた状態（要素が1つ減った状態）をシミュレート
     const remoteUndoneElements = initialElements.slice(0, -1); // 最後の要素がUndoされたと仮定
@@ -216,14 +214,14 @@ describe('useDrawingElements', () => {
     expect(result.current.drawingElements).toEqual(remoteUndoneElements);
     // 元のdrawingElementsがredoStackに積まれることを確認 (APPLY_REMOTE_UNDOのロジックによる)
     expect(result.current.redoStack[result.current.redoStack.length - 1]).toEqual(initialElements);
-    // undoStackは変更されないことを確認（ローカルの履歴は保持）
-    expect(result.current.undoStack).toEqual(initialUndoStack);
-    expect(result.current.canUndo).toBe(true);
+    // undoStackはリモートのUndo状態にリセットされることを確認
+    expect(result.current.undoStack).toEqual([[]]);
+    expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(true); // リモートからのUndoによりRedo可能になる
   });
 
   it('should apply remote redo action and manage stacks', () => {
-    const { result, rerender } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
+    const { result } = renderHook(() => useDrawingElements(mockSetIsDirty, mockOnNewElementCreated, [], mockOnUndoRedoAction));
 
     // 複数の要素を追加し、undoしてredoStackに状態を作る
     act(() => {
@@ -240,8 +238,6 @@ describe('useDrawingElements', () => {
     });
 
     const initialElements = result.current.drawingElements;
-    const initialUndoStack = result.current.undoStack;
-    const initialRedoStack = result.current.redoStack;
 
     // リモートからRedoされた状態（要素が1つ増えた状態）をシミュレート
     const remoteRedoneElements = initialElements.concat([
