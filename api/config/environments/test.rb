@@ -10,7 +10,7 @@ Rails.application.configure do
 
   # ログを標準出力に設定し、詳細なログを出力します。
   config.logger = ActiveSupport::Logger.new($stdout)
-  config.log_level = :info
+  config.log_level = :debug
 
   # While tests run files are not watched, reloading is not necessary.
   config.enable_reloading = false
