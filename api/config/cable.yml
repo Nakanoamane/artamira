@@ -12,7 +12,7 @@ development:
   # message_retention: 1.day
 
 test:
-  adapter: async
+  adapter: test
   # adapter: solid_cable
   # connects_to:
   #   database:

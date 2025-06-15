@@ -9,9 +9,9 @@ services:
       - test_rails_storage:/rails/storage # テスト専用のストレージボリューム
     ports:
       - "3001:3000" # テスト環境用のAPIポート
-    command: sh -c "bundle exec rails db:test:prepare && echo \"--- Running db:seed ---\" && bundle exec rails db:seed && echo \"--- db:seed finished ---\" && /rails/bin/docker-entrypoint rails server -b '0.0.0.0'"
-    environment: # ランタイムもテスト環境を明示
-      RAILS_ENV: test
+    command: sh -c "bundle exec rails db:reset && echo \"--- Running db:seed ---\" && bundle exec rails db:seed && echo \"--- db:seed finished ---\" && /rails/bin/docker-entrypoint rails server -b '0.0.0.0'"
+    environment:
+      RAILS_ENV: development
       RAILS_MASTER_KEY: your_master_key_here
 
   frontend:
