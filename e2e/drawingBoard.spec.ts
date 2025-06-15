@@ -1,7 +1,6 @@
 import { test, expect, Page } from '@playwright/test'
 
 test.describe('DrawingBoard', () => {
-  let drawingId: number;
 
   // ヘルパー関数: 新規ボードを作成する
   async function createNewDrawingBoard(page: Page, title: string = 'テスト描画ボード') {
@@ -79,8 +78,6 @@ test.describe('DrawingBoard', () => {
 
   test.beforeEach(async ({ page }) => {
     await createNewDrawingBoard(page);
-    drawingId = await getDrawingIdFromUrl(page);
-
     await expect(page.locator('label:has-text("ツール")')).toBeVisible();
     await expect(page.getByText('ペン')).toBeVisible();
   })
@@ -118,6 +115,7 @@ test.describe('DrawingBoard', () => {
     const context1 = await browser.newContext({ storageState: './e2e/storageState.json' });
     const page1 = await context1.newPage();
     await createNewDrawingBoard(page1, 'マルチタブUndo/Redoテストボード');
+    const drawingId = await getDrawingIdFromUrl(page1);
 
     // クライアント2のセットアップ
     const context2 = await browser.newContext({ storageState: './e2e/storageState.json' });
@@ -267,6 +265,7 @@ test.describe('DrawingBoard', () => {
 
   test('should fallback to drawing_elements when canvas_data is not available', async ({ page }) => {
     await drawLine(page);
+    const drawingId = await getDrawingIdFromUrl(page);
 
     // 描画ボードにアクセス
     await page.goto(`/drawings/${drawingId}`);
@@ -356,6 +355,7 @@ test.describe('DrawingBoard', () => {
     const context1 = await browser.newContext({ storageState: './e2e/storageState.json' });
     const page1 = await context1.newPage();
     await createNewDrawingBoard(page1, 'マルチタブUndo/Redoテストボード');
+    const drawingId = await getDrawingIdFromUrl(page1);
 
     // クライアント2のセットアップ
     const context2 = await browser.newContext({ storageState: './e2e/storageState.json' });
