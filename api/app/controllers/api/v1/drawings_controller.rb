@@ -2,6 +2,7 @@ module Api
   module V1
     class DrawingsController < ApplicationController
       before_action :set_drawing, only: [:show, :update, :destroy, :save, :export]
+      before_action :authorize_drawing_owner, only: [:update, :destroy]
 
       def index
         @drawings = Drawing.order(created_at: :desc).page(params[:page]).per(params[:per_page] || 10)
@@ -99,7 +100,15 @@ module Api
       private
 
       def set_drawing
-        @drawing = current_user.drawings.find(params[:id])
+        @drawing = Drawing.find(params[:id])
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Drawing not found." }, status: :not_found
+      end
+
+      def authorize_drawing_owner
+        unless @drawing.user_id == current_user.id
+          render json: { error: "You are not authorized to perform this action." }, status: :forbidden
+        end
       end
 
       def drawing_params

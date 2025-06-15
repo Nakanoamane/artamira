@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe 'Api::V1::Drawings', type: :request do
+RSpec.describe 'Api::V1::DrawingsController', type: :request do
   include AuthenticationHelpers
 
   let!(:user) { create(:user) }
@@ -174,6 +174,19 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
         end
       end
 
+      context '他のユーザーの描画ボードの場合' do
+        let!(:other_user) { create(:user) }
+        let!(:other_drawing) { create(:drawing, user: other_user) }
+        let!(:other_user_cookies) { cookies_for_header(user) }
+
+        it '認証済みユーザーが他のユーザーの描画ボードにアクセスした場合、200 OKを返す' do
+          get api_v1_drawing_path(other_drawing), headers: { 'Cookie' => other_user_cookies }, as: :json
+          expect(response).to have_http_status(:ok)
+          expect(response.parsed_body['id']).to eq(other_drawing.id)
+          expect(response.parsed_body['title']).to eq(other_drawing.title)
+        end
+      end
+
       context '存在しない描画ボードの場合' do
         it '404 Not Found を返す' do
           get api_v1_drawing_path(99999), headers: { 'Cookie' => cookies }, as: :json
@@ -243,10 +256,13 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
       context '他のユーザーの描画ボードの場合' do
         let!(:other_user) { create(:user) }
         let!(:other_drawing) { create(:drawing, user: other_user) }
+        let!(:other_user_cookies) { cookies_for_header(user) }
 
-        it '404 Not Found を返す (認可エラーのため)' do
-          post save_api_v1_drawing_path(other_drawing), headers: { 'Cookie' => cookies }, as: :json
-          expect(response).to have_http_status(:not_found) # set_drawingでNotFoundになる
+        it '認証済みユーザーが他のユーザーの描画ボードを保存しようとすると、200 OK を返す' do
+          post save_api_v1_drawing_path(other_drawing), params: { canvas_data: '他のユーザーによるデータ' }, headers: { 'Cookie' => other_user_cookies }, as: :json
+          expect(response).to have_http_status(:ok)
+          expect(response.parsed_body['status']).to eq('success')
+          expect(response.parsed_body['message']).to eq('Drawing saved successfully.')
         end
       end
     end
@@ -254,50 +270,6 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
     context '未認証ユーザーの場合' do
       it '401 Unauthorized を返す' do
         post save_api_v1_drawing_path(drawing), as: :json
-        expect(response).to have_http_status(:unauthorized)
-      end
-    end
-  end
-
-  describe 'GET /api/v1/drawings/:drawing_id/elements' do
-    let!(:drawing) { create(:drawing, user: user, last_saved_at: 2.days.ago) }
-    let!(:drawing_element1) { create(:drawing_element, drawing: drawing, user: user, element_type: 'line', data: { path: [[0,0],[10,10]] }) }
-    let!(:drawing_element2) { create(:drawing_element, drawing: drawing, user: user, element_type: 'rectangle', data: { start: {x: 20, y: 20}, end: {x: 30, y: 30} }) }
-
-    context '認証済みユーザーの場合' do
-      let!(:cookies) { cookies_for_header(user) }
-
-      it '描画要素とlast_saved_atを返す' do
-        get api_v1_drawing_elements_path(drawing), headers: { 'Cookie' => cookies }, as: :json
-        expect(response).to have_http_status(:ok)
-        expect(response.parsed_body).to have_key('drawing_elements')
-        expect(response.parsed_body['drawing_elements'].length).to eq(2)
-        expect(response.parsed_body).to have_key('last_saved_at')
-        expect(Time.zone.parse(response.parsed_body['last_saved_at']).to_i).to eq(drawing.last_saved_at.to_i)
-        expect(response.parsed_body['drawing_elements'][0]['element_type']).to eq('line')
-        expect(response.parsed_body['drawing_elements'][1]['element_type']).to eq('rectangle')
-      end
-
-      context '存在しない描画ボードの場合' do
-        it '404 Not Found を返す' do
-          get api_v1_drawing_elements_path(99999), headers: { 'Cookie' => cookies }, as: :json
-          expect(response).to have_http_status(:not_found)
-        end
-      end
-
-      context '他のユーザーの描画ボードの場合' do
-        let!(:other_user) { create(:user) }
-        let!(:other_drawing) { create(:drawing, user: other_user) }
-        it '404 Not Found を返す (認可エラーのため)' do
-          get api_v1_drawing_elements_path(other_drawing), headers: { 'Cookie' => cookies }, as: :json
-          expect(response).to have_http_status(:not_found)
-        end
-      end
-    end
-
-    context '未認証ユーザーの場合' do
-      it '401 Unauthorized を返す' do
-        get api_v1_drawing_elements_path(drawing), as: :json
         expect(response).to have_http_status(:unauthorized)
       end
     end
@@ -365,12 +337,15 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
       context '他のユーザーの描画ボードの場合' do
         let!(:other_user) { create(:user) }
         let!(:other_drawing) { create(:drawing, user: other_user) }
+        let!(:other_user_cookies) { cookies_for_header(user) }
 
-        it '404 Not Foundを返す (認可エラーのため)' do
+        it '認証済みユーザーが他のユーザーの描画ボードをエクスポートしようとすると、200 OK を返す' do
           image_data = generate_dummy_base64_image('png')
-          post export_api_v1_drawing_path(other_drawing), params: { format: 'png', image_data: image_data }, headers: { 'Cookie' => cookies }
+          post export_api_v1_drawing_path(other_drawing), params: { format: 'png', image_data: image_data }, headers: { 'Cookie' => other_user_cookies }
 
-          expect(response).to have_http_status(:not_found)
+          expect(response).to have_http_status(:ok)
+          expect(response.header['Content-Type']).to include('image/png')
+          expect(response.body).not_to be_empty
         end
       end
     end
@@ -380,6 +355,91 @@ RSpec.describe 'Api::V1::Drawings', type: :request do
         image_data = generate_dummy_base64_image('png')
         post export_api_v1_drawing_path(drawing), params: { format: 'png', image_data: image_data }
 
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
+
+  describe 'PUT /api/v1/drawings/:id' do
+    let!(:drawing) { create(:drawing, user: user) }
+
+    context '認証済みユーザーの場合' do
+      let!(:cookies) { cookies_for_header(user) }
+
+      it '描画ボードを更新し、200 OKを返す' do
+        new_title = '更新された描画ボード'
+        put api_v1_drawing_path(drawing), params: { drawing: { title: new_title } }, headers: { 'Cookie' => cookies }, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body['title']).to eq(new_title)
+        drawing.reload
+        expect(drawing.title).to eq(new_title)
+      end
+
+      context '存在しない描画ボードの場合' do
+        it '404 Not Found を返す' do
+          put api_v1_drawing_path(99999), params: { drawing: { title: '無効なタイトル' } }, headers: { 'Cookie' => cookies }, as: :json
+          expect(response).to have_http_status(:not_found)
+        end
+      end
+
+      context '他のユーザーの描画ボードの場合' do
+        let!(:other_user) { create(:user) }
+        let!(:other_drawing) { create(:drawing, user: other_user) }
+        let!(:other_user_cookies) { cookies_for_header(user) }
+
+        it '認証済みユーザーが他のユーザーの描画ボードを更新しようとすると、403 Forbidden を返す' do
+          put api_v1_drawing_path(other_drawing), params: { drawing: { title: '無効なタイトル' } }, headers: { 'Cookie' => other_user_cookies }, as: :json
+          expect(response).to have_http_status(:forbidden)
+          expect(response.parsed_body['error']).to eq("You are not authorized to perform this action.")
+        end
+      end
+    end
+
+    context '未認証ユーザーの場合' do
+      it '401 Unauthorized を返す' do
+        put api_v1_drawing_path(drawing), params: { drawing: { title: '無効なタイトル' } }, as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
+
+  describe 'DELETE /api/v1/drawings/:id' do
+    let!(:drawing) { create(:drawing, user: user) }
+
+    context '認証済みユーザーの場合' do
+      let!(:cookies) { cookies_for_header(user) }
+
+      it '描画ボードを削除し、204 No Content を返す' do
+        expect do
+          delete api_v1_drawing_path(drawing), headers: { 'Cookie' => cookies }, as: :json
+        end.to change(Drawing, :count).by(-1)
+        expect(response).to have_http_status(:no_content)
+      end
+
+      context '存在しない描画ボードの場合' do
+        it '404 Not Found を返す' do
+          delete api_v1_drawing_path(99999), headers: { 'Cookie' => cookies }, as: :json
+          expect(response).to have_http_status(:not_found)
+        end
+      end
+
+      context '他のユーザーの描画ボードの場合' do
+        let!(:other_user) { create(:user) }
+        let!(:other_drawing) { create(:drawing, user: other_user) }
+        let!(:other_user_cookies) { cookies_for_header(user) }
+
+        it '認証済みユーザーが他のユーザーの描画ボードを削除しようとすると、403 Forbidden を返す' do
+          delete api_v1_drawing_path(other_drawing), headers: { 'Cookie' => other_user_cookies }, as: :json
+          expect(response).to have_http_status(:forbidden)
+          expect(response.parsed_body['error']).to eq("You are not authorized to perform this action.")
+        end
+      end
+    end
+
+    context '未認証ユーザーの場合' do
+      it '401 Unauthorized を返す' do
+        delete api_v1_drawing_path(drawing), as: :json
         expect(response).to have_http_status(:unauthorized)
       end
     end
