@@ -47,16 +47,12 @@ const drawingReducer = (state: DrawingState, action: Action): DrawingState => {
       return newStateAdd;
 
     case 'UNDO':
-      if (state.undoStack.length <= 1) {
-        return state;
-      }
       const newUndoStackAfterUndo = [...state.undoStack];
       const previousState = newUndoStackAfterUndo.pop();
 
       if (previousState === undefined) {
         return state;
       }
-
       const newStateUndo = {
         elements: previousState,
         undoStack: newUndoStackAfterUndo,
@@ -65,16 +61,12 @@ const drawingReducer = (state: DrawingState, action: Action): DrawingState => {
       return newStateUndo;
 
     case 'REDO':
-      if (state.redoStack.length === 0) {
-        return state;
-      }
       const newRedoStackAfterRedo = [...state.redoStack];
       const nextState = newRedoStackAfterRedo.pop();
 
       if (nextState === undefined) {
         return state;
       }
-
       const newStateRedo = {
         elements: nextState,
         undoStack: [...state.undoStack, state.elements],
@@ -83,12 +75,13 @@ const drawingReducer = (state: DrawingState, action: Action): DrawingState => {
       return newStateRedo;
 
     case 'SET_ELEMENTS':
-      return {
+      const newState = {
         ...state,
         elements: action.payload,
-        undoStack: [action.payload],
+        undoStack: action.payload.length > 0 ? [action.payload] : [[]],
         redoStack: [],
       };
+      return newState;
 
     case 'RESET_HISTORY':
       const newStateResetHistory = {
@@ -100,20 +93,22 @@ const drawingReducer = (state: DrawingState, action: Action): DrawingState => {
 
     case 'APPLY_REMOTE_UNDO': {
       const newRedoStack = [...state.redoStack, state.elements];
-      return {
+      const newState = {
         elements: action.payload,
-        undoStack: state.undoStack,
+        undoStack: action.payload.length > 0 ? [action.payload] : [[]],
         redoStack: newRedoStack,
       };
+      return newState;
     }
 
     case 'APPLY_REMOTE_REDO': {
       const newUndoStack = [...state.undoStack, state.elements];
-      return {
+      const newState = {
         elements: action.payload,
         undoStack: newUndoStack,
         redoStack: [],
       };
+      return newState;
     }
 
     default:
@@ -135,11 +130,22 @@ export const useDrawingElements = (
 
   const pendingElementTempId = useRef<string | null>(null);
 
+  // New state to trigger broadcasting after reducer updates
+  const [actionToBroadcast, setActionToBroadcast] = useState<{ type: "undo" | "redo"; timestamp: number } | null>(null);
+
   useEffect(() => {
     if (initialLoadedElements.length > 0 && state.elements.length === 0) {
       dispatch({ type: "SET_ELEMENTS", payload: initialLoadedElements });
     }
   }, [initialLoadedElements, state.elements.length]);
+
+  // Effect to handle broadcasting after undo/redo actions
+  useEffect(() => {
+    if (actionToBroadcast) {
+      onUndoRedoAction(actionToBroadcast.type, state.elements);
+      setActionToBroadcast(null); // Reset to avoid re-triggering
+    }
+  }, [state.elements, actionToBroadcast, onUndoRedoAction]);
 
   const addDrawingElement = useCallback(
     (element: DrawingElementType) => {
@@ -179,29 +185,26 @@ export const useDrawingElements = (
       return;
     }
 
-    const previousElements = state.undoStack[state.undoStack.length - 2];
     dispatch({ type: 'UNDO' });
     setIsDirty(true);
-    onUndoRedoAction("undo", previousElements);
-
-  }, [state.undoStack, setIsDirty, onUndoRedoAction]);
+    setActionToBroadcast({ type: "undo", timestamp: Date.now() }); // Trigger broadcast after state update
+  }, [dispatch, state.undoStack.length, setIsDirty]); // Removed state.elements from deps
 
   const handleRedo = useCallback(() => {
     if (state.redoStack.length === 0) {
       return;
     }
 
-    const nextElements = state.redoStack[state.redoStack.length - 1];
     dispatch({ type: 'REDO' });
     setIsDirty(true);
-    onUndoRedoAction("redo", nextElements);
-  }, [state.redoStack, setIsDirty, onUndoRedoAction]);
+    setActionToBroadcast({ type: "redo", timestamp: Date.now() }); // Trigger broadcast after state update
+  }, [dispatch, state.redoStack.length, setIsDirty]); // Removed state.elements from deps
 
   const canUndo = state.undoStack.length > 1;
   const canRedo = state.redoStack.length > 0;
 
   useEffect(() => {
-  }, [canUndo, canRedo]);
+  }, [state.elements.length, state.undoStack.length, state.redoStack.length]);
 
   return {
     drawingElements: state.elements,

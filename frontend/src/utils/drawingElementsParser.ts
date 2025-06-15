@@ -42,53 +42,63 @@ export interface RawDrawingElement {
 }
 
 export const parseDrawingElement = (
-  rawElement: RawDrawingElement
+  rawElement: any // Accepting 'any' to handle different incoming structures
 ): DrawingElementType | null => {
+
   let parsedElement: DrawingElementType | null = null;
+
+  // Determine the element type. Check 'element_type' first (from backend/API structure), then 'type' (from frontend object structure).
+  const elementType = rawElement.element_type || rawElement.type;
+
+  // Extract relevant data. If rawElement has a 'data' property, use it. Otherwise, assume rawElement itself contains the data.
+  const elementData = rawElement.data || rawElement;
 
   const elementId = rawElement.id !== undefined && rawElement.id !== null
     ? (typeof rawElement.id === 'string' && rawElement.id.startsWith('temp-') ? undefined : Number(rawElement.id))
     : undefined;
 
-  if (rawElement.element_type === "line") {
-    if (!rawElement.data || !Array.isArray(rawElement.data.path)) {
+  // Common properties to extract, handling both lineWidth and brushSize
+  const color = elementData.color;
+  const brushSize = elementData.brushSize !== undefined ? elementData.brushSize : elementData.lineWidth;
+
+  if (elementType === "line") {
+    if (!elementData || (!Array.isArray(elementData.points) && !Array.isArray(elementData.path))) {
       return null;
     }
+    const points = elementData.points || elementData.path.map((p: [number, number]) => ({ x: p[0], y: p[1] }));
     parsedElement = {
       id: elementId,
       type: "line",
-      points: rawElement.data.path.map((p: [number, number]) => ({
-        x: p[0],
-        y: p[1],
-      })),
-      color: rawElement.data.color,
-      brushSize: rawElement.data.lineWidth,
+      points: points,
+      color: color,
+      brushSize: brushSize,
     };
-  } else if (rawElement.element_type === "rectangle") {
-    if (!rawElement.data || !rawElement.data.start || !rawElement.data.end) {
+  } else if (elementType === "rectangle") {
+    if (!elementData || !elementData.start || !elementData.end) {
       return null;
     }
     parsedElement = {
       id: elementId,
       type: "rectangle",
-      start: { x: rawElement.data.start.x, y: rawElement.data.start.y },
-      end: { x: rawElement.data.end.x, y: rawElement.data.end.y },
-      color: rawElement.data.color,
-      brushSize: rawElement.data.lineWidth,
+      start: { x: elementData.start.x, y: elementData.start.y },
+      end: { x: elementData.end.x, y: elementData.end.y },
+      color: color,
+      brushSize: brushSize,
     };
-  } else if (rawElement.element_type === "circle") {
-    if (!rawElement.data || !rawElement.data.center || rawElement.data.radius === undefined) {
+  } else if (elementType === "circle") {
+    if (!elementData || !elementData.center || elementData.radius === undefined) {
       return null;
     }
     parsedElement = {
       id: elementId,
       type: "circle",
-      center: { x: rawElement.data.center.x, y: rawElement.data.center.y },
-      radius: rawElement.data.radius,
-      color: rawElement.data.color,
-      brushSize: rawElement.data.brushSize,
+      center: { x: elementData.center.x, y: elementData.center.y },
+      radius: elementData.radius,
+      color: color,
+      brushSize: brushSize,
     };
   }
+
   return parsedElement;
 };
 

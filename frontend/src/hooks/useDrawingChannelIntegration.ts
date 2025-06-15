@@ -24,19 +24,28 @@ interface UseDrawingChannelIntegrationResult {
   sendUndoRedoAction: (actionType: "undo" | "redo", elements: DrawingElementType[]) => void;
 }
 
+interface ReceivedActionCableData {
+  action: string;
+  type: string;
+  drawing_element?: any;
+  drawing_id?: number;
+  last_saved_at?: string;
+  action_type?: "undo" | "redo";
+  elements?: any[];
+  client_id?: string;
+}
+
 export const useDrawingChannelIntegration = (
   { drawingId, addDrawingElement, onDrawingSaved, pendingElementTempId, applyRemoteUndo, applyRemoteRedo, currentUserId, clientId }: UseDrawingChannelIntegrationProps
 ): UseDrawingChannelIntegrationResult => {
-  const [actionCableError, setActionCableError] = useState<string | null>(null);
+  const [_actionCableError, setActionCableError] = useState<string | null>(null);
 
   const handleReceivedData = useCallback(
-    (receivedActionCableData: any) => {
-
+    (receivedActionCableData: ReceivedActionCableData) => {
       if (
         receivedActionCableData.type === "drawing_element_created" &&
         receivedActionCableData.drawing_element
       ) {
-        const receivedElementId = receivedActionCableData.drawing_element.id;
         const receivedElementTempId = receivedActionCableData.drawing_element.temp_id;
 
         if (receivedElementTempId && receivedElementTempId === pendingElementTempId.current) {
@@ -60,15 +69,15 @@ export const useDrawingChannelIntegration = (
         );
       } else if (
         receivedActionCableData.type === "undo_redo_action" &&
-        receivedActionCableData.drawing_id === drawingId
+        receivedActionCableData.drawing_id === drawingId &&
+        receivedActionCableData.action_type &&
+        receivedActionCableData.elements
       ) {
-        // 送信元と同じクライアントからのブロードキャストの場合はスキップ
         if (receivedActionCableData.client_id === clientId) {
           return;
         }
 
         const elementsToUpdate: DrawingElementType[] = receivedActionCableData.elements.map((el: any) => parseDrawingElement(el)).filter(Boolean) as DrawingElementType[];
-
         if (receivedActionCableData.action_type === "undo") {
           applyRemoteUndo(elementsToUpdate);
         } else if (receivedActionCableData.action_type === "redo") {
@@ -146,7 +155,7 @@ export const useDrawingChannelIntegration = (
     if (status.error) {
       setActionCableError(status.error);
     }
-  }, [status.error]);
+  }, [status.error, status]);
 
   return {
     channelStatus: status,
