@@ -117,20 +117,7 @@ test.describe('DrawingBoard', () => {
     // クライアント1のセットアップ
     const context1 = await browser.newContext({ storageState: './e2e/storageState.json' });
     const page1 = await context1.newPage();
-    await page1.goto('/drawings');
-    await page1.click('a:has-text("新規描画ボードを作成")');
-    await page1.waitForURL('/drawings/new');
-    await page1.screenshot({ path: 'test-results/screenshots/multi_tab_user_same_create_new_drawing_board_page1.png' });
-    await page1.waitForSelector('input[placeholder="新しい描画ボードのタイトル"]', { state: 'visible' });
-    await page1.fill('input[placeholder="新しい描画ボードのタイトル"]', 'マルチタブUndo/Redoテストボード');
-    await page1.screenshot({ path: 'test-results/screenshots/multi_tab_user_same_fill_title_page1.png' });
-    await page1.click('button:has-text("作成")');
-    await page1.screenshot({ path: 'test-results/screenshots/multi_tab_user_same_after_create_button_click_page1.png' });
-    await page1.waitForURL(/\/drawings\/\d+/);
-    await expect(page1.locator('h1')).toBeVisible({ timeout: 15000 });
-
-    const drawingId = page1.url().split('/').pop();
-    if (!drawingId) throw new Error('Failed to get drawing ID for real-time test');
+    await createNewDrawingBoard(page1, 'マルチタブUndo/Redoテストボード');
 
     // クライアント2のセットアップ
     const context2 = await browser.newContext({ storageState: './e2e/storageState.json' });
@@ -139,25 +126,13 @@ test.describe('DrawingBoard', () => {
     await page2.waitForSelector('canvas');
 
     // クライアント1で描画
-    const canvas1 = page1.locator('canvas');
-    await page1.getByRole('button', { name: '四角' }).click(); // 四角形ツールを選択
-    const canvas1BoundingBox = await canvas1.boundingBox();
-    if (!canvas1BoundingBox) throw new Error('Canvas 1 not found');
-
-    const startX1 = canvas1BoundingBox.x + 50;
-    const startY1 = canvas1BoundingBox.y + 50;
-    const endX1 = canvas1BoundingBox.x + 150;
-    const endY1 = canvas1BoundingBox.y + 150;
-
-    await page1.mouse.move(startX1, startY1);
-    await page1.mouse.down();
-    await page1.mouse.move(endX1, endY1, { steps: 5 });
-    await page1.mouse.up();
+    await drawRectangle(page1);
 
     // クライアント2で描画が反映されるのを待つ
-    await page2.waitForTimeout(3000); // 待機時間を延長
+    await expect(page2.locator('canvas')).toHaveScreenshot('after_draw_rectangle_page2.png', {
+      maxDiffPixels: 100,
+    });
 
-    // 単純な描画反映の確認（スナップショットは別途考慮）
     // Redoボタンが活性化しているかどうかで間接的に確認
     const page2RedoButton = page2.getByRole('button', { name: 'Redo' });
     await expect(page2RedoButton).toBeDisabled(); // 描画直後はRedoは無効
