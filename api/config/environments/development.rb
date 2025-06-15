@@ -58,7 +58,7 @@ Rails.application.configure do
   config.logger.level = Logger::DEBUG
 
   # Action CableのWebSocket接続を許可するオリジンを設定
-  config.action_cable.allowed_request_origins = ['http://localhost:5173']
+  config.action_cable.allowed_request_origins = ['http://localhost:5173', 'http://localhost:5174']
 
   config.active_job.queue_adapter = :solid_queue
   config.solid_queue.connects_to = { database: { writing: :queue } }

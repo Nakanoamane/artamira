@@ -54,9 +54,8 @@ Rails.application.configure do
 
   # Configure Action Cable for testing
   config.action_cable.disable_request_forgery_protection = true
-  config.action_cable.url = "ws://localhost:3001/cable"
-  config.action_cable.mount_path = "/cable"
-  config.action_cable.allowed_request_origins = ["http://localhost:5174"]
+
+  config.action_cable.allowed_request_origins = ['http://localhost:5173', 'http://localhost:5174']
 
   config.hosts << "www.example.com"
   config.hosts << "localhost"

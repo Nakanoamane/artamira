@@ -106,7 +106,7 @@ npm run test:e2e
     docker compose exec api bundle exec rspec
 
     # 特定のバックエンドテストを実行
-    docker compose exec api bundle exec rspec spec/models/drawing_element_spec.rb
+    docker compose exec api bundle exec rspec spec/models/drawings_controller_spec.rb
     ```
 
 *   フロントエンドのコンポーネント単体テスト (Vitest)
