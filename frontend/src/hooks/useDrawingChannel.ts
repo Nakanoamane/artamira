@@ -47,7 +47,7 @@ export const useDrawingChannel = (
     }
 
     if (!consumerRef.current) {
-      const cable = ActionCable.createConsumer(`${import.meta.env.VITE_WEBSOCKET_URL || 'ws://localhost:3000'}/cable`);
+      const cable = ActionCable.createConsumer(`${import.meta.env.VITE_WS_URL || 'ws://localhost:3000/cable'}`);
       consumerRef.current = cable;
     }
 
