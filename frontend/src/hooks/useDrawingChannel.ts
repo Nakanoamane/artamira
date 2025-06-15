@@ -56,7 +56,8 @@ export const useDrawingChannel = (
     const subscription = consumerRef.current.subscriptions.create(
       { channel: channelName, drawing_id: drawingId },
       {
-        initialized: () => {},
+        initialized: () => {
+        },
         connected: () => {
           setStatus({ isConnected: true, isConnecting: false, isDisconnected: false, error: null });
         },
@@ -64,7 +65,6 @@ export const useDrawingChannel = (
           setStatus({ isConnected: false, isConnecting: false, isDisconnected: true, error: reason || null });
         },
         rejected: () => {
-          console.error('Action Cable channel rejected');
           setStatus({ isConnected: false, isConnecting: false, isDisconnected: true, error: 'Channel rejected' });
         },
         received: (data: any) => {

@@ -177,7 +177,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         animationFrameId.current = null;
       }
       if (tempDrawingElement && !drawingCompletedRef.current) {
-        console.trace("[Canvas] handleMouseUp: Calling onDrawComplete.");
         onDrawComplete(tempDrawingElement);
         drawingCompletedRef.current = true;
         setTempDrawingElement(null);
@@ -193,7 +192,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           animationFrameId.current = null;
         }
         if (tempDrawingElement && !drawingCompletedRef.current) {
-          console.trace("[Canvas] handleMouseLeave: Calling onDrawComplete.");
           onDrawComplete(tempDrawingElement);
           drawingCompletedRef.current = true;
           setTempDrawingElement(null);

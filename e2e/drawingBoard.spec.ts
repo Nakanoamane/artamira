@@ -362,7 +362,6 @@ test.describe('DrawingBoard', () => {
     const page2 = await context2.newPage();
     await page2.goto(`/drawings/${drawingId}`);
     await page2.waitForSelector('canvas');
-    await page2.screenshot({ path: 'test-results/screenshots/same-user-page2-initial.png' });
 
     // 1. タブAで描画し、タブBでそれが表示されることを確認する。
     await drawRectangle(page1);
