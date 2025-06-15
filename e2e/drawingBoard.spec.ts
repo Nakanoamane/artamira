@@ -3,6 +3,29 @@ import { test, expect, Page } from '@playwright/test'
 test.describe('DrawingBoard', () => {
   let drawingId: number;
 
+  // ヘルパー関数: 新規ボードを作成する
+  async function createNewDrawingBoard(page: Page, title: string = 'テスト描画ボード') {
+    await page.goto('/drawings');
+
+    await page.waitForSelector('a:has-text("新規描画ボードを作成")');
+    await page.click('a:has-text("新規描画ボードを作成")');
+    await page.waitForSelector('input[placeholder="新しい描画ボードのタイトル"]', { state: 'visible' });
+    await page.fill('input[placeholder="新しい描画ボードのタイトル"]', title);
+    await page.click('button:has-text("作成")');
+    await page.waitForURL(/\/drawings\/\d+/, { timeout: 15000 });
+    await expect(page.locator('h1', { hasText: title })).toBeVisible({ timeout: 15000 });
+  }
+
+  // ヘルパー関数: 描画ボードのURLからIDを抽出
+  async function getDrawingIdFromUrl(page: Page) {
+    const url = page.url();
+    const match = url.match(/\/drawings\/(\d+)/);
+    if (match && match[1]) {
+      return parseInt(match[1], 10);
+    }
+    throw new Error('Failed to extract drawing ID from URL');
+  }
+
   // ヘルパー関数: canvasのboundingBoxを取得する
   async function getCanvasBoundingBox(page: Page) {
     await page.waitForSelector('canvas');
@@ -13,15 +36,14 @@ test.describe('DrawingBoard', () => {
       throw new Error('Canvas not found or has no bounding box');
     }
 
+    await expect(page.getByText('接続中')).not.toBeVisible();
+
     return canvasBoundingBox;
   }
 
   // ヘルパー関数: 予測可能な四角形を描画し、ダーティ状態になることを確認する
   async function drawRectangle(page: Page) {
     const canvasBoundingBox = await getCanvasBoundingBox(page);
-
-    // 接続中が表示されていないことを確認
-    await expect(page.getByText('接続中')).not.toBeVisible();
 
     // 四角形ツールを選択
     await page.getByRole('button', { name: '四角' }).click();
@@ -37,7 +59,6 @@ test.describe('DrawingBoard', () => {
     await page.mouse.move(endX, endY);
     await page.mouse.up();
 
-    await page.screenshot({ path: 'test-results/screenshots/after_draw_rectangle_before_save_button_check.png' });
     await expect(page.getByRole('button', { name: '保存 *' })).toBeVisible();
   }
 
@@ -57,32 +78,11 @@ test.describe('DrawingBoard', () => {
   }
 
   test.beforeEach(async ({ page }) => {
-    page.on('console', (msg) => {
-      console.log(`Browser Console LOG (${msg.type()}): ${msg.text()}`);
-    });
-    await page.goto('/drawings');
+    await createNewDrawingBoard(page);
+    drawingId = await getDrawingIdFromUrl(page);
 
-    await page.waitForSelector('a:has-text("新規描画ボードを作成")');
-    await page.click('a:has-text("新規描画ボードを作成")');
-    await page.waitForSelector('input[placeholder="新しい描画ボードのタイトル"]', { state: 'visible' });
-    await page.fill('input[placeholder="新しい描画ボードのタイトル"]', 'テスト描画ボード');
-    await page.screenshot({ path: 'test-results/screenshots/after_fill_title_before_create.png' });
-    await page.click('button:has-text("作成")');
-    await page.screenshot({ path: 'test-results/screenshots/after_create_button_click.png' });
-    await page.waitForURL(/\/drawings\/\d+/, { timeout: 15000 });
-    await expect(page.locator('h1', { hasText: 'テスト描画ボード' })).toBeVisible({ timeout: 15000 });
-
-    // 新しい描画ボードのURLに遷移したことを確認し、IDを抽出
-    const url = page.url();
-    const match = url.match(/\/drawings\/(\d+)/);
-    if (match && match[1]) {
-      drawingId = parseInt(match[1], 10);
-    } else {
-      throw new Error('Failed to extract drawing ID from URL');
-    }
-
-    await expect(page.locator('label:has-text("ツール")')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('ペン')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('label:has-text("ツール")')).toBeVisible();
+    await expect(page.getByText('ペン')).toBeVisible();
   })
 
   test('should render Toolbar and Canvas components', async ({ page }) => {
@@ -117,9 +117,6 @@ test.describe('DrawingBoard', () => {
     // クライアント1のセットアップ
     const context1 = await browser.newContext({ storageState: './e2e/storageState.json' });
     const page1 = await context1.newPage();
-    page1.on('console', (msg) => {
-      console.log(`Browser Console LOG (Page1 - ${msg.type()}): ${msg.text()}`);
-    });
     await page1.goto('/drawings');
     await page1.click('a:has-text("新規描画ボードを作成")');
     await page1.waitForURL('/drawings/new');
@@ -138,9 +135,6 @@ test.describe('DrawingBoard', () => {
     // クライアント2のセットアップ
     const context2 = await browser.newContext({ storageState: './e2e/storageState.json' });
     const page2 = await context2.newPage();
-    page2.on('console', (msg) => {
-      console.log(`Browser Console LOG (Page2 - ${msg.type()}): ${msg.text()}`);
-    });
     await page2.goto(`/drawings/${drawingId}`);
     await page2.waitForSelector('canvas');
 
@@ -386,9 +380,6 @@ test.describe('DrawingBoard', () => {
     // クライアント1のセットアップ
     const context1 = await browser.newContext({ storageState: './e2e/storageState.json' });
     const page1 = await context1.newPage();
-    page1.on('console', (msg) => {
-      console.log(`Browser Console LOG (Page1 - Same User - ${msg.type()}): ${msg.text()}`);
-    });
     await page1.goto('/drawings');
     await page1.click('a:has-text("新規描画ボードを作成")');
     await page1.waitForURL('/drawings/new');
@@ -402,9 +393,6 @@ test.describe('DrawingBoard', () => {
     // クライアント2のセットアップ
     const context2 = await browser.newContext({ storageState: './e2e/storageState.json' });
     const page2 = await context2.newPage();
-    page2.on('console', (msg) => {
-      console.log(`Browser Console LOG (Page2 - Same User - ${msg.type()}): ${msg.text()}`);
-    });
     await page2.goto(`/drawings/${drawingId}`);
     await page2.waitForSelector('canvas');
     await page2.screenshot({ path: 'test-results/screenshots/same-user-page2-initial.png' });
@@ -431,7 +419,6 @@ test.describe('DrawingBoard', () => {
       // @ts-ignore
       return window.redoStack ? window.redoStack.length : 0;
     });
-    console.log(`Browser Console LOG (Page1 - After Draw - elements.length: ${page1ElementsAfterDraw}, undoStack.length: ${page1UndoStackAfterDraw}, redoStack.length: ${page1RedoStackAfterDraw}`);
 
     // page2での描画反映を待機し、drawingElementsの状態を検証
     await page2.waitForFunction(() => {
@@ -450,7 +437,6 @@ test.describe('DrawingBoard', () => {
       // @ts-ignore
       return window.redoStack ? window.redoStack.length : 0;
     });
-    console.log(`Browser Console LOG (Page2 - After Page1 Draw - elements.length): ${page2ElementsAfterDraw}, undoStack.length: ${page2UndoStackAfterDraw}, redoStack.length: ${page2RedoStackAfterDraw}`);
     await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
     await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
     await expect(page2.locator('canvas')).toHaveScreenshot('same-user-initial-draw-by-A.png', { maxDiffPixels: 100 });
@@ -475,7 +461,6 @@ test.describe('DrawingBoard', () => {
       // @ts-ignore
       return window.redoStack ? window.redoStack.length : 0;
     });
-    console.log(`Browser Console LOG (Page1 - After Undo - elements.length: ${page1ElementsAfterUndo}, undoStack.length: ${page1UndoStackAfterUndo}, redoStack.length: ${page1RedoStackAfterUndo}`);
 
     // page2でのUndo反映を待機し、drawingElementsの状態を検証
     await page2.waitForFunction(() => {
@@ -494,7 +479,6 @@ test.describe('DrawingBoard', () => {
       // @ts-ignore
       return window.redoStack ? window.redoStack.length : 0;
     });
-    console.log(`Browser Console LOG (Page2 - After Page1 Undo - elements.length): ${page2ElementsAfterUndo}, undoStack.length: ${page2UndoStackAfterUndo}, redoStack.length: ${page2RedoStackAfterUndo}`);
     await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
     await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
     await expect(page2.locator('canvas')).toHaveScreenshot('same-user-undo-by-A.png', { maxDiffPixels: 100 });
@@ -519,7 +503,6 @@ test.describe('DrawingBoard', () => {
       // @ts-ignore
       return window.redoStack ? window.redoStack.length : 0;
     });
-    console.log(`Browser Console LOG (Page1 - After Redo - elements.length: ${page1ElementsAfterRedo}, undoStack.length: ${page1UndoStackAfterRedo}, redoStack.length: ${page1RedoStackAfterRedo}`);
 
     // page2でのRedo反映を待機し、drawingElementsの状態を検証
     await page2.waitForFunction(() => {
@@ -538,7 +521,6 @@ test.describe('DrawingBoard', () => {
       // @ts-ignore
       return window.redoStack ? window.redoStack.length : 0;
     });
-    console.log(`Browser Console LOG (Page2 - After Page1 Redo - elements.length): ${page2ElementsAfterRedo}, undoStack.length: ${page2UndoStackAfterRedo}, redoStack.length: ${page2RedoStackAfterRedo}`);
     await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
     await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
     await expect(page2.locator('canvas')).toHaveScreenshot('same-user-redo-by-A.png', { maxDiffPixels: 100 });
@@ -562,7 +544,6 @@ test.describe('DrawingBoard', () => {
       // @ts-ignore
       return window.redoStack ? window.redoStack.length : 0;
     });
-    console.log(`Browser Console LOG (Page1 - After Undo Again - elements.length: ${page1ElementsAfterUndoAgain}, undoStack.length: ${page1UndoStackAfterUndoAgain}, redoStack.length: ${page1RedoStackAfterUndoAgain}`);
 
     // page2でのUndo反映とRedoボタン活性化を待機
     await page2.waitForFunction(() => {
@@ -591,7 +572,6 @@ test.describe('DrawingBoard', () => {
       // @ts-ignore
       return window.redoStack ? window.redoStack.length : 0;
     });
-    console.log(`Browser Console LOG (Page2 - After Page2 Redo - elements.length): ${page2ElementsAfterRedoByB}, undoStack.length: ${page2UndoStackAfterRedoByB}, redoStack.length: ${page2RedoStackAfterRedoByB}`);
     await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
     await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
     await expect(page2.locator('canvas')).toHaveScreenshot('same-user-redo-by-B-after-undo.png', { maxDiffPixels: 100 }); // スナップショット名を更新
@@ -615,7 +595,6 @@ test.describe('DrawingBoard', () => {
       // @ts-ignore
       return window.redoStack ? window.redoStack.length : 0;
     });
-    console.log(`Browser Console LOG (Page1 - After Redo Again - elements.length: ${page1ElementsAfterRedoAgain}, undoStack.length: ${page1UndoStackAfterRedoAgain}, redoStack.length: ${page1RedoStackAfterRedoAgain}`);
 
     // page2でのRedo反映とUndoボタン活性化を待機
     await page2.waitForFunction(() => {
@@ -644,7 +623,6 @@ test.describe('DrawingBoard', () => {
       // @ts-ignore
       return window.redoStack ? window.redoStack.length : 0;
     });
-    console.log(`Browser Console LOG (Page2 - After Page2 Undo - elements.length): ${page2ElementsAfterUndoByB}, undoStack.length: ${page2UndoStackAfterUndoByB}, redoStack.length: ${page2RedoStackAfterUndoByB}`);
     await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
     await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
     await expect(page2.locator('canvas')).toHaveScreenshot('same-user-undo-by-B-after-redo.png', { maxDiffPixels: 100 }); // スナップショット名を更新
