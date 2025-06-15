@@ -16,10 +16,18 @@ async function globalSetup(config: FullConfig) {
 
   await page.fill('input[name="email"]', process.env.TEST_USER_EMAIL)
   await page.fill('input[name="password"]', process.env.TEST_USER_PASSWORD)
-  await page.getByRole('button', { name: 'ログイン' }).click()
+
+  // ログインリクエストのレスポンスを待つ
+  const [response] = await Promise.all([
+    page.waitForResponse(response => response.url().includes('/api/v1/login') && response.request().method() === 'POST' && response.status() === 200),
+    page.getByRole('button', { name: 'ログイン' }).click(),
+  ]);
+
+  // デバッグ用: 必要であればレスポンスのボディをログ出力
+  // console.log('Login API Response:', await response.json());
 
   try {
-    await page.waitForURL(`${baseURL}/drawings`, { timeout: 30000 })
+    await page.waitForURL(`${baseURL}/drawings`, { timeout: 60000 })
     const storageStatePath = storageState as string;
     await page.context().storageState({ path: storageStatePath })
   } catch (error) {
