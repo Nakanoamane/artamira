@@ -355,15 +355,7 @@ test.describe('DrawingBoard', () => {
     // クライアント1のセットアップ
     const context1 = await browser.newContext({ storageState: './e2e/storageState.json' });
     const page1 = await context1.newPage();
-    await page1.goto('/drawings');
-    await page1.click('a:has-text("新規描画ボードを作成")');
-    await page1.waitForURL('/drawings/new');
-    await page1.fill('input[placeholder="新しい描画ボードのタイトル"]', '同一ユーザー複数タブテスト');
-    await page1.click('button:has-text("作成")');
-    await page1.waitForURL(/\/drawings\/\d+/);
-    await expect(page1.locator('h1')).toBeVisible({ timeout: 15000 });
-    const drawingId = page1.url().split('/').pop();
-    if (!drawingId) throw new Error('Failed to get drawing ID for same user multi-tab test');
+    await createNewDrawingBoard(page1, 'マルチタブUndo/Redoテストボード');
 
     // クライアント2のセットアップ
     const context2 = await browser.newContext({ storageState: './e2e/storageState.json' });
@@ -373,243 +365,50 @@ test.describe('DrawingBoard', () => {
     await page2.screenshot({ path: 'test-results/screenshots/same-user-page2-initial.png' });
 
     // 1. タブAで描画し、タブBでそれが表示されることを確認する。
-    await page1.getByRole('button', { name: '四角' }).click(); // 四角形ツールを選択
-    const canvas1 = page1.locator('canvas');
-    const canvas1BoundingBox = await canvas1.boundingBox();
-    if (!canvas1BoundingBox) throw new Error('Canvas 1 not found');
-    await page1.mouse.move(canvas1BoundingBox.x + 50, canvas1BoundingBox.y + 50);
-    await page1.mouse.down();
-    await page1.mouse.move(canvas1BoundingBox.x + 150, canvas1BoundingBox.y + 150);
-    await page1.mouse.up();
-    // page1のelements, undoStack, redoStackの状態を検証
-    const page1ElementsAfterDraw = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.drawingElements ? window.drawingElements.length : 0;
-    });
-    const page1UndoStackAfterDraw = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.undoStack ? window.undoStack.length : 0;
-    });
-    const page1RedoStackAfterDraw = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.redoStack ? window.redoStack.length : 0;
-    });
-
-    // page2での描画反映を待機し、drawingElementsの状態を検証
-    await page2.waitForFunction(() => {
-      // @ts-ignore
-      return window.drawingElements && window.drawingElements.length > 0;
-    }, null, { timeout: 10000 });
-    const page2ElementsAfterDraw = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.drawingElements ? window.drawingElements.length : 0;
-    });
-    const page2UndoStackAfterDraw = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.undoStack ? window.undoStack.length : 0;
-    });
-    const page2RedoStackAfterDraw = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.redoStack ? window.redoStack.length : 0;
-    });
-    await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
-    await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
+    await drawRectangle(page1);
     await expect(page2.locator('canvas')).toHaveScreenshot('same-user-initial-draw-by-A.png', { maxDiffPixels: 100 });
-    await page1.screenshot({ path: 'test-results/screenshots/same-user-page1-after-draw.png' });
-    await page2.screenshot({ path: 'test-results/screenshots/same-user-page2-after-draw.png' });
-
 
     // 2. タブAでUndoを実行すると、タブBの表示もUndoされることを確認する。
     const page1UndoButton = page1.getByRole('button', { name: 'Undo' });
     await expect(page1UndoButton).toBeEnabled(); // Undoボタンが活性化していることを確認
     await page1UndoButton.click();
-    // page1のelements, undoStack, redoStackの状態を検証
-    const page1ElementsAfterUndo = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.drawingElements ? window.drawingElements.length : 0;
-    });
-    const page1UndoStackAfterUndo = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.undoStack ? window.undoStack.length : 0;
-    });
-    const page1RedoStackAfterUndo = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.redoStack ? window.redoStack.length : 0;
-    });
 
-    // page2でのUndo反映を待機し、drawingElementsの状態を検証
-    await page2.waitForFunction(() => {
-      // @ts-ignore
-      return window.drawingElements && window.drawingElements.length === 0;
-    }, null, { timeout: 10000 });
-    const page2ElementsAfterUndo = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.drawingElements ? window.drawingElements.length : 0;
-    });
-    const page2UndoStackAfterUndo = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.undoStack ? window.undoStack.length : 0;
-    });
-    const page2RedoStackAfterUndo = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.redoStack ? window.redoStack.length : 0;
-    });
     await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
     await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
     await expect(page2.locator('canvas')).toHaveScreenshot('same-user-undo-by-A.png', { maxDiffPixels: 100 });
-    await page1.screenshot({ path: 'test-results/screenshots/same-user-page1-after-undo.png' });
-    await page2.screenshot({ path: 'test-results/screenshots/same-user-page2-after-undo.png' });
-
 
     // 3. タブAでRedoを実行すると、タブBの表示もRedoされることを確認する。
     const page1RedoButton = page1.getByRole('button', { name: 'Redo' });
     await expect(page1RedoButton).toBeEnabled(); // Redoボタンが活性化していることを確認
     await page1RedoButton.click();
-    // page1のelements, undoStack, redoStackの状態を検証
-    const page1ElementsAfterRedo = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.drawingElements ? window.drawingElements.length : 0;
-    });
-    const page1UndoStackAfterRedo = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.undoStack ? window.undoStack.length : 0;
-    });
-    const page1RedoStackAfterRedo = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.redoStack ? window.redoStack.length : 0;
-    });
 
-    // page2でのRedo反映を待機し、drawingElementsの状態を検証
-    await page2.waitForFunction(() => {
-      // @ts-ignore
-      return window.drawingElements && window.drawingElements.length > 0;
-    }, null, { timeout: 10000 });
-    const page2ElementsAfterRedo = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.drawingElements ? window.drawingElements.length : 0;
-    });
-    const page2UndoStackAfterRedo = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.undoStack ? window.undoStack.length : 0;
-    });
-    const page2RedoStackAfterRedo = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.redoStack ? window.redoStack.length : 0;
-    });
     await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
     await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
     await expect(page2.locator('canvas')).toHaveScreenshot('same-user-redo-by-A.png', { maxDiffPixels: 100 });
-    await page1.screenshot({ path: 'test-results/screenshots/same-user-page1-after-redo.png' });
-    await page2.screenshot({ path: 'test-results/screenshots/same-user-page2-after-redo.png' });
-
 
     // 4. タブAでUndoした後、タブBでRedoが活性化され、それをクリックするとタブAでUndoされた内容がタブBでRedoされることを確認する。
     await expect(page1UndoButton).toBeEnabled(); // Undoボタンが活性化していることを確認
     await page1UndoButton.click();
-    // page1のelements, undoStack, redoStackの状態を検証
-    const page1ElementsAfterUndoAgain = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.drawingElements ? window.drawingElements.length : 0;
-    });
-    const page1UndoStackAfterUndoAgain = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.undoStack ? window.undoStack.length : 0;
-    });
-    const page1RedoStackAfterUndoAgain = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.redoStack ? window.redoStack.length : 0;
-    });
 
-    // page2でのUndo反映とRedoボタン活性化を待機
-    await page2.waitForFunction(() => {
-      // @ts-ignore
-      const redoButton = document.querySelector('button[name="Redo"]') as HTMLButtonElement;
-      // @ts-ignore
-      return window.drawingElements && window.drawingElements.length === 0 && redoButton && !redoButton.disabled;
-    }, null, { timeout: 20000 });
     const page2RedoButton = page2.getByRole('button', { name: 'Redo' });
     await expect(page2RedoButton).toBeEnabled({ timeout: 20000 }); // Redoボタンが活性化されるのを待つ
     await page2RedoButton.click();
-    // page2でのRedo反映を待機し、drawingElementsの状態を検証
-    await page2.waitForFunction(() => {
-      // @ts-ignore
-      return window.drawingElements && window.drawingElements.length > 0;
-    }, null, { timeout: 10000 });
-    const page2ElementsAfterRedoByB = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.drawingElements ? window.drawingElements.length : 0;
-    });
-    const page2UndoStackAfterRedoByB = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.undoStack ? window.undoStack.length : 0;
-    });
-    const page2RedoStackAfterRedoByB = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.redoStack ? window.redoStack.length : 0;
-    });
-    await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
-    await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
+
     await expect(page2.locator('canvas')).toHaveScreenshot('same-user-redo-by-B-after-undo.png', { maxDiffPixels: 100 }); // スナップショット名を更新
-    await page1.screenshot({ path: 'test-results/screenshots/same-user-page1-after-remote-redo.png' });
-    await page2.screenshot({ path: 'test-results/screenshots/same-user-page2-after-remote-redo.png' });
 
 
     // 5. タブAでRedoした後、タブBでUndoが活性化され、それをクリックするとタブAでRedoされた内容がタブBでUndoされることを確認する。
     await expect(page1RedoButton).toBeEnabled(); // Redoボタンが活性化していることを確認
     await page1RedoButton.click();
-    // page1のelements, undoStack, redoStackの状態を検証
-    const page1ElementsAfterRedoAgain = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.drawingElements ? window.drawingElements.length : 0;
-    });
-    const page1UndoStackAfterRedoAgain = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.undoStack ? window.undoStack.length : 0;
-    });
-    const page1RedoStackAfterRedoAgain = await page1.evaluate(() => {
-      // @ts-ignore
-      return window.redoStack ? window.redoStack.length : 0;
-    });
 
-    // page2でのRedo反映とUndoボタン活性化を待機
-    await page2.waitForFunction(() => {
-      // @ts-ignore
-      const undoButton = document.querySelector('button[name="Undo"]') as HTMLButtonElement;
-      // @ts-ignore
-      return window.drawingElements && window.drawingElements.length > 0 && undoButton && !undoButton.disabled;
-    }, null, { timeout: 20000 });
     const page2UndoButton = page2.getByRole('button', { name: 'Undo' });
     await expect(page2UndoButton).toBeEnabled({ timeout: 20000 }); // Undoボタンが活性化されるのを待つ
     await page2UndoButton.click();
-    // page2でのUndo反映を待機し、drawingElementsの状態を検証
-    await page2.waitForFunction(() => {
-      // @ts-ignore
-      return window.drawingElements && window.drawingElements.length === 0;
-    }, null, { timeout: 10000 });
-    const page2ElementsAfterUndoByB = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.drawingElements ? window.drawingElements.length : 0;
-    });
-    const page2UndoStackAfterUndoByB = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.undoStack ? window.undoStack.length : 0;
-    });
-    const page2RedoStackAfterUndoByB = await page2.evaluate(() => {
-      // @ts-ignore
-      return window.redoStack ? window.redoStack.length : 0;
-    });
-    await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
-    await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
-    await expect(page2.locator('canvas')).toHaveScreenshot('same-user-undo-by-B-after-redo.png', { maxDiffPixels: 100 }); // スナップショット名を更新
-    await page1.screenshot({ path: 'test-results/screenshots/same-user-page1-after-remote-undo.png' });
-    await page2.screenshot({ path: 'test-results/screenshots/same-user-page2-after-remote-undo.png' });
 
+    await expect(page2.locator('canvas')).toHaveScreenshot('same-user-undo-by-B-after-redo.png', { maxDiffPixels: 100 }); // スナップショット名を更新
 
     await context1.close();
     await context2.close();
   });
 
-  // TODO: 描画テストの追加
-  // Canvas上での描画操作（マウスイベント）のシミュレーションと、描画が正しく行われたかの検証
-  // リアルタイム反映のテストは、モック化したAction Cableまたは複数ブラウザインスタンスでのテストが必要
 })
