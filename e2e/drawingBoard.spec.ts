@@ -91,7 +91,7 @@ test.describe('DrawingBoard', () => {
 
     // 描画: 初期状態として四角形を描画し、両方のタブで表示されることを確認
     await drawRectangle(page1);
-    await expect(page2.locator('canvas')).toHaveScreenshot('same-user-initial-draw-by-A.png', { maxDiffPixels: 100 });
+    await expect(page2.locator('canvas')).toHaveScreenshot('same-user-initial-draw-by-A.png', { maxDiffPixels: 100, timeout: 3000 });
     return { page1, page2 };
   }
 
@@ -130,7 +130,7 @@ test.describe('DrawingBoard', () => {
     await drawLine(page);
 
     await expect(page.locator('canvas')).toHaveScreenshot('after_draw_line.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 100, timeout: 3000,
     });
   })
 
@@ -139,7 +139,7 @@ test.describe('DrawingBoard', () => {
 
     // クライアント2で描画が反映されるのを待つ
     await expect(page2.locator('canvas')).toHaveScreenshot('after_draw_rectangle_page2.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 100, timeout: 3000,
     });
 
     // Redoボタンが活性化しているかどうかで間接的に確認
@@ -208,7 +208,7 @@ test.describe('DrawingBoard', () => {
 
     // 描画内容が正確に復元されていることをスナップショットで検証
     await expect(canvas).toHaveScreenshot('restored_rectangle.png', {
-      maxDiffPixels: 100, // 描画のわずかな差異を許容
+      maxDiffPixels: 100, timeout: 3000, // 描画のわずかな差異を許容
     });
   });
 
@@ -230,7 +230,7 @@ test.describe('DrawingBoard', () => {
     await undoButton.click();
     // キャンバス上の描画が消えたことを検証
     await expect(page.locator('canvas')).toHaveScreenshot('single_tab_after_undo.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 100, timeout: 3000,
     });
 
     // Undoボタンが非活性化していることを確認 (描画が一つしかないので、Undo後は非活性になる)
@@ -242,7 +242,7 @@ test.describe('DrawingBoard', () => {
     await redoButton.click();
     // キャンバス上の描画が再描画されたことを検証
     await expect(page.locator('canvas')).toHaveScreenshot('single_tab_after_redo.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 100, timeout: 3000,
     });
 
     // Undoボタンが活性化していることを確認
@@ -266,7 +266,7 @@ test.describe('DrawingBoard', () => {
     // キャンバスの内容をスナップショットで検証
     const canvas = page.locator('canvas');
     await expect(canvas).toHaveScreenshot('loaded_canvas_data_rectangle.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 100, timeout: 3000,
     });
 
     // 保存ボタンがロード時に非活性であることを確認
@@ -286,7 +286,7 @@ test.describe('DrawingBoard', () => {
     // キャンバスの内容をスナップショットで検証
     const canvas = page.locator('canvas');
     await expect(canvas).toHaveScreenshot('loaded_drawing_elements_line.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 100, timeout: 3000
     });
 
     // 保存ボタンがロード時に非活性であることを確認
@@ -332,7 +332,7 @@ test.describe('DrawingBoard', () => {
 
     // 描画後のキャンバスの状態をスナップショットで保存
     await expect(canvas).toHaveScreenshot('drawn_rectangle_initial.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 100, timeout: 3000,
     });
 
     // Undoを実行
@@ -340,7 +340,7 @@ test.describe('DrawingBoard', () => {
 
     // Undo後のキャンバスの状態をスナップショットで検証（描画が消えていることを期待）
     await expect(canvas).toHaveScreenshot('drawn_rectangle_after_undo.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 100, timeout: 3000,
     });
 
     // Undo後、Undoボタンが非活性、Redoボタンが活性化されることを確認
@@ -352,7 +352,7 @@ test.describe('DrawingBoard', () => {
 
     // Redo後のキャンバスの状態をスナップショットで検証（描画が再表示されていることを期待）
     await expect(canvas).toHaveScreenshot('drawn_rectangle_after_redo.png', {
-      maxDiffPixels: 100,
+      maxDiffPixels: 100, timeout: 3000,
     });
 
     // Redo後、Undoボタンが活性化、Redoボタンが非活性化されることを確認
@@ -381,7 +381,7 @@ test.describe('DrawingBoard', () => {
       await page1UndoButton.click();
 
       // Tab Bで描画が消えていることを確認
-      await expect(page2.locator('canvas')).toHaveScreenshot('same-user-undo-by-A.png', { maxDiffPixels: 100 });
+      await expect(page2.locator('canvas')).toHaveScreenshot('same-user-undo-by-A.png', { maxDiffPixels: 100, timeout: 3000 });
 
       // 各タブのボタンの状態を検証
       await expect(page1UndoButton).toBeDisabled();
@@ -406,7 +406,7 @@ test.describe('DrawingBoard', () => {
       await page1RedoButton.click();
 
       // Tab Bで描画が再表示されていることを確認
-      await expect(page2.locator('canvas')).toHaveScreenshot('same-user-redo-by-A.png', { maxDiffPixels: 100 });
+      await expect(page2.locator('canvas')).toHaveScreenshot('same-user-redo-by-A.png', { maxDiffPixels: 100, timeout: 3000 });
 
       // 各タブのボタンの状態を検証
       await expect(page1UndoButton).toBeEnabled();
@@ -433,7 +433,7 @@ test.describe('DrawingBoard', () => {
       await page2RedoButton.click();
 
       // Tab Aで描画が再表示されていることを確認
-      await expect(page1.locator('canvas')).toHaveScreenshot('same-user-tabB-redo-after-tabA-undo.png', { maxDiffPixels: 100 });
+      await expect(page1.locator('canvas')).toHaveScreenshot('same-user-tabB-redo-after-tabA-undo.png', { maxDiffPixels: 100, timeout: 3000 });
 
       // 各タブのボタンの状態を検証
       await expect(page1UndoButton).toBeEnabled();
@@ -464,7 +464,7 @@ test.describe('DrawingBoard', () => {
       await page2UndoButton.click();
 
       // Tab Aで描画が消えていることを確認
-      await expect(page1.locator('canvas')).toHaveScreenshot('same-user-tabB-undo-after-tabA-redo.png', { maxDiffPixels: 100 });
+      await expect(page1.locator('canvas')).toHaveScreenshot('same-user-tabB-undo-after-tabA-redo.png', { maxDiffPixels: 100, timeout: 3000 });
 
       // 各タブのボタンの状態を検証
       await expect(page1UndoButton).toBeDisabled();
