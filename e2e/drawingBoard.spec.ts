@@ -1,4 +1,5 @@
 import { test, expect, Page, Browser } from '@playwright/test'
+import { registerAndLogin } from './utils';
 
 test.describe('DrawingBoard', () => {
 
@@ -98,6 +99,30 @@ test.describe('DrawingBoard', () => {
   async function closeMultiTab(page1: Page, page2: Page) {
     await page1.context().close();
     await page2.context().close();
+  }
+
+  // ヘルパー関数: 異なる二つのユーザーをセットアップし、ユーザーAがボードを作成、ユーザーBがそのボードにアクセス
+  async function setUpTwoDifferentUsersAndDrawing(browser: Browser, drawingTitle: string = 'テスト描画ボード') {
+    // ユーザーAのセットアップ
+    const contextA = await browser.newContext();
+    const pageA = await contextA.newPage();
+    await registerAndLogin(pageA);
+
+    // ユーザーAが描画ボードを作成
+    await createNewDrawingBoard(pageA, drawingTitle);
+    const drawingId = await getDrawingIdFromUrl(pageA);
+
+    // ユーザーBのセットアップ
+    const contextB = await browser.newContext();
+    const pageB = await contextB.newPage();
+    await registerAndLogin(pageB);
+
+    // ユーザーBがユーザーAの描画ボードにアクセス
+    await pageB.goto(`/drawings/${drawingId}`);
+    await pageB.waitForSelector('canvas'); // キャンバスが表示されるまで待機
+    await expect(pageB.getByRole('heading', { name: drawingTitle })).toBeVisible({ timeout: 15000 });
+
+    return { pageA, pageB, drawingId, contextA, contextB };
   }
 
   test.beforeEach(async ({ page }) => {
@@ -475,4 +500,24 @@ test.describe('DrawingBoard', () => {
       await closeMultiTab(page1, page2);
     });
   });
+
+  // 新しいテスト: 他のユーザーの描画ボードの閲覧と描画
+  test('should allow other authorized users to view and draw on a drawing board', async ({ browser }) => {
+    const { pageA, pageB, contextA, contextB } = await setUpTwoDifferentUsersAndDrawing(browser, 'ユーザーAのボード');
+
+    // ユーザーBが描画できることを確認
+    await drawRectangle(pageB);
+
+    // ユーザーBが描画した内容がページAにもリアルタイムで反映されていることを確認（オプション）
+    await expect(pageA.locator('canvas')).toHaveScreenshot('other-user-draw-reflected.png', { maxDiffPixels: 100 });
+
+    // ユーザーBの描画が保存できることを確認
+    const saveButtonWithAsteriskB = pageB.getByRole('button', { name: '保存 *' });
+    await saveButtonWithAsteriskB.click({ timeout: 3000 });
+    await expect(pageB.getByRole('button', { name: '保存', exact: true })).toBeDisabled();
+
+    await contextA.close();
+    await contextB.close();
+  });
+
 })
