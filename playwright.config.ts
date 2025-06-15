@@ -27,7 +27,7 @@ export default defineConfig({
     baseURL: 'http://localhost:5174',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: 'on',
 
     // ログイン状態を共有するためのstorageStateを設定
     storageState: './e2e/storageState.json',

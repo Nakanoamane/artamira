@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test'
+import { test, expect, Page, Browser } from '@playwright/test'
 
 test.describe('DrawingBoard', () => {
 
@@ -76,6 +76,30 @@ test.describe('DrawingBoard', () => {
     await page.mouse.up()
   }
 
+  async function setUpMultiTab(browser: Browser) {
+    // クライアント1のセットアップ
+    const context1 = await browser.newContext({ storageState: './e2e/storageState.json' });
+    const page1 = await context1.newPage();
+    await createNewDrawingBoard(page1, 'マルチタブUndo/Redoテストボード');
+    const drawingId = await getDrawingIdFromUrl(page1);
+
+    // クライアント2のセットアップ
+    const context2 = await browser.newContext({ storageState: './e2e/storageState.json' });
+    const page2 = await context2.newPage();
+    await page2.goto(`/drawings/${drawingId}`);
+    await page2.waitForSelector('canvas');
+
+    // 描画: 初期状態として四角形を描画し、両方のタブで表示されることを確認
+    await drawRectangle(page1);
+    await expect(page2.locator('canvas')).toHaveScreenshot('same-user-initial-draw-by-A.png', { maxDiffPixels: 100 });
+    return { page1, page2 };
+  }
+
+  async function closeMultiTab(page1: Page, page2: Page) {
+    await page1.context().close();
+    await page2.context().close();
+  }
+
   test.beforeEach(async ({ page }) => {
     await createNewDrawingBoard(page);
     await expect(page.locator('label:has-text("ツール")')).toBeVisible();
@@ -111,20 +135,7 @@ test.describe('DrawingBoard', () => {
   })
 
   test('should reflect drawings in real-time across multiple clients', async ({ browser }) => {
-    // クライアント1のセットアップ
-    const context1 = await browser.newContext({ storageState: './e2e/storageState.json' });
-    const page1 = await context1.newPage();
-    await createNewDrawingBoard(page1, 'マルチタブUndo/Redoテストボード');
-    const drawingId = await getDrawingIdFromUrl(page1);
-
-    // クライアント2のセットアップ
-    const context2 = await browser.newContext({ storageState: './e2e/storageState.json' });
-    const page2 = await context2.newPage();
-    await page2.goto(`/drawings/${drawingId}`);
-    await page2.waitForSelector('canvas');
-
-    // クライアント1で描画
-    await drawRectangle(page1);
+    const { page1, page2 } = await setUpMultiTab(browser);
 
     // クライアント2で描画が反映されるのを待つ
     await expect(page2.locator('canvas')).toHaveScreenshot('after_draw_rectangle_page2.png', {
@@ -135,8 +146,7 @@ test.describe('DrawingBoard', () => {
     const page2RedoButton = page2.getByRole('button', { name: 'Redo' });
     await expect(page2RedoButton).toBeDisabled(); // 描画直後はRedoは無効
 
-    await context1.close();
-    await context2.close();
+    await closeMultiTab(page1, page2);
   });
 
   test('should activate save button and show unsaved indicator after drawing', async ({ page }) => {
@@ -350,64 +360,141 @@ test.describe('DrawingBoard', () => {
     await expect(redoButton).toBeDisabled();
   });
 
-  test('should perform undo and redo actions correctly across multiple tabs for the same user', async ({ browser }) => {
-    // クライアント1のセットアップ
-    const context1 = await browser.newContext({ storageState: './e2e/storageState.json' });
-    const page1 = await context1.newPage();
-    await createNewDrawingBoard(page1, 'マルチタブUndo/Redoテストボード');
-    const drawingId = await getDrawingIdFromUrl(page1);
+  // 複数タブでのUndo/Redoテスト
+  test.describe('Multiple tabs Undo/Redo for the same user', () => {
 
-    // クライアント2のセットアップ
-    const context2 = await browser.newContext({ storageState: './e2e/storageState.json' });
-    const page2 = await context2.newPage();
-    await page2.goto(`/drawings/${drawingId}`);
-    await page2.waitForSelector('canvas');
+    async function getUndoRedoButtons(page1: Page, page2: Page) {
+      const page1UndoButton = page1.getByRole('button', { name: 'Undo' });
+      const page1RedoButton = page1.getByRole('button', { name: 'Redo' });
+      const page2UndoButton = page2.getByRole('button', { name: 'Undo' });
+      const page2RedoButton = page2.getByRole('button', { name: 'Redo' });
+      return { page1UndoButton, page1RedoButton, page2UndoButton, page2RedoButton };
+    }
 
-    // 1. タブAで描画し、タブBでそれが表示されることを確認する。
-    await drawRectangle(page1);
-    await expect(page2.locator('canvas')).toHaveScreenshot('same-user-initial-draw-by-A.png', { maxDiffPixels: 100 });
+    // テストケース 1: Undoが複数タブで正しく機能すること
+    test('should perform undo correctly across multiple tabs', async ({ browser }) => {
+      const { page1, page2 } = await setUpMultiTab(browser);
 
-    // 2. タブAでUndoを実行すると、タブBの表示もUndoされることを確認する。
-    const page1UndoButton = page1.getByRole('button', { name: 'Undo' });
-    await expect(page1UndoButton).toBeEnabled(); // Undoボタンが活性化していることを確認
-    await page1UndoButton.click();
+      console.log('--- Test 2: Undo across multiple tabs ---');
+      const { page1UndoButton, page1RedoButton, page2UndoButton, page2RedoButton } = await getUndoRedoButtons(page1, page2);
 
-    await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
-    await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
-    await expect(page2.locator('canvas')).toHaveScreenshot('same-user-undo-by-A.png', { maxDiffPixels: 100 });
+      // Tab AでUndoを実行
+      await expect(page1UndoButton).toBeEnabled();
+      await page1UndoButton.click();
+      console.log('Tab A: Undo button clicked.');
 
-    // 3. タブAでRedoを実行すると、タブBの表示もRedoされることを確認する。
-    const page1RedoButton = page1.getByRole('button', { name: 'Redo' });
-    await expect(page1RedoButton).toBeEnabled(); // Redoボタンが活性化していることを確認
-    await page1RedoButton.click();
+      // Tab Bで描画が消えていることを確認
+      await expect(page2.locator('canvas')).toHaveScreenshot('same-user-undo-by-A.png', { maxDiffPixels: 100 });
+      console.log('Tab B: Canvas screenshot taken after Tab A Undo.');
 
-    await page2.waitForLoadState('networkidle'); // ネットワークが落ち着くまで待機
-    await page2.waitForTimeout(1000); // さらに描画安定化のための待機時間を追加
-    await expect(page2.locator('canvas')).toHaveScreenshot('same-user-redo-by-A.png', { maxDiffPixels: 100 });
+      // 各タブのボタンの状態を検証
+      await expect(page1UndoButton).toBeDisabled();
+      await expect(page1RedoButton).toBeEnabled();
+      await expect(page2UndoButton).toBeDisabled();
+      await expect(page2RedoButton).toBeEnabled();
+      console.log('Test 2 Completed: Undo button states verified.');
 
-    // 4. タブAでUndoした後、タブBでRedoが活性化され、それをクリックするとタブAでUndoされた内容がタブBでRedoされることを確認する。
-    await expect(page1UndoButton).toBeEnabled(); // Undoボタンが活性化していることを確認
-    await page1UndoButton.click();
+      await closeMultiTab(page1, page2);
+    });
 
-    const page2RedoButton = page2.getByRole('button', { name: 'Redo' });
-    await expect(page2RedoButton).toBeEnabled({ timeout: 20000 }); // Redoボタンが活性化されるのを待つ
-    await page2RedoButton.click();
+    // テストケース 2: Redoが複数タブで正しく機能すること
+    test('should perform redo correctly across multiple tabs', async ({ browser }) => {
+      const { page1, page2 } = await setUpMultiTab(browser);
 
-    await expect(page2.locator('canvas')).toHaveScreenshot('same-user-redo-by-B-after-undo.png', { maxDiffPixels: 100 }); // スナップショット名を更新
+      console.log('--- Test 3: Redo across multiple tabs ---');
+      const { page1UndoButton, page1RedoButton, page2UndoButton, page2RedoButton } = await getUndoRedoButtons(page1, page2);
+
+      // Tab AでUndoを実行 (Redo可能な状態にするため)
+      await expect(page1UndoButton).toBeEnabled();
+      await page1UndoButton.click();
+
+      // Tab AでRedoを実行
+      await expect(page1RedoButton).toBeEnabled();
+      await page1RedoButton.click();
+
+      // Tab Bで描画が再表示されていることを確認
+      await expect(page2.locator('canvas')).toHaveScreenshot('same-user-redo-by-A.png', { maxDiffPixels: 100 });
+
+      // 各タブのボタンの状態を検証
+      await expect(page1UndoButton).toBeEnabled();
+      await expect(page1RedoButton).toBeDisabled();
+      await expect(page2UndoButton).toBeEnabled();
+      await expect(page2RedoButton).toBeDisabled();
+
+      await closeMultiTab(page1, page2);
+    });
+
+    // テストケース 3: タブAでUndoした内容をタブBでRedoできること
+    test('should allow Tab B to redo an action undone by Tab A', async ({ browser }) => {
+      const { page1, page2 } = await setUpMultiTab(browser);
+
+      console.log('--- Test 4: Tab B Redo after Tab A Undo ---');
+      const { page1UndoButton, page1RedoButton, page2UndoButton, page2RedoButton } = await getUndoRedoButtons(page1, page2);
+
+      // Tab AでUndoを実行 (Redo可能な状態にするため)
+      await expect(page1UndoButton).toBeEnabled();
+      await page1UndoButton.click();
+      console.log('Tab A: Undo button clicked for Test 4 setup.');
+
+      // Tab BのRedoボタンが活性化していることを確認
+      await expect(page2RedoButton).toBeEnabled();
+      console.log('Tab B: Redo button is enabled.');
+
+      // Tab BでRedoを実行
+      await page2RedoButton.click();
+      console.log('Tab B: Redo button clicked.');
 
 
-    // 5. タブAでRedoした後、タブBでUndoが活性化され、それをクリックするとタブAでRedoされた内容がタブBでUndoされることを確認する。
-    await expect(page1RedoButton).toBeEnabled(); // Redoボタンが活性化していることを確認
-    await page1RedoButton.click();
+      // Tab Aで描画が再表示されていることを確認
+      await expect(page1.locator('canvas')).toHaveScreenshot('same-user-tabB-redo-after-tabA-undo.png', { maxDiffPixels: 100 });
+      console.log('Tab A: Canvas screenshot taken after Tab B Redo.');
 
-    const page2UndoButton = page2.getByRole('button', { name: 'Undo' });
-    await expect(page2UndoButton).toBeEnabled({ timeout: 20000 }); // Undoボタンが活性化されるのを待つ
-    await page2UndoButton.click();
+      // 各タブのボタンの状態を検証
+      await expect(page1UndoButton).toBeEnabled();
+      await expect(page1RedoButton).toBeDisabled();
+      await expect(page2UndoButton).toBeEnabled();
+      await expect(page2RedoButton).toBeDisabled();
+      console.log('Test 4 Completed: Button states verified.');
 
-    await expect(page2.locator('canvas')).toHaveScreenshot('same-user-undo-by-B-after-redo.png', { maxDiffPixels: 100 }); // スナップショット名を更新
+      await closeMultiTab(page1, page2);
+    });
 
-    await context1.close();
-    await context2.close();
+    // テストケース 4: タブAでRedoした内容をタブBでUndoできること
+    test('should allow Tab B to undo an action redone by Tab A', async ({ browser }) => {
+      const { page1, page2 } = await setUpMultiTab(browser);
+
+      console.log('--- Test 5: Tab B Undo after Tab A Redo ---');
+      const { page1UndoButton, page1RedoButton, page2UndoButton, page2RedoButton } = await getUndoRedoButtons(page1, page2);
+
+      // Tab AでUndoを実行 (Redo可能な状態にするため)
+      await expect(page1UndoButton).toBeEnabled();
+      await page1UndoButton.click();
+
+      // Tab AでRedoを実行 (Undo可能な状態にするため)
+      await expect(page1RedoButton).toBeEnabled();
+      await page1RedoButton.click();
+      console.log('Tab A: Redo button clicked for Test 5 setup.');
+
+      // Tab BのUndoボタンが活性化していることを確認
+      await expect(page2UndoButton).toBeEnabled();
+      console.log('Tab B: Undo button is enabled.');
+
+      // Tab BでUndoを実行
+      await page2UndoButton.click();
+      console.log('Tab B: Undo button clicked.');
+
+      // Tab Aで描画が消えていることを確認
+      await expect(page1.locator('canvas')).toHaveScreenshot('same-user-tabB-undo-after-tabA-redo.png', { maxDiffPixels: 100 });
+      console.log('Tab A: Canvas screenshot taken after Tab B Undo.');
+
+      // 各タブのボタンの状態を検証
+      await expect(page1UndoButton).toBeDisabled();
+      await expect(page1RedoButton).toBeEnabled();
+      await expect(page2UndoButton).toBeDisabled();
+      await expect(page2RedoButton).toBeEnabled();
+      console.log('Test 5 Completed: Button states verified.');
+
+      await closeMultiTab(page1, page2);
+    });
   });
-
 })
