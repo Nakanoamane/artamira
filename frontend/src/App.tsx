@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import DrawingBoard from './pages/DrawingBoard'
 import LoginPage from './pages/Auth/LoginPage'
 import RegisterPage from './pages/Auth/RegisterPage'
@@ -9,6 +9,7 @@ import DrawingList from './pages/DrawingList'
 import CreateDrawingForm from './pages/CreateDrawingForm'
 import { HeaderProvider, useHeader } from './contexts/HeaderContext'
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import ErrorPage from './components/ErrorPage';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -68,6 +69,7 @@ const AppContent: React.FC = () => {
           }
         />
         <Route path="/" element={<Navigate to="/drawings" replace />} />
+        <Route path="*" element={<ErrorPage statusCode={404} message="お探しのページは見つかりませんでした。" />} />
       </Routes>
     </div>
   )
