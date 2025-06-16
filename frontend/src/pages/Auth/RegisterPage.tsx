@@ -72,13 +72,13 @@ const RegisterPage: React.FC = () => {
             </div>
             {error && <p className="text-status-danger text-xs mt-2">{error}</p>}
             <div className="flex items-baseline justify-between">
+              <a href="/login" className="text-sm text-stone-blue hover:underline">ログイン</a>
               <button
                 type="submit"
                 className="px-6 py-2 mt-4 text-clay-white bg-cave-ochre rounded-lg hover:bg-dark-cave-ochre"
               >
                 登録
               </button>
-              <a href="/login" className="text-sm text-stone-blue hover:underline">ログイン</a>
             </div>
           </div>
         </form>
